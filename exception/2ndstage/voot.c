@@ -28,6 +28,7 @@ static void dump_framebuffer_udp(void)
     #define MAP_NUM_PIXELS  (640 * 480)
     #define STRIP_SIZE      300
 
+    /* STAGE: Release the data back in sectioned strips. */
     for (index = 0; index <= MAP_NUM_PIXELS; index++)
     {
         uint8 strip[STRIP_SIZE][3];
@@ -43,24 +44,21 @@ static void dump_framebuffer_udp(void)
 
 static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16 udp_data_length)
 {
-/*
-    volatile uint16 *player_a_health = (uint16 *) 0x8CCF6284;
-    volatile uint16 *player_b_health = (uint16 *) 0x8CCF7402;
-*/
-
     switch (maybe_command)
     {
-        /* STAGE: Dump VOOT system memory. */
+        /* STAGE: Gamedata upload logic. */
         case '1':
             biudp_write_buffer((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
             break;
 
+        /* STAGE: Gamedata download logic. */
         case '2':
             biudp_write_str("[UBC] Uploading game data.\r\n");
             memcpy((uint8 *) VOOT_MEM_START, (uint8 *) udp + sizeof(udp_header_t) + 1, VOOT_MEM_END - VOOT_MEM_START);
             biudp_write_str("[UBC] Uploaded game data.\r\n");
             break;
 
+        /* STAGE: Serial injection test case. It's amazing how SuperJoe is, so conveniently, 8 bytes. */
         case 'i':
         {
             char xstr[] = "SuperJoe";

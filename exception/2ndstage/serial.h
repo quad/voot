@@ -3,13 +3,20 @@
 
 #include "vars.h"
 
-void    ubc_serial_init         (uint16 baud_rate);
-void    ubc_serial_set_baudrate (uint16 baud_rate);
-void    ubc_serial_write        (int32 c);
-void    ubc_serial_flush        (void);
-void    ubc_serial_write_buffer (uint8 * data, uint32 len);
-void    ubc_serial_write_str    (uint8 * str);
-int32   ubc_serial_read         (void);
-void    ubc_serial_write_hex    (uint32 val);
+#define _SCIF_BASE      (0xFFE80000)
+#define SCIF_R_SMR      (REGISTER(uint16)   (_SCIF_BASE + 0x00))
+#define SCIF_R_BRR      (REGISTER(uint8)    (_SCIF_BASE + 0x04))
+#define SCIF_R_FTG      (REGISTER(uint8)    (_SCIF_BASE + 0x0C))
+#define SCIF_R_FS       (REGISTER(uint16)   (_SCIF_BASE + 0x10))
+#define SCIF_R_FC       (REGISTER(uint16)   (_SCIF_BASE + 0x18))
+
+#define SCIF_FS_TDFE    (1<<5)
+#define SCIF_FS_TEND    (1<<6)
+
+#define SCIF_FC_LOOP    (1)
+
+#define SCIF_TIMEOUT    10000
+
+void    serial_set_baudrate (uint16 baud_rate);
 
 #endif

@@ -8,7 +8,6 @@
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "serial.h"
-#include "heartbeat.h"
 #include "trap.h"
 
 /*
@@ -46,45 +45,39 @@ void init_ubc_b_serial(void)
     add_exception_handler(&new);
 } 
 
-void trap_inject_data(uint8 *data, uint32 size)
+uint32 trap_inject_data(uint8 *data, uint32 size)
 {
-    volatile uint16 *scif_sr = REGISTER(uint16) 0xFFE80010;
-    volatile uint16 *scif_cr = REGISTER(uint16) 0xFFe80018;
-    volatile uint8 *scif_tdr = REGISTER(uint8) 0xFFE8000C;
     uint32 data_index, timeout_count;
-
-    #define SCIF_SR_TDFE    (1<<5)
-    #define SCIF_SR_TEND    (1<<6)
-    #define SCIF_CR_LOOP    (1)
-    #define SCIF_TIMEOUT    10000
 
     biudp_write_str("i>");
 
-    *scif_cr |= SCIF_CR_LOOP;
+    *SCIF_R_FC |= SCIF_FC_LOOP;
 
-    /* STAGE: !!! switch the serial port into loopback mode and write some bytes. */
+    /* STAGE: Write the bytes to the FIFO, if possible. */
     data_index = 0;
-    while((data_index < size) && (*scif_sr & SCIF_SR_TDFE))
+    while((data_index < size) && (*SCIF_R_FS & SCIF_FS_TDFE))
     {
-        *scif_tdr = data[data_index];
+        *SCIF_R_FTG = data[data_index];
 
         biudp_write(data[data_index]);
 
         data_index++;
 
-        *scif_sr &= ~(SCIF_SR_TDFE | SCIF_SR_TEND);
+        *SCIF_R_FS &= ~(SCIF_FS_TDFE | SCIF_FS_TEND);
     }
 
     biudp_write_str("#\r\n");
 
     timeout_count = 0;
-    while((timeout_count < SCIF_TIMEOUT) && !(*scif_sr & SCIF_SR_TEND))
+    while((timeout_count < SCIF_TIMEOUT) && !(*SCIF_R_FS & SCIF_FS_TEND))
         timeout_count++;
 
     if (timeout_count == SCIF_TIMEOUT)
         biudp_write_str("[UBC] SCIF timeout during injection.\r\n");
 
-    *scif_cr &= ~(SCIF_CR_LOOP);
+    *SCIF_R_FC &= ~(SCIF_FC_LOOP);
+
+    return data_index;
 }
 
 void* rxi_handler(register_stack *stack, void *current_vector)
@@ -120,7 +113,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 void* serial_handler(register_stack *stack, void *current_vector)
 {
     /* STAGE: !!! Reconfigure serial port for testing. */
-    ubc_serial_set_baudrate(57600);
+    serial_set_baudrate(57600);
 
     /* STAGE: We only break on the serial (channel B) exception. */
     if (*UBC_R_BRCR & UBC_BRCR_CMFB)

@@ -3,6 +3,6 @@
 
 #include "vars.h"
 
-void warez_load(uint32 data_size);
+extern void warez_load(uint32 data_size);
 
 #endif

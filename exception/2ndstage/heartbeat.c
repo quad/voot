@@ -29,6 +29,7 @@ void init_heartbeat(void)
 
 static void count_pageflip(void)
 {
+    /* STAGE: Display statistic information only in the case of a new pageflip handler. */
     if (pageflip_info.spc != spc())
     {
         biudp_write_str("[UBC] Pageflip 0x");

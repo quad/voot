@@ -9,8 +9,7 @@
 #include <dream.h>
 #include "vconsole.h"
 
-/* !SIZE! This buffer really should be much smaller. */
-char printf_buf[2048];
+char printf_buf[1024];
 
 unsigned short vc_line;
 

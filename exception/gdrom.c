@@ -8,6 +8,7 @@
 */
 
 #include <dream.h>
+#include "gdrom.h"
 
 /* GD-Rom BIOS calls... named mostly after Marcus' code. None have more
    than two parameters; R7 (fourth parameter) needs to describe
@@ -77,4 +78,16 @@ unsigned int gdrom_disc_type(void)
     }
 
     return params[1];
+}
+
+int open_gd_or_cd(unsigned int *fd, unsigned char *filename)
+{
+    *fd = iso_open(filename, O_RDONLY);
+
+    /* Try GD-ROM support */
+    if (!*fd)
+        *fd = iso_open_gdrom(filename, O_RDONLY);
+
+    /* If it isn't a GD-ROM, descramble it. */
+    return (gdrom_disc_type() != GD_TYPE_GDROM);
 }

@@ -29,18 +29,21 @@ void init_ubc_a_exception(void)
 
 static void init_vbr_table(void)
 {
-    /* STAGE: Be evil to VOOT VBR */
+    /* STAGE: !!! Install handlers for the other exception types OR remove
+        the alternative exception type handlers. */
+
+    /* STAGE: Add our magic sprinkles of evil to the VOOT VBR. */
     memcpy(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
             interrupt_sub_handler,
             interrupt_sub_handler_end - interrupt_sub_handler);
 
-    /* STAGE: Relocate the Katana VBR index - bypass our entry logic */
+    /* STAGE: Relocate the Katana VBR index - bypass our entry logic. */
     vbr_buffer_katana = vbr_buffer + (sizeof(uint16) * 4);
 
     /* STAGE: Flush cache after modifying application memory */
     flush_cache();
 
-    /* STAGE: Change the actual VBR */
+    /* STAGE: Notify ourselves of the change. */
     exp_table.vbr_switched = TRUE;
 }
 
@@ -59,7 +62,7 @@ static bool is_vbr_switch_time(void)
 
 uint32 add_exception_handler(const exception_table_entry *new_entry)
 {
-    uint32  index;
+    uint32 index;
 
     for (index = 0; index < EXP_TABLE_SIZE; index++)
     {

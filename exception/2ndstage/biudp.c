@@ -56,14 +56,6 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
     IP_ADDR_COPY(ip->source, control.source_ip);
     IP_ADDR_COPY(ip->dest, control.dest_ip);
 
-/*
-    *(((uint16 *) &ip->source)    ) = *(((uint16 *) &control.source_ip)    );
-    *(((uint16 *) &ip->source) + 1) = *(((uint16 *) &control.source_ip) + 1);
-
-    *(((uint16 *) &ip->dest)    ) = *(((uint16 *) &control.dest_ip)    );
-    *(((uint16 *) &ip->dest) + 1) = *(((uint16 *) &control.dest_ip) + 1);
-*/
-
     /* STAGE: Calculate the IP checksum last. */
     ip_header_length = IP_HEADER_SIZE(ip);
     ip->checksum = ip_checksum(ip, ip_header_length);
@@ -86,7 +78,6 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
     rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
 }
 
-/* STAGE: Split the incoming into 1024 byte chunks and feed those out. */
 void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 {
     uint32 index, remain;
@@ -94,6 +85,8 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     if (!control.initialized)
         return;
 
+    /* STAGE: Split the incoming into BIUDP_SEGMENT_SIZE byte chunks and
+        feed those out. */
     for (index = 0; index < (in_data_length / BIUDP_SEGMENT_SIZE); index++)
     {
         const uint8 *in_data_segment;
@@ -102,6 +95,7 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 
         biudp_write_segment(in_data_segment, BIUDP_SEGMENT_SIZE);
 
+        /* STAGE: Delay so we don't flood the receiving system. */
         vid_waitvbl();
     }
 

@@ -12,37 +12,19 @@
 #include "gdrom.h"
 #include "descramble.h"
 #include "2ndstage.h"
-#include "loader.h"
 
 #define FIRST_LOAD_POINT    0x8C300000
 #define FIRST_RUN_POINT     0x8C010000
 #define FIRST_LOAD_FILE     "/1st_read.bin"
 
-#define LOAD_POINT          0xAC004000
-#define RUN_POINT           0xAC004000
-#define IP_BOOTSTRAP_POINT  0x8C00B800
-#define IP_LOAD_FILE        "/ip.bin"
-
-static char *ip_buffer = (char *) LOAD_POINT;
+static char *stage_buffer = (char *) 0xAC004000;
 static char *first_load_buffer = (char *) FIRST_LOAD_POINT;
 static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
 
 #define COLOR_FIRST_WAIT    0, 0, 0
 #define COLOR_BOOT_INIT     0, 0, 100
 
-static int open_gd_or_cd(unsigned int *fd, unsigned char *filename)
-{
-    *fd = iso_open(filename, O_RDONLY);
-
-    /* Try GD-ROM support */
-    if (!*fd)
-        *fd = iso_open_gdrom(filename, O_RDONLY);
-
-    /* If it isn't a GD-ROM, descramble it. */
-    return (gdrom_disc_type() != GD_TYPE_GDROM);
-}
-
-void boot_loader(unsigned char *bootstrap_name)
+static void boot_loader(unsigned char *bootstrap_name)
 {
     int fd, bin_size;
     int do_descramble;
@@ -78,11 +60,11 @@ void boot_loader(unsigned char *bootstrap_name)
         vc_puts("WAREZ_LOAD active! Bad pirate.");
 
     /* Copy the second stage into the IP.BIN area and execute it */
-    memcpy(ip_buffer, stage_two_bin, stage_two_bin_size);
+    memcpy(stage_buffer, stage_two_bin, stage_two_bin_size);
 
     vc_puts("Go!");
     *first_load_size = bin_size;
-    (*(void (*)()) RUN_POINT) (do_descramble);    /* If you don't screw with R4. */
+    (*(void (*)()) stage_buffer) (do_descramble);    /* If you don't screw with R4. */
 }
 
 void dc_main(void)

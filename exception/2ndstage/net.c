@@ -373,7 +373,7 @@ static void ip_handle_packet(ether_info_packet_t *frame)
             udp_handle_packet(frame, ip_header_length, ip_data_length);
             break;
 
-        //case IP_PROTO_TCP:
+        /* case IP_PROTO_TCP: */
         default:    /* Yeah, we don't support this. */
             return;
     }

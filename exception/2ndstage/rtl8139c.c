@@ -63,7 +63,7 @@ bool pci_bb_init(void)
     G2_INT(0x1424) = 0x01000000;
     G2_INT(0x1428) = 0x01840000;                /* DMA Base */
     G2_INT(0x142c) = 0x01840000 + 32 * 1024;    /* DMA End - 32k buffer includes Rx Ring and Tx descriptors */
-    G2_INT(0x1414) = 0x00000001;
+    G2_INT(0x1414) = 0x00000001;                /* Interrupt enable. */
     G2_INT(0x1434) = 0x00000001;
 
     /* Initialize the PCI Bridge - this is the part which *should* be more intelligent, but isn't. */
@@ -377,7 +377,7 @@ void rtl_rx_all(void)
 
         packet_size = rx_size - 4;
 
-        /* Handle that GOOD packet, baby! */
+        /* STAGE: Handle that GOOD packet, baby! */
         if (rx_status & 1)  /* if it's done? */
         {
             /* + 4 to skip the header. */
@@ -394,6 +394,7 @@ void rtl_rx_all(void)
         /* Reset both buffers to within our scope. */
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
+        /* STAGE: Only handle if the frame is complete. */
         if (rx_status & 1)
             net_handle_frame(rtl_info.frame_in_buffer, packet_size);
     }

@@ -26,6 +26,7 @@
 #define ICMP_TYPE_ECHO_REQUEST  8
 #define ICMP_TYPE_ECHO_REPLY    0
 
+/* Virtual definitions for our byte-swapping functions. */
 #define ntohl bswap32
 #define htonl bswap32
 #define ntohs bswap16

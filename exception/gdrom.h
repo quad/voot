@@ -10,5 +10,6 @@
 int gdc_get_drv_stat(void *param);
 void wait_for_gdrom(void);
 unsigned int gdrom_disc_type(void);
+int open_gd_or_cd(unsigned int *fd, unsigned char *filename);
 
 #endif

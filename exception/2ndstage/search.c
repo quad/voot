@@ -17,16 +17,9 @@ volatile uint8* search_sysmem_at(const uint8 *key, uint32 key_size, volatile uin
     volatile uint8 *cur_loc;
 
     for (cur_loc = start_loc; cur_loc < end_loc; cur_loc++)
-    {
         if (*cur_loc == key[0])
-        {
             if(!memcmp((const uint8 *) cur_loc, key, key_size))
-            {
-                /* So we have a match. Report it. */
-                return cur_loc;
-            }
-        }
-    }
+                return cur_loc;     /* So we have a match. Report it. */
 
     return 0x0;     // I really should define NULL
 }

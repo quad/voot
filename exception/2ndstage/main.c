@@ -4,21 +4,11 @@
     shell and hook to various parts of the system.
 */
 
-#include <string.h>         // For memmove() - How much memory wasted?
-#include "util.h"
-#include "system.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "trap.h"
+#include "util.h"
 #include "warez_load.h"
-
-/*
-SCIF Control Register - 0xFFE80008
-SCIF Receive Register - 0xFFE80014
-IP.BIN/UBC Load Point - 0x8C008000
-VR ? Armor Location   - 0x8CCF7402
-FB Page Flip          - 0xa05f8050
-*/
 
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
