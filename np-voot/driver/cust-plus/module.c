@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.4 2002/08/04 05:48:05 quad Exp $
+    $Id: module.c,v 1.5 2002/11/14 22:35:04 quad Exp $
 
 DESCRIPTION
 
@@ -11,10 +11,8 @@ DESCRIPTION
 #include <vars.h>
 #include <vmu.h>
 #include <controller.h>
-#include "customize.h"
 
-#include <ether.h>
-#include <dumpio.h>
+#include "customize.h"
 
 #include "module.h"
 

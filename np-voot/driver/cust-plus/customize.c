@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.8 2002/10/28 01:13:01 quad Exp $
+    $Id: customize.c,v 1.9 2002/11/14 22:35:04 quad Exp $
 
 DESCRIPTION
 
@@ -14,8 +14,6 @@ TODO
 
     Re-reverse the entire system to have data transmitted across the line.
     Customized heads are *for certain* not transmitted.
-
-    Combine the two mount request statements.
 
     Finish documenting the player gamedata structure and switch it its
     usage.
@@ -156,7 +154,6 @@ static void maybe_start_load_customize (void)
         /* STAGE: Begin the mount scan for a VMS. */
 
         GAMEDATA_OPT->data_port = VMU_PORT_A1;
-        ipc                     = C_IPC_MOUNT_SCAN_1;
         go                      = TRUE;
     }
     /* STAGE: [Step 1-P2] Second player requests customization load. */
@@ -184,7 +181,6 @@ static void maybe_start_load_customize (void)
         /* STAGE: Begin the mount scan for a VMS. */
 
         GAMEDATA_OPT->data_port = VMU_PORT_B1;
-        ipc                     = C_IPC_MOUNT_SCAN_1;
         go                      = TRUE;
     }
 
@@ -196,6 +192,7 @@ static void maybe_start_load_customize (void)
 
         /* STAGE: Finish initializing the IPC for the mount scan. */
 
+        ipc         = C_IPC_MOUNT_SCAN_1;
         file_number = 0;
 
         /* STAGE: Send the mount request. */
@@ -517,8 +514,8 @@ static void* customize_handler (register_stack *stack, void *current_vector)
 
 void customize_init (void)
 {
-    static bool             exp_inited;
-    static bool             anim_inited;
+    static bool exp_inited;
+    static bool anim_inited;
 
     if (!exp_inited)
     {
