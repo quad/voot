@@ -1,8 +1,0 @@
-#!/bin/sh
-
-echo "Press Control-C to finalize."
-
-echo -n "2" > tmp.gamedata.out
-cat gamedata.dump >> tmp.gamedata.out
-
-cat tmp.gamedata.out | nc -q 1 -v -v -u 10.1.1.70 5007

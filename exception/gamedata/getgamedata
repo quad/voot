@@ -1,5 +1,0 @@
-#!/bin/sh
-
-echo "Press Control-C to finalize."
-
-echo "1" | nc -q 1 -v -v -u 10.1.1.70 5007 > gamedata.dump
