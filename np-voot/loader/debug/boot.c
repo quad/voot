@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.1 2002/06/12 00:37:00 quad Exp $
+    $Id: boot.c,v 1.2 2002/06/29 13:02:27 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,9 @@ CHANGELOG
 
     Tue May 28 09:19:02 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Split out the boot loading functionality from the main module.
+
+    Mon Jun 24 22:53:47 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Shifted load address to new safe page.
 
 */
 
@@ -23,7 +26,7 @@ void boot_loader (void)
     uint8  *driver_buffer;
     uint8  *stage_buffer;
     
-    stage_buffer = (uint8 *) 0x8c004000;
+    stage_buffer = (uint8 *) 0x8c250000;
 
     /* STAGE: Open and read in the driver binary. */
 
