@@ -26,6 +26,9 @@ CHANGELOG
         Added dump buffer functionality and command w/ option wrapper
         functions.
 
+    Sun Apr  7 23:28:39 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Bug-fix for the command sending functionality.
+
 */
 
 #include <stdlib.h>
