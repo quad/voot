@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.3 2002/11/12 02:00:55 quad Exp $
+    $Id: bbaif.c,v 1.4 2002/11/12 08:52:35 quad Exp $
 
 DESCRIPTION
 
@@ -13,8 +13,6 @@ DESCRIPTION
     <adam@sics.se>
 
 TODO
-
-    Implement an etharp timer.
 
     Add in the complete statistics package.
 

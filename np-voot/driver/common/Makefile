@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.11 2002/11/08 19:47:40 quad Exp $
+# $Id: Makefile,v 1.12 2002/11/12 08:52:32 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 DRIVER_CLEAN = lwip.a-clean
@@ -19,17 +19,14 @@ DRIVER_OBJS += util.o printf.o searchmem.o video.o serial.o bswap.o
 DRIVER_OBJS += biosfont.o biosfont-lowlevel.o assert.o
 
 # Network Layer (drivers and stack).
-#DRIVER_OBJS += net.o ether.o rtl8139c.o biudp.o voot.o dumpio.o
+#DRIVER_OBJS += rtl8139c.o voot.o dumpio.o
 DRIVER_OBJS += rtl8139c.o
 
 # Gamedata interaction logic.
 DRIVER_OBJS += gamedata.o
 
-# TA VSync Heartbeat.
-DRIVER_OBJS += heartbeat.o
-
 # VOOT internal accessors.
-DRIVER_OBJS += malloc.o controller.o vmu.o
+DRIVER_OBJS += malloc.o controller.o vmu.o timer.o
 
 # VOOT animation/render cycle patch.
 DRIVER_OBJS += anim.o
