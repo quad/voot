@@ -1,20 +1,14 @@
 /*  net.c
 
-    $Id: net.c,v 1.5 2002/06/23 23:18:05 quad Exp $
+    $Id: net.c,v 1.6 2002/06/23 23:48:52 quad Exp $
 
 DESCRIPTION
 
-    Networking sub-system. I intend on handling the following protocols:
-
-    * UDP           - Our primary data transfer protocol.
-        * DHCP      - We want to be able to resolve our IP address in
-                       foreign environments.
-        * VOOT      - The Netplay VOOT protocol.
-    * ICMP          - Pings, primarily.
+    IP, ICMP, and basic UDP services layer.
 
 TODO
 
-    Implement DHCP.
+    Implement ARP and DHCP.
 
 */
 
@@ -27,51 +21,6 @@ TODO
 #include "voot.h"
 
 #include "net.h"
-
-/*
-    Ethernet Subsystem
-*/
-
-bool net_transmit (ether_info_packet_t *frame_in)
-{
-    ether_ii_header_t  *frame_out;
-    uint32              frame_out_length;
-    bool                retval;
-
-    /* STAGE: Ensure the packet isn't oversize. */
-
-    frame_out_length    = sizeof (ether_ii_header_t) + frame_in->length;
-
-    if (frame_out_length > NET_MAX_PACKET)
-        return FALSE;
-
-    /* STAGE: malloc() appropriate sized buffer. */
-
-    frame_out           = malloc (frame_out_length);
-
-    if (!frame_out)
-        return FALSE;
-
-    /* STAGE: Setup the packet. */
-
-    memcpy (frame_out->source, frame_in->source, ETHER_MAC_SIZE);
-    memcpy (frame_out->dest, frame_in->dest, ETHER_MAC_SIZE);
-    frame_out->ethertype = htons (frame_in->ethertype);
-
-    /* STAGE: Copy the remaining buffer. */
-
-    memcpy ((uint8 *) frame_out + sizeof (ether_ii_header_t), frame_in->data, frame_in->length);
-
-    /* STAGE: Transmit the packet. */
-
-    retval = ether_tx ((uint8 *) frame_out, frame_out_length);
-
-    /* STAGE: Free output buffer. */
-
-    free (frame_out);
-
-    return retval;
-}
 
 /*
     IP Processor
@@ -252,7 +201,7 @@ static bool icmp_echo_reply (ether_info_packet_t *frame, icmp_header_t *icmp, ui
 
     /* STAGE: Transmit it, god willing. */
 
-    return net_transmit (frame);
+    return ether_transmit (frame);
 }
 
 bool icmp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
@@ -362,7 +311,7 @@ static bool udp_echo_reply (ether_info_packet_t *frame, udp_header_t *udp, uint1
 
     /* STAGE: Transmit it, god willing. */
 
-    return net_transmit (frame);
+    return ether_transmit (frame);
 }
 
 bool udp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)

@@ -1,6 +1,6 @@
 /*  ether.h
 
-    $Id: ether.h,v 1.1 2002/06/23 23:18:05 quad Exp $
+    $Id: ether.h,v 1.2 2002/06/23 23:48:52 quad Exp $
 
 */
 
@@ -45,7 +45,7 @@ typedef struct
 /* NOTE: Module definitions. */
 
 bool    ether_init          (void);
-bool    ether_tx            (const uint8 *frame, uint32 frame_size);
+bool    ether_transmit      (ether_info_packet_t *frame_in);
 uint8 * ether_mac           (void);
 bool    ether_handle_frame  (const uint8* data, uint32 data_size);
 

@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.5 2002/06/23 23:18:05 quad Exp $
+    $Id: biudp.c,v 1.6 2002/06/23 23:48:52 quad Exp $
 
 DESCRIPTION
 
@@ -26,19 +26,11 @@ void biudp_init (const biudp_control_t *in_control)
     control.initialized = 1;
 }
 
-/*
-    NOTE: This entire section is essentially a duplicate of the net_transmit
-    code, except its formatted differently.
-    
-    I wish I could combine them somehow.
-*/
-
 static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 {
-    ether_ii_header_t  *frame_out;
+    ether_info_packet_t frame_out;
     ip_header_t        *ip;
     udp_header_t       *udp;
-    uint16              total_length;
     uint16              ip_length;
     uint16              ip_header_length;
     bool                retval;
@@ -50,26 +42,26 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
 
-    ip_length       = sizeof (ip_header_t) + sizeof (udp_header_t) + in_data_length;
-    total_length    = sizeof (ether_ii_header_t) + ip_length;
+    ip_length = sizeof (ip_header_t) + sizeof (udp_header_t) + in_data_length;
 
     /* STAGE: malloc() the proper size output buffer. */
 
-    frame_out = malloc (total_length);
+    ip = malloc (ip_length);
 
-    if (!frame_out)
+    if (!ip)
         return FALSE;
 
     /* STAGE: Setup the frame layer. */
 
-    memcpy (frame_out->source, ether_mac (), ETHER_MAC_SIZE);
-    memcpy (frame_out->dest, control.dest_mac, ETHER_MAC_SIZE);
+    memcpy (frame_out.source, ether_mac (), ETHER_MAC_SIZE);
+    memcpy (frame_out.dest, control.dest_mac, ETHER_MAC_SIZE);
 
-    frame_out->ethertype = htons(0x0800);
+    frame_out.ethertype = 0x0800;
+    frame_out.length    = ip_length;
+    frame_out.data      = (uint8 *) ip;
 
     /* STAGE: Setup the IP layer. */
 
-    ip                      = (ip_header_t *) ((uint8 *) frame_out + sizeof (ether_ii_header_t)); 
     ip->version_ihl         = 0x45;                 /* 4 is the IP version, 5 is the size of the header in 32-bit segments. No options and no padding. */
     ip->tos                 = 0x14;                 /* Normal precedence, low delay, high reliability - this is all we want but we'll never get. */
     ip->length              = htons (ip_length);
@@ -107,11 +99,11 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: ... and transmit it, god willing. */
 
-    retval = ether_tx ((uint8 *) frame_out, sizeof (ether_ii_header_t) + ip_length);
+    retval = ether_transmit (&frame_out);
 
     /* STAGE: Free the output buffer. */
 
-    free (frame_out);
+    free (ip);
 
     return retval;
 }

@@ -1,6 +1,6 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.1 2002/06/23 23:18:05 quad Exp $
+    $Id: ether.c,v 1.2 2002/06/23 23:48:52 quad Exp $
 
 DESCRIPTION
 
@@ -13,11 +13,19 @@ DESCRIPTION
 #include "vars.h"
 #include "rtl8139c.h"
 #include "util.h"
+#include "malloc.h"
 #include "net.h"
 
 #include "ether.h"
 
 /* NOTE: Miscellaneous utility functions. No logic occurs within these. */
+
+static bool ether_tx (const uint8 *frame, uint32 frame_size)
+{
+    /* TODO: Dummy function directly accessing the RTL. */
+
+    return rtl_tx (frame, frame_size);
+}
 
 /*
     NOTE: Recognize between an Ethernet II and 802.3 SNAP frame, and
@@ -82,11 +90,46 @@ bool ether_init (void)
     return rtl_init ();
 }
 
-bool ether_tx (const uint8 *frame, uint32 frame_size)
-{
-    /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx (frame, frame_size);
+bool ether_transmit (ether_info_packet_t *frame_in)
+{
+    ether_ii_header_t  *frame_out;
+    uint32              frame_out_length;
+    bool                retval;
+
+    /* STAGE: Ensure the packet isn't oversize. */
+
+    frame_out_length = sizeof (ether_ii_header_t) + frame_in->length;
+
+    if (frame_out_length > NET_MAX_PACKET)
+        return FALSE;
+
+    /* STAGE: malloc() appropriate sized buffer. */
+
+    frame_out = malloc (frame_out_length);
+
+    if (!frame_out)
+        return FALSE;
+
+    /* STAGE: Setup the packet. */
+
+    memcpy (frame_out->source, frame_in->source, ETHER_MAC_SIZE);
+    memcpy (frame_out->dest, frame_in->dest, ETHER_MAC_SIZE);
+    frame_out->ethertype = htons (frame_in->ethertype);
+
+    /* STAGE: Copy the remaining buffer. */
+
+    memcpy ((uint8 *) frame_out + sizeof (ether_ii_header_t), frame_in->data, frame_in->length);
+
+    /* STAGE: Transmit the packet. */
+
+    retval = ether_tx ((uint8 *) frame_out, frame_out_length);
+
+    /* STAGE: Free output buffer. */
+
+    free (frame_out);
+
+    return retval;
 }
 
 uint8* ether_mac (void)
