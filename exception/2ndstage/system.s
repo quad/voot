@@ -5,6 +5,9 @@
     .global _dbr_set
     .global _r15
     .global _spc
+    .global _sr
+    .global _fpscr
+    .global _gbr
     .global _flush_cache
 
 _vbr:
@@ -34,6 +37,21 @@ _r15:
 
 _spc:
     stc     SPC, r0
+    rts
+    nop
+
+_sr:
+    stc     SR, r0
+    rts
+    nop
+
+_fpscr:
+    sts     FPSCR, r0
+    rts
+    nop
+
+_gbr:
+    stc     GBR, r0
     rts
     nop
 

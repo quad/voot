@@ -33,7 +33,7 @@ static char startup_msg[] = {
     "FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n"
     "General Public License for more details.\n"
     "\n"
-    "* Press 'Y' during selection to load customization\n"
+    "* Press 'Y' during selection to load colors.\n"
     "\n"
     "* Press 'Y' after *full VR load* for VR Test.\n"
     "   Load is finished if sub-menus are working.\n"

@@ -80,27 +80,32 @@ void __assert(const char *module, int32 line, const char *expr, const char *func
 
     assert_puts("*** ASSERTION FAILURE ***");
 
+    /* STAGE: Module name. */
     assert_puts("Module:");
     assert_puts(module);
 
+    /* STAGE: Function the assertion occured in. */
     assert_puts("Function:");
     assert_puts(func);
 
+    /* STAGE: The line number of the assertion. */
     memset(line_msg, NULL, sizeof(line_msg));
     number(line_msg, line, 10, sizeof(line_msg), 0, N_LEFT);
 
     assert_puts("Line Number:");
     assert_puts(line_msg);
 
+    /* STAGE: The expression asserted. */
     assert_puts("Expression:");
     assert_puts(expr);
 
+    /* STAGE: The optional extra data passed in assert_x() */
     if (extra)
     {
         memset(line_msg, NULL, sizeof(line_msg));
         number(line_msg, extra, 16, sizeof(line_msg), 0, N_LEFT);
 
-        assert_puts("Extra:");
+        assert_puts("Message:");
         assert_puts(line_msg);
     }
 
