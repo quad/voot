@@ -8,6 +8,7 @@
 #include "biudp.h"
 #include "exception.h"
 #include "search.h"
+#include "trap.h"
 #include "voot.h"
 
 static void dump_framebuffer_udp(void)
@@ -58,6 +59,13 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
             biudp_write_str("[UBC] Uploading game data.\r\n");
             memcpy((uint8 *) VOOT_MEM_START, (uint8 *) udp + sizeof(udp_header_t) + 1, VOOT_MEM_END - VOOT_MEM_START);
             biudp_write_str("[UBC] Uploaded game data.\r\n");
+            break;
+
+        case 'i':
+        {
+            char xstr[] = "SuperJoe";
+            trap_inject_data(xstr, strlen(xstr));
+        }
             break;
 
         /* STAGE: Do we take a screenshot? */

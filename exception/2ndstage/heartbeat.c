@@ -11,6 +11,8 @@
 #include "gamedata.h"
 #include "heartbeat.h"
 
+my_pageflip pageflip_info;
+
 void init_heartbeat(void)
 {
     exception_table_entry new;
@@ -27,26 +29,23 @@ void init_heartbeat(void)
 
 static void count_pageflip(void)
 {
-    static uint32 saved_spc;
-    static uint32 save_count = 0;
-
-    if (saved_spc != spc())
+    if (pageflip_info.spc != spc())
     {
         biudp_write_str("[UBC] Pageflip 0x");
-        biudp_write_hex(saved_spc);
+        biudp_write_hex(pageflip_info.spc);
         biudp_write_str(" lasted 0x");
-        biudp_write_hex(save_count);
+        biudp_write_hex(pageflip_info.count);
         biudp_write_str("\r\n");
 
-        saved_spc = spc();
-        save_count = 0;
+        pageflip_info.spc = spc();
+        pageflip_info.count = 0;
 
         biudp_write_str("[UBC] Pageflip @ 0x");
-        biudp_write_hex(saved_spc);
+        biudp_write_hex(pageflip_info.spc);
         biudp_write_str("\r\n");
     }
 
-    save_count++;
+    pageflip_info.count++;
 }
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)

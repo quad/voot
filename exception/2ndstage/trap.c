@@ -8,11 +8,13 @@
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "serial.h"
+#include "heartbeat.h"
 #include "trap.h"
 
 /*
     SCIF Write:
         WRITE on 0xFFE8000C in R2   (PC: 8c0397f4)
+        Each write occurs within a single pageflip.
 
     SCIF Read:
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
@@ -43,6 +45,47 @@ void init_ubc_b_serial(void)
 
     add_exception_handler(&new);
 } 
+
+void trap_inject_data(uint8 *data, uint32 size)
+{
+    volatile uint16 *scif_sr = REGISTER(uint16) 0xFFE80010;
+    volatile uint16 *scif_cr = REGISTER(uint16) 0xFFe80018;
+    volatile uint8 *scif_tdr = REGISTER(uint8) 0xFFE8000C;
+    uint32 data_index, timeout_count;
+
+    #define SCIF_SR_TDFE    (1<<5)
+    #define SCIF_SR_TEND    (1<<6)
+    #define SCIF_CR_LOOP    (1)
+    #define SCIF_TIMEOUT    10000
+
+    biudp_write_str("i>");
+
+    *scif_cr |= SCIF_CR_LOOP;
+
+    /* STAGE: !!! switch the serial port into loopback mode and write some bytes. */
+    data_index = 0;
+    while((data_index < size) && (*scif_sr & SCIF_SR_TDFE))
+    {
+        *scif_tdr = data[data_index];
+
+        biudp_write(data[data_index]);
+
+        data_index++;
+
+        *scif_sr &= ~(SCIF_SR_TDFE | SCIF_SR_TEND);
+    }
+
+    biudp_write_str("#\r\n");
+
+    timeout_count = 0;
+    while((timeout_count < SCIF_TIMEOUT) && !(*scif_sr & SCIF_SR_TEND))
+        timeout_count++;
+
+    if (timeout_count == SCIF_TIMEOUT)
+        biudp_write_str("[UBC] SCIF timeout during injection.\r\n");
+
+    *scif_cr &= ~(SCIF_CR_LOOP);
+}
 
 void* rxi_handler(register_stack *stack, void *current_vector)
 {
