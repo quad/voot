@@ -41,8 +41,21 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             break;
 
         case VOOT_COMMAND_TYPE_DUMPON:
-            dump_start(((uint32 *) packet->buffer)[1]);
+        {
+            uint32 address;
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Received DUMPON command...");
+
+            address = ((uint32 *) packet->buffer)[1];
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Receiving dump to address %u", address);
+
+#if 0
+            dump_start(address);
+#endif
+
             break;
+        }
 
         case VOOT_COMMAND_TYPE_DUMPOFF:
             dump_stop();
