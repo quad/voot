@@ -9,6 +9,8 @@
 #include "util.h"
 #include "rtl8139c.h"
 #include "heartbeat.h"
+#include "biosfont.h"
+#include "hud.h"
 #include "exception.h"
 
 exception_table exp_table;
@@ -143,6 +145,12 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
+
+        /* STAGE: Pre-cache the biosfont address. */
+        bfont_init(); 
+
+        /* STAGE: Initialize the HUD. */
+        //hud_init();
     }
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)

@@ -4,7 +4,7 @@
 */
 
 #include "vars.h"
-#include <stdarg.h>
+#include "printf.h"
 
 #define ZEROPAD	1		/* pad with zero */
 #define SIGN	2		/* unsigned/signed long */

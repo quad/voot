@@ -9,6 +9,7 @@
 #include "system.h"
 #include "voot.h"
 #include "gamedata.h"
+#include "hud.h"
 #include "heartbeat.h"
 
 my_pageflip pageflip_info;
@@ -61,6 +62,8 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
 
         done_once = TRUE;
     }
+
+    display_hud();
 
 #ifdef COUNT_PAGEFLIP
     /* STAGE: Pageflip statistics. */

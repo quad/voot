@@ -8,7 +8,6 @@
 #include "net.h"
 #include "rtl8139c.h"
 #include "util.h"
-#include <stdarg.h>
 #include "printf.h"
 #include "biudp.h"
 
@@ -131,6 +130,9 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 	int32 i;
 	voot_packet *netout;
 
+    if (!control.initialized)
+        return 0;
+
     netout = malloc(sizeof(voot_packet));
     if (!netout)
         return 0;   /* We didn't print any data. */
@@ -141,9 +143,11 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 	i = vsnprintf(netout->buffer, sizeof(netout->buffer), fmt, args);
 	va_end(args);
 
-    netout->size = htons(i);
-
-    biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + i);
+    if (i)
+    {
+        netout->size = htons(i);
+        biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + i);
+    }
 
     free(netout);
 

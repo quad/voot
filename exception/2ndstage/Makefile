@@ -10,9 +10,9 @@ OBJS += exception.o exception-lowlevel.o system.o asic.o
 OBJS += main.o warez_load.o
 
 # All the others...
-OBJS += util.o serial.o gamedata.o printf.o
+OBJS += util.o serial.o gamedata.o printf.o biosfont.o
 OBJS += rtl8139c.o net.o bswap.o biudp.o
-OBJS += heartbeat.o trap.o voot.o
+OBJS += heartbeat.o trap.o voot.o hud.o
 
 TARGET=sh-elf
 DCBASE=/home/scott/dcdev

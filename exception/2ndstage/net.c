@@ -96,9 +96,126 @@ static ether_info_packet_t eth_discover_frame(uint8 *frame_data, uint32 frame_si
 
 /*
  *
+ *  IP Processor
+ *
+ *  With all thanks to AndrewK.
+ *
+ *  Is this feeling like a cleaner re-implementation of dc-load-ip. Anyone
+ *  else?
+ *
+ */
+
+static uint16 ip_checksum_add(uint16 *buf, uint16 count_short, uint32 sum)
+{
+    while (count_short--)
+    {
+	    sum += *buf++;
+
+	    if (sum & 0xffff0000)
+	    {
+	        sum &= 0xffff;
+    	    sum++;
+    	}
+    }
+
+    return sum;
+}
+
+bool ip_packet_ok(ether_info_packet_t *frame, uint16 ip_header_length, uint16 ip_data_length)
+{
+    ip_header_t *ip;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: Check IP header version. */
+
+    /* STAGE: Check if length matches frame size. */
+
+    /* STAGE: IP Header checksum */
+    if (ip->checksum != ip_checksum(ip, ip_header_length))
+        return TRUE;
+
+    /* STAGE: Check if the packet is fragmented. We don't support it - yet. */
+    if (ntohs(ip->flags_frag_offset) & 0x3fff)
+        return TRUE;
+
+    return FALSE;
+}
+
+uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length)
+{
+    uint16 temp_checksum, calc_checksum;
+
+    /* STAGE: Back and clear the incoming checksum value. */
+    temp_checksum = ip->checksum;
+    ip->checksum = 0;
+
+    /* STAGE: Calculate the checksum. */
+    calc_checksum = ~(ip_checksum_add((uint16 *) ip, ip_header_length / 2, 0) & 0xffff);
+
+    /* STAGE: Restore the original incoming checksum value. */
+    ip->checksum = temp_checksum;
+
+    /* STAGE: Return our calculated value. */
+    return calc_checksum;
+}
+
+void ip_handle_packet(ether_info_packet_t *frame)
+{
+    ip_header_t *ip;
+    uint16 ip_data_length;
+    uint16 ip_header_length;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: Pre-calculate IP header sizes. */
+    ip_header_length = IP_HEADER_SIZE(ip);
+    ip_data_length = ntohs(ip->length) - ip_header_length;
+
+    /* STAGE: Sanity checks on the IP packet. */
+    if (ip_packet_ok(frame, ip_header_length, ip_data_length))
+        return;
+
+    /* STAGE: And handle the appropriate protocol type! */
+    switch (ip->protocol)
+    {
+        case IP_PROTO_ICMP:
+            icmp_handle_packet(frame, ip_header_length, ip_data_length);
+            break;
+
+        case IP_PROTO_UDP:
+            udp_handle_packet(frame, ip_header_length, ip_data_length);
+            break;
+
+        /* case IP_PROTO_TCP: */
+        default:    /* Yeah, we don't support this. */
+            return;
+    }
+}
+
+/*
+ *
  *  ICMP Sub-System
  *
  */
+
+uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length)
+{
+    uint16 temp_checksum, calc_checksum;
+
+    /* STAGE: Back and clear the incoming checksum value. */
+    temp_checksum = icmp->checksum;
+    icmp->checksum = 0;
+
+    /* STAGE: Calculate the checksum. */
+    calc_checksum = ~(ip_checksum_add((uint16 *) icmp, icmp_header_length / 2, 0) & 0xffff);
+
+    /* STAGE: Restore the original incoming checksum value. */
+    icmp->checksum = temp_checksum;
+
+    /* STAGE: Return our calculated value. */
+    return calc_checksum;
+}
 
 static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
 {
@@ -137,7 +254,7 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     net_transmit(frame);
 }
 
-static void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
+void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
 {
     icmp_header_t *icmp;
 
@@ -165,110 +282,6 @@ static void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_leng
  *  UDP Sub-System
  *
  */
-
-static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
-{
-    char temp_mac[ETHER_MAC_SIZE];
-    uint32 temp_ipaddr;
-    uint16 temp_port;
-    uint16 ip_header_size;
-    ip_header_t *ip;
-
-    ip = (ip_header_t *) frame->data;
-    ip_header_size = IP_HEADER_SIZE(ip);
-
-    /* STAGE: Ether - point to our origiantor. */
-    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-    IP_ADDR_COPY(temp_ipaddr, ip->source);
-    IP_ADDR_COPY(ip->source, ip->dest);
-    IP_ADDR_COPY(ip->dest, temp_ipaddr);
-
-/*
-    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
-    memcpy(&ip->source, &ip->dest, sizeof(uint32));
-    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
-*/
-
-    /* STAGE: Compute IP checksum. */
-    ip->checksum = ip_checksum(ip, ip_header_size);
-
-    /* STAGE: UDP - we want to reply from our echo port to their port. */
-    temp_port = udp->src;
-    udp->src = udp->dest;
-    udp->dest = temp_port;
-
-    /* STAGE: Compute UDP checksum. */
-    udp->checksum = udp_checksum(ip, ip_header_size);
-
-    /* STAGE: Transmit it, god willing. */
-    net_transmit(frame);
-}
-
-static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
-{
-    udp_header_t *udp;
-
-    udp = (udp_header_t *) (frame->data + ip_header_length);
-
-    /* STAGE: UDP header checksum */
-    if (udp->checksum)
-    {
-        uint16 checksum;
-
-        checksum = udp_checksum((ip_header_t *) frame->data, ip_header_length);
-
-        if (!checksum)  /* Fix the complementation "problem" */
-            checksum = 0xffff;
-
-        if (checksum != udp->checksum)
-            return;
-    }
-
-    /* STAGE: Handle UDP packets based on port. */
-    switch(ntohs(udp->dest))
-    {
-        case 7:     /* UDP Echo */
-            udp_echo_reply(frame, udp, udp_data_length);
-            break;
-
-        case 5007:  /* now the official VOOT network protocol port. */
-            voot_handle_packet(frame, udp, udp_data_length);
-            break;
-
-        default:    /* Drop on the floor any network data we couldn't possibly understand. */
-            break;
-    }
-}
-
-/*
- *
- *  IP Processor
- *
- *  With all thanks to AndrewK.
- *
- *  Is this feeling like a cleaner re-implementation of dc-load-ip. Anyone
- *  else?
- */
-
-static uint16 ip_checksum_add(uint16 *buf, uint16 count_short, uint32 sum)
-{
-    while (count_short--)
-    {
-	    sum += *buf++;
-
-	    if (sum & 0xffff0000)
-	    {
-	        sum &= 0xffff;
-    	    sum++;
-    	}
-    }
-
-    return sum;
-}
 
 uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
 {
@@ -313,76 +326,81 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     return ~(calc_checksum & 0xffff);
 }
 
-uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length)
+static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
-    uint16 temp_checksum, calc_checksum;
-
-    /* STAGE: Back and clear the incoming checksum value. */
-    temp_checksum = icmp->checksum;
-    icmp->checksum = 0;
-
-    /* STAGE: Calculate the checksum. */
-    calc_checksum = ~(ip_checksum_add((uint16 *) icmp, icmp_header_length / 2, 0) & 0xffff);
-
-    /* STAGE: Restore the original incoming checksum value. */
-    icmp->checksum = temp_checksum;
-
-    /* STAGE: Return our calculated value. */
-    return calc_checksum;
-}
-
-uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length)
-{
-    uint16 temp_checksum, calc_checksum;
-
-    /* STAGE: Back and clear the incoming checksum value. */
-    temp_checksum = ip->checksum;
-    ip->checksum = 0;
-
-    /* STAGE: Calculate the checksum. */
-    calc_checksum = ~(ip_checksum_add((uint16 *) ip, ip_header_length / 2, 0) & 0xffff);
-
-    /* STAGE: Restore the original incoming checksum value. */
-    ip->checksum = temp_checksum;
-
-    /* STAGE: Return our calculated value. */
-    return calc_checksum;
-}
-
-static void ip_handle_packet(ether_info_packet_t *frame)
-{
+    char temp_mac[ETHER_MAC_SIZE];
+    uint32 temp_ipaddr;
+    uint16 temp_port;
+    uint16 ip_header_size;
     ip_header_t *ip;
-    uint16 ip_data_length;
-    uint16 ip_header_length;
 
     ip = (ip_header_t *) frame->data;
+    ip_header_size = IP_HEADER_SIZE(ip);
 
-    /* STAGE: Check if the packet is fragmented. We don't support it - yet. */
-    if (ntohs(ip->flags_frag_offset) & 0x3fff)
-        return;
+    /* STAGE: Ether - point to our origiantor. */
+    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
-    /* STAGE: Pre-calculate IP header sizes. */
-    ip_header_length = IP_HEADER_SIZE(ip);
-    ip_data_length = ntohs(ip->length) - ip_header_length;
+    /* STAGE: IP - point to our originator. */
+    IP_ADDR_COPY(temp_ipaddr, ip->source);
+    IP_ADDR_COPY(ip->source, ip->dest);
+    IP_ADDR_COPY(ip->dest, temp_ipaddr);
 
-    /* STAGE: IP Header checksum */
-    if (ip->checksum != ip_checksum(ip, ip_header_length))
-        return;
+/*
+    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
+    memcpy(&ip->source, &ip->dest, sizeof(uint32));
+    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
+*/
 
-    /* STAGE: And handle the appropriate protocol type! */
-    switch (ip->protocol)
+    /* STAGE: Compute IP checksum. */
+    ip->checksum = ip_checksum(ip, ip_header_size);
+
+    /* STAGE: UDP - we want to reply from our echo port to their port. */
+    temp_port = udp->src;
+    udp->src = udp->dest;
+    udp->dest = temp_port;
+
+    /* STAGE: Compute UDP checksum. */
+    udp->checksum = udp_checksum(ip, ip_header_size);
+
+    /* STAGE: Transmit it, god willing. */
+    net_transmit(frame);
+}
+
+void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
+{
+    udp_header_t *udp;
+
+    udp = (udp_header_t *) (frame->data + ip_header_length);
+
+    /* STAGE: UDP header checksum */
+    if (udp->checksum)
     {
-        case IP_PROTO_ICMP:
-            icmp_handle_packet(frame, ip_header_length, ip_data_length);
-            break;
+        uint16 checksum;
 
-        case IP_PROTO_UDP:
-            udp_handle_packet(frame, ip_header_length, ip_data_length);
-            break;
+        checksum = udp_checksum((ip_header_t *) frame->data, ip_header_length);
 
-        /* case IP_PROTO_TCP: */
-        default:    /* Yeah, we don't support this. */
+        if (!checksum)  /* Fix the complementation "problem" */
+            checksum = 0xffff;
+
+        if (checksum != udp->checksum)
             return;
+    }
+
+    /* STAGE: Handle UDP packets based on port. */
+    switch(ntohs(udp->dest))
+    {
+        case 7:     /* UDP Echo */
+            udp_echo_reply(frame, udp, udp_data_length);
+            break;
+
+        case 5007:  /* now the official VOOT network protocol port. */
+            voot_handle_packet(frame, udp, udp_data_length);
+            break;
+
+        default:    /* Drop on the floor any network data we couldn't possibly understand. */
+            break;
     }
 }
 

@@ -9,6 +9,7 @@
 #include "trap.h"
 #include "biudp.h"
 #include "util.h"
+#include "hud.h"
 #include "voot.h"
 
 #ifdef DEPRECATED_VOOT_NET
@@ -95,6 +96,22 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
             free(ba);
         }
+            break;
+
+        case 'p':
+        {
+            volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
+            volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
+
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u\n", *p1_health, *p2_health);
+            hud_printf("p1_health = %u p2_health = %u", *p1_health, *p2_health);
+        }
+            break;
+
+        case 'h':
+            hud_init();
+            do_hud = 1;
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "do_hud is now %u", do_hud);
             break;
 
         case 'v':

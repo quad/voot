@@ -102,9 +102,16 @@ typedef struct
 } udp_pseudo_header_t __attribute__ ((packed));
 
 void net_transmit(ether_info_packet_t *frame_in);
-uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length);
-uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length);
+
 uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length);
+void ip_handle_packet(ether_info_packet_t *frame);
+
+uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length);
+void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length);
+
+uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length);
+void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length);
+
 void net_handle_frame(uint8 *frame_data, uint32 frame_size);
 
 #endif
