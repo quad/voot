@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.10 2002/11/14 06:09:48 quad Exp $
+    $Id: init.c,v 1.11 2002/11/24 14:56:45 quad Exp $
 
 DESCRIPTION
 
@@ -26,7 +26,7 @@ DESCRIPTION
 #include "init.h"
 
 static exception_handler_f  old_init_handler;
-static bool                 have_initialized;
+static bool                 have_bios_skip;
 
 #ifdef BIOS_VECTOR_BYPASS
 #warning Experimental BIOS vector code included in common library.
@@ -61,10 +61,23 @@ static void* init_handler (register_stack *stack, void *current_vector)
 
         /* STAGE: Handle the first initialization. */
 
-        if (init_result == INIT)
-            np_configure ();
+        switch (init_result)
+        {
+            case INIT :
+                np_configure ();
+                break;
+
+            case REINIT :
+                np_reconfigure ();
+                break;
+
+            case FAIL :
+            default :
+                /* NOTE: This should never occur. */
+                break;
+        }
     }
-    else if (!have_initialized)
+    else if (!have_bios_skip)
     {
         if (ubc_is_channel_break (UBC_CHANNEL_A))
         {
@@ -88,7 +101,7 @@ static void* init_handler (register_stack *stack, void *current_vector)
 
             /* STAGE: Make sure we don't pull this crap twice. */
 
-            have_initialized = TRUE;
+            have_bios_skip = TRUE;
 
 #ifdef BIOS_VECTOR_BYPASS
             /* STAGE: Redirect the Flash ROM syscall. */
@@ -184,4 +197,15 @@ void np_configure (void)
     /* STAGE: Give the module configuration core a chance to set itself up. */
 
     module_configure ();
+}
+
+void np_reconfigure (void)
+{
+    /* STAGE: Locate and assign syMalloc functionality. (REQUIRED) */
+
+    malloc_init ();
+
+    /* STAGE: Give the module configuration core a chance to set itself up. */
+
+    module_reconfigure ();
 }

@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.16 2002/11/14 20:56:03 quad Exp $
+    $Id: rtl8139c.c,v 1.17 2002/11/24 14:56:45 quad Exp $
 
 DESCRIPTION
 
@@ -84,7 +84,7 @@ static bool pci_bb_init (void)
     G2_INT(0x1420) = 0x01000000;
     G2_INT(0x1424) = 0x01000000;
     G2_INT(0x1428) = 0x01840000;                /* DMA Base */
-    G2_INT(0x142c) = 0x01840000 + 32 * 1024;    /* DMA End - 32k buffer includes Rx Ring and Tx descriptors */
+    G2_INT(0x142c) = 0x01840000 + (32 * 1024);  /* DMA End - 32k buffer includes Rx Ring and Tx descriptors */
     G2_INT(0x1414) = 0x00000001;                /* Interrupt enable. */
     G2_INT(0x1434) = 0x00000001;
 
@@ -228,6 +228,8 @@ static void* rtl_irq_handler (void *passer, register_stack *stack, void *current
         rtl_irq_info->cur_rx = RTL_IO_SHORT(RTL_RXBUFHEAD) % RX_BUFFER_LEN;
         RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_irq_info->cur_rx - RX_BUFFER_THRESHOLD;
 
+        rtl_irq_info->cur_rx_index = 0;
+
         rtl_start ();
     }
 
@@ -256,10 +258,8 @@ static void* rtl_irq_handler (void *passer, register_stack *stack, void *current
 
     else if (intr & RTL_INT_RX_OK)
         net_handle_rx (rtl_irq_info->owner);
-        //ether_handle_rx (rtl_irq_info->owner);
     else if (intr & RTL_INT_TX_OK);
         net_handle_tx (rtl_irq_info->owner);
-        //ether_handle_rx (rtl_irq_info->owner);
 
     if (rtl_irq_info->old_rtl_handler)
         return rtl_irq_info->old_rtl_handler (passer, stack, my_exception_finish);
@@ -500,7 +500,7 @@ uint32 rtl_rx (rtl_t *rtl_info, uint8 *data, uint32 data_size)
 
         frame_data = (uint8 *) ((uint32) RTL_DMA_BYTE + ((rtl_info->cur_rx + 4 + rtl_info->cur_rx_index) % RX_BUFFER_LEN));
 
-        /* STAGE: Ensure we don't have an overside data_size. */
+        /* STAGE: Ensure we don't have an oversize data_size. */
 
         if (data_size > (frame_size - rtl_info->cur_rx_index))
             data_size = frame_size - rtl_info->cur_rx_index;
@@ -510,7 +510,7 @@ uint32 rtl_rx (rtl_t *rtl_info, uint8 *data, uint32 data_size)
             for it.
         */
 
-        if (rx_status & RTL_RX_STATUS_OK && data && data_size)
+        if ((rx_status & RTL_RX_STATUS_OK) && data && data_size)
         {
             rtl_copy_frame (data, frame_data, data_size);
 
@@ -523,7 +523,7 @@ uint32 rtl_rx (rtl_t *rtl_info, uint8 *data, uint32 data_size)
                 place to put it) we drop it on the floor.
             */
 
-            rtl_info->cur_rx_index += frame_size;
+            rtl_info->cur_rx_index = frame_size;
             data_size = 0;
         }
 

@@ -1,6 +1,6 @@
 /*  callbacks.h
 
-    $Id: callbacks.h,v 1.3 2002/06/23 03:22:52 quad Exp $
+    $Id: callbacks.h,v 1.4 2002/11/24 14:56:45 quad Exp $
 
 DESCRIPTION
 
@@ -17,6 +17,7 @@ DESCRIPTION
 
 extern void     module_initialize   (void);
 extern void     module_configure    (void);
+extern void     module_reconfigure  (void);
 extern void     module_bios_vector  (void);
 extern void *   module_heartbeat    (register_stack *stack, void *current_vector);
 

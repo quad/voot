@@ -80,9 +80,10 @@ a lot of data that needs to be copied, this should be set high. */
    timeouts. */
 #define MEMP_NUM_SYS_TIMEOUT    0
 
+
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
-#define PBUF_POOL_SIZE          8
+#define PBUF_POOL_SIZE          10
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
 #define PBUF_POOL_BUFSIZE       128
@@ -136,9 +137,13 @@ a lot of data that needs to be copied, this should be set high. */
    defined to 0, all packets with IP options are dropped. */
 #define IP_OPTIONS              1
 
+/* IP reassembly and segmentation. These are orthogonal even
+ * if they both deal with IP fragments */
+#define IP_REASSEMBLY           1
+#define IP_FRAG                 1
+
 /* ---------- ICMP options ---------- */
 #define ICMP_TTL                255
-
 
 /* ---------- DHCP options ---------- */
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of

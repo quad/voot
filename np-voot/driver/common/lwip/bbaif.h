@@ -1,6 +1,6 @@
 /*  bbaif.h
 
-    $Id: bbaif.h,v 1.1 2002/11/12 02:00:55 quad Exp $
+    $Id: bbaif.h,v 1.2 2002/11/24 14:56:46 quad Exp $
 
 */
 
@@ -12,7 +12,7 @@
 /* NOTE: Module definitions. */
 
 err_t   bbaif_output    (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr);
-void    bbaif_input     (struct netif *netif);
+bool    bbaif_input     (struct netif *netif);
 void    bbaif_init      (struct netif *netif);
 
 #endif

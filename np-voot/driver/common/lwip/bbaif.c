@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.5 2002/11/14 20:56:08 quad Exp $
+    $Id: bbaif.c,v 1.6 2002/11/24 14:56:46 quad Exp $
 
 DESCRIPTION
 
@@ -29,6 +29,7 @@ TODO
 #include "lwip/mem.h"
 #include "lwip/pbuf.h"
 #include "lwip/sys.h"
+#include "lwip/stats.h"
 #include "netif/etharp.h"
 
 #include "bbaif.h"
@@ -100,6 +101,11 @@ static struct pbuf* low_level_input (rtl_t *devif)
                 pbuf_free (p);
                 p = NULL;
 
+#ifdef LINK_STATS
+                stats.link.lenerr++;
+                stats.link.drop++;
+#endif /* LINK_STATS */      
+
                 break;
             }
         }
@@ -165,22 +171,31 @@ static err_t low_level_output (struct netif *netif, struct pbuf *p)
 
 err_t bbaif_output (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
 {
+    err_t   retval;
+
+    retval = ERR_OK;
+
     p = etharp_output (netif, ipaddr, p);
 
     if (p)
     {
-        low_level_output (netif, p);
+        retval = low_level_output (netif, p);
 
-        /* STAGE: Clean any ARP left-overs. Needed in this lwIP CVS. */
+        /* STAGE: Clean any ARP left-overs. */
 
         etharp_output_sent (p);
-        p = NULL;
+    }
+    else
+    {
+#ifdef LINK_STATS
+        stats.link.err++;
+#endif /* LINK_STATS */      
     }
 
-    return ERR_OK;
+    return retval;
 }
 
-void bbaif_input (struct netif *netif)
+bool bbaif_input (struct netif *netif)
 {
     rtl_t          *devif;
     struct eth_hdr *ethhdr;
@@ -199,10 +214,6 @@ void bbaif_input (struct netif *netif)
 
     if (p)
     {
-#ifdef LINK_STATS
-        stats.link.recv++;
-#endif /* LINK_STATS */
-
         ethhdr = p->payload;
 
         switch (htons (ethhdr->type))
@@ -221,6 +232,10 @@ void bbaif_input (struct netif *netif)
                 break;
 
             default :
+#ifdef LINK_STATS
+                stats.link.proterr++;
+#endif /* LINK_STATS */
+
                 pbuf_free (p);
                 break;
         }
@@ -244,6 +259,8 @@ void bbaif_input (struct netif *netif)
             pbuf_free (q);
         }
     }
+
+    return !!p;
 }
 
 void bbaif_init (struct netif *netif)
@@ -252,6 +269,7 @@ void bbaif_init (struct netif *netif)
     netif->name[1]      = IFNAME1;
     netif->output       = bbaif_output;
     netif->linkoutput   = low_level_output;
+    netif->mtu          = 1500;
 
     /* STAGE: Initialize the actual network harware. */
   

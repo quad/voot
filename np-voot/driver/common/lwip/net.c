@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.6 2002/11/20 00:02:19 quad Exp $
+    $Id: net.c,v 1.7 2002/11/24 14:56:46 quad Exp $
 
 DESCRIPTION
 
@@ -34,10 +34,7 @@ TODO
 #include "net.h"
 
 static anim_render_chain_f  old_anim_chain;
-
-#ifdef DO_DHCP
 static struct dhcp_state   *client;
-#endif
 
 static void net_etharp_timer (void)
 {
@@ -49,11 +46,10 @@ static void net_etharp_timer (void)
 
         last_tick = time ();
     }
-    else
+    else if (!last_tick)
         last_tick = time ();
 }
 
-#ifdef DO_DHCP
 static void net_dhcp_coarse_timer (void)
 {
     static uint32   last_tick = 0;
@@ -64,7 +60,7 @@ static void net_dhcp_coarse_timer (void)
 
         last_tick = time ();
     }
-    else
+    else if (!last_tick)
         last_tick = time ();
 }
 
@@ -72,25 +68,22 @@ static void net_dhcp_fine_timer (void)
 {
     static uint32   last_tick = 0;
 
-    if (last_tick && (timer_gen_micro(timer_gen_count() - last_tick) >= (DHCP_FINE_TIMER_MSECS * 1000)))
+    if (last_tick && (timer_gen_micro (timer_gen_count () - last_tick) >= (DHCP_FINE_TIMER_MSECS * 1000)))
     {
         dhcp_fine_tmr ();
 
         last_tick = timer_gen_count ();
     }
-    else
+    else if (!last_tick)
         last_tick = timer_gen_count ();
 }
-#endif
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
     net_etharp_timer ();
 
-#ifdef DO_DHCP
     net_dhcp_coarse_timer ();
     net_dhcp_fine_timer ();
-#endif
 
     //net_tcp_timer ();
 
@@ -115,7 +108,7 @@ void net_handle_rx (void *owner)
 
     /* NOTE: Dummy function, simply calls bbaif_input. */
 
-    bbaif_input (netif);
+    while (bbaif_input (netif));
 }
 
 void net_init (void)
@@ -141,25 +134,13 @@ void net_init (void)
     ip_init ();
     udp_init ();
     //tcp_init();
+    dhcp_init ();
 
-    /* STAGE: Intial IP configuration. */
+    /* STAGE: Initial IP configuration. */
 
-#ifdef DO_DHCP
     IP4_ADDR(&gw, 0,0,0,0);
     IP4_ADDR(&ipaddr, 0,0,0,0);
     IP4_ADDR(&netmask, 0,0,0,0);
-#else
-//#define KIRK
-#ifdef KIRK
-    IP4_ADDR(&gw, 192,168,0,1);
-    IP4_ADDR(&ipaddr, 192,168,0,11);
-    IP4_ADDR(&netmask, 255,255,255,0);
-#else
-    IP4_ADDR(&gw, 10,1,1,254);
-    IP4_ADDR(&ipaddr, 10,1,1,70);
-    IP4_ADDR(&netmask, 255,0,0,0);
-#endif
-#endif
 
     /* STAGE: Enable the BBA network interface. */
 
@@ -167,10 +148,7 @@ void net_init (void)
   
     netif_set_default (netif);
 
-#ifdef DO_DHCP
     /* STAGE: Enable address resolution via DHCP. */
 
-    dhcp_init ();
     client = dhcp_start (netif);
-#endif
 }

@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.15 2002/11/14 20:56:08 quad Exp $
+    $Id: module.c,v 1.16 2002/11/24 14:56:46 quad Exp $
 
 DESCRIPTION
 
@@ -13,7 +13,7 @@ NOTES
 
     8c0397d8 (byte) - actual TX
     8c018dd8 (init, data, data_size) = {0 continue, 3 syncing, 1 success} - actual TX function in INIT
-    8c018c06 (init, ?data, ?data_size) = {0 abort, 1 continue, 2 success} - actual INIT function
+    8c018c06 (init, ?data, ?data_size) = {0 abort, 1 continue, 2 success} - actual INIT function (8c022072 JP)
 
     8c093ca4 - voot RX fifo
     8c03990c (void) = {byte} - uni RX routine
@@ -26,6 +26,9 @@ NOTES
 #include <vars.h>
 #include <anim.h>
 
+#include <gamedata.h>
+#include <dumpio.h>
+
 #include <lwip/net.h>
 #include <lwip/voot.h>
 
@@ -36,7 +39,7 @@ static anim_render_chain_f      old_anim_chain;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active.");
+    anim_printf_debug (0.0, 0.0, "Test module active. [bid 60]");
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
@@ -66,10 +69,16 @@ void module_configure (void)
 
     net_init ();
     voot_init ();
+    dump_init ();
 
     /* STAGE: Initialize the SCIXB emulation layer. */
 
     scixb_init ();
+}
+
+void module_reconfigure (void)
+{
+    /* NOTE: We don't need to reconfigure anything, yet. */
 }
 
 void module_bios_vector (void)
