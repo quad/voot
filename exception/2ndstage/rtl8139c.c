@@ -161,7 +161,7 @@ bool rtl_init(void)
     RTL_IO_BYTE(RTL_CONFIG1) = 0;
 
     /* STAGE: Enable auto-negotiation of network media */
-    RTL_IO_SHORT(RTL_MII_BMCR) = RTL_BMCR_ANE | RTL_BMCR_RAN;
+    RTL_IO_SHORT(RTL_MII_BMCR) = RTL_BMCR_RESET | RTL_BMCR_ANE | RTL_BMCR_RAN;
 
     rtl_soft_reset();
 

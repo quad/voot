@@ -77,6 +77,7 @@
 #define RTL_CMD_RX_BUF_EMPTY    0x01
 
 /* RTL8193c MII BMCR bits; OR these together */
+#define RTL_BMCR_RESET          0x8000  /* Reset PHY Registers */
 #define RTL_BMCR_ANE            0x1000  /* Automatic Negotiation Enable */
 #define RTL_BMCR_RAN            0x200   /* Reset Auto Negotiation */
 
