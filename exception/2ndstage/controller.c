@@ -17,7 +17,7 @@ static const uint8 controller_key[] = { 0x34, 0xe0, 0x04, 0xd3, 0x07, 0x04, 0x1a
 
 void controller_init (void)
 {
-    if (!controller_root)
+    if (!controller_root || memcmp(controller_root, controller_key, sizeof(controller_key)))
         controller_root = search_sysmem(controller_key, sizeof(controller_key));
 }
 

@@ -26,8 +26,6 @@ TODO
 #include "controller.h"
 #include "vmu.h"
 
-#include "voot.h"
-
 #include "customize.h"
 
 static char module_save[VMU_MAX_FILENAME];
@@ -108,15 +106,14 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
 
 static void maybe_start_load_customize(void)
 {
+    uint8 *control_port = (uint8 *) 0x8ccf9f1a;
+    uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
+    uint8 *game_side = (uint8 *) 0x8ccf96f8;
     vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
 
     /* STAGE: [Step 1-P1] First player requests customization load. */
     if (ipc == C_IPC_START && (check_controller_press(CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y))
     {
-        uint8 *control_port = (uint8 *) 0x8ccf9f1a;
-        uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
-        uint8 *game_side = (uint8 *) 0x8ccf96f8;
-
         /* STAGE: If the control port is 0 (A), our side is equal to the DNA/RNA select.
                   If the control port is 1 (B), our side is equal to the reverse of the DNA/RNA select.
                   Our player is the controlling port.
@@ -147,10 +144,6 @@ static void maybe_start_load_customize(void)
     /* STAGE: [Step 1-P2] Second player requests customization load. */
     else if (ipc == C_IPC_START && (check_controller_press(CONTROLLER_PORT_B0) & CONTROLLER_MASK_BUTTON_Y))
     {
-        uint8 *control_port = (uint8 *) 0x8ccf9f1a;
-        uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
-        uint8 *game_side = (uint8 *) 0x8ccf96f8;
-
         /* STAGE: If the control port is 0 (A), our side is equal to the reverse of the DNA/RNA select.
                   If the control port is 1 (B), our side is equal to DNA/RNA select.
                   Our player is the reverse of the controlling port.
@@ -282,15 +275,14 @@ static void maybe_do_load_customize(void)
 
 static void* my_anim_handler(register_stack *stack, void *current_vector)
 {
+    uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
+    uint16 *anim_mode_b = (uint16 *) 0x8ccf022a;
+    static uint16 save_mode_a = 0;
+    static uint16 save_mode_b = 0;
     static uint32 play_vector = 0;
     static uint32 osd_vector = 0;
     static int32 p1_health_save[2] = {-1, -1};
     static int32 p2_health_save[2] = {-1, -1};
-
-    static uint16 save_mode_a = 0;
-    static uint16 save_mode_b = 0;
-    uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
-    uint16 *anim_mode_b = (uint16 *) 0x8ccf022a;
 
     /* STAGE: This code occurs are every animation changeover. (game code latch) */
     if ((save_mode_a != *anim_mode_a || save_mode_b != *anim_mode_b))
@@ -429,6 +421,19 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         play_vector = osd_vector = 0;
         p1_health_save[0] = p2_health_save[0] = -1;
         p1_health_save[1] = p2_health_save[1] = 0;
+    }
+
+    /* STAGE: Check if we're in a VR Customization module. If so, enable Button Y to start VR Test. */
+    if (*anim_mode_a == 0x0 && *anim_mode_b == 0x0 && !strcmp("vrcust.bin", (const char *) VOOT_MODULE_NAME))
+    {
+        vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
+
+        if (check_controller_press(*data_port) & CONTROLLER_MASK_BUTTON_Y)
+        {
+            uint8 *vrcust_action = (uint8 *) 0x8c275224;
+
+            *vrcust_action = 0x1a;
+        }
     }
 
     return current_vector;

@@ -18,7 +18,7 @@ DESCRIPTION
 
 void handle_bios_vector(void)
 {
-    assert(dbr() == exception_handler_lowlevel);
+    assert_x(dbr() == exception_handler_lowlevel, dbr());
 }
 
 void dc_main(void)

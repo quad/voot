@@ -16,7 +16,7 @@ TODO
 #include "dumpio.h"
 #include "gamedata.h"
 
-#include "vmu.h"
+#include "customize.h"
 
 #include "voot.h"
 
@@ -26,9 +26,10 @@ static bool maybe_handle_command(uint8 command, uint32 option, voot_packet *pack
     {
         case VOOT_COMMAND_TYPE_DEBUG:
         {
-            uint8 *cust_menu_id = (uint8 *) 0x8c275224;
-
-            *cust_menu_id = 0x1a;
+#if 0
+            new_level++;
+            voot_debug("Level select at %x", new_level);
+#endif
 
             break;
         }

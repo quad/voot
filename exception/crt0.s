@@ -78,7 +78,7 @@ ccr_data:
     .word   0x0000              ! Buffer so data is still aligned.
 
 main_addr:
-    .long   _dc_main
+    .long   _main
 
 old_stack_addr:
     .long   old_stack

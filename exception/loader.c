@@ -21,8 +21,10 @@ static int warez_enable = 1;
 
 static char startup_msg[] = {
 //    "Netplay VOOT Extensions (np-voot-slave) - BETA\n"
-    "Customization Append Disc (np-voot-cust) - ALPHA\n"
-    "(C) 2001-2002, Scott Robinson. All Rights Reserved.\n"
+//    "Customization Append Disc (np-voot-cust) - ALPHA\n"
+//    "5.60 Unlock Disc (np-voot-560)\n"
+    "Customization + 5.60 Append Disc (np-voot-cust+)\n"
+    "(C) 2002, Scott Robinson. All Rights Reserved.\n"
     "http://voot.sourceforge.net/ for more information.\n"
     "\n"
     "This program is distributed in the hope that it\n"
@@ -30,6 +32,11 @@ static char startup_msg[] = {
     "even the implied warranty of MERCHANTABILITY or\n"
     "FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n"
     "General Public License for more details.\n"
+    "\n"
+    "* Press 'Y' during selection to load customization\n"
+    "\n"
+    "* Press 'Y' after *full VR load* for VR Test.\n"
+    "   Load is finished if sub-menus are working.\n"
     "\n"
     "(loader built at " __TIME__" on " __DATE__ ")"
 };
@@ -61,7 +68,7 @@ static void boot_loader(void)
     (*(void (*)()) stage_buffer) ();
 }
 
-void dc_main(void)
+void main(void)
 {
     /* STAGE: Restart the video system and give us a workable screen. */
     vid_init(vid_check_cable(), DM_640x480, PM_RGB565);

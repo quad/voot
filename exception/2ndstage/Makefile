@@ -18,8 +18,8 @@ OBJS += util.o printf.o
 OBJS += biosfont.o assert.o
 
 # Hardware Network Layer
-OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
-CC += -DNETWORK_SUPPORT
+#OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
+#CC += -DNETWORK_SUPPORT
 
 # Gamedata interaction.
 #OBJS += gamedata.o
@@ -43,9 +43,11 @@ OBJS += customize.o
 
 # Controller Access
 OBJS += controller.o
+CC += -DCONTROLLER_SUPPORT
 
 # VMU Access
 OBJS += vmu.o
+CC += -DVMU_SUPPORT
 
 all: $(BIN).srec $(BIN).bin
 

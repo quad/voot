@@ -62,6 +62,8 @@ typedef struct
     uint8 palette[CUSTOMIZE_PALETTE_SIZE];
 } customize_data;
 
+extern uint32 new_level;
+
 void customize_init(void);
 void* customize_handler(register_stack *stack, void *current_vector);
 

@@ -13,8 +13,9 @@ TODO
 
 #include "vars.h"
 #include "asic.h"
-#include "gamedata.h"
-#include "customize.h"
+
+#include "exception.h"
+#include "exception-lowlevel.h"
 
 #include "heartbeat.h"
 
@@ -32,9 +33,6 @@ void init_heartbeat(void)
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
-    /* STAGE: Enable the various codes. */
-    gamedata_enable_debug();
-
     return current_vector;
 }
 

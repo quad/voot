@@ -74,16 +74,12 @@ static void init_vbr_table(void)
 
 static bool is_vbr_switch_time(void)
 {
-#ifdef REINIT_VBR_ON_RESET
     uint32 int_changed;
 
     /* STAGE: Check to see if our interrupt hooks are still installed. */
     int_changed = memcmp(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
                             interrupt_sub_handler,
                             interrupt_sub_handler_end - interrupt_sub_handler);
-#else
-    bool int_changed = TRUE;
-#endif
 
     /* Have we had enough exceptions to make it worthwhile? */
     return int_changed && exp_table.ubc_exception_count >= 5;
@@ -159,11 +155,6 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
-#ifndef REINIT_VBR_ON_RESET
-        /* STAGE: Deinitialize the UBC for future use. */
-        clear_ubc_a_exception();
-#endif
-
         /* STAGE: Initialize the VBR hooks. */
         init_vbr_table();
 
@@ -189,23 +180,32 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Initialize the customization break logic. */
         customize_init();
 
+#ifdef CONTROLLER_SUPPORT
         /* STAGE: Initialize the controller access logic. */
         controller_init();
+#endif
 
+#ifdef VMU_SUPPORT
         /* STAGE: Initialize the VMU access logic. */
         vmu_init();
+#endif
     }
-#ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)
     {
-        /* STAGE: Initialize the new VBR */
+        /* STAGE: Reinitialize the new VBR */
         init_vbr_table();
 
-        /* DEBUG: Notification. */
-        voot_debug("Reinitialized VBR");
-    }
+#ifdef CONTROLLER_SUPPORT
+        /* STAGE: Reinitialize the controller access logic. */
+        controller_init();
 #endif
+
+#ifdef VMU_SUPPORT
+        /* STAGE: Reinitialize the VMU access logic. */
+        vmu_init();
+#endif
+    }
 
     /* STAGE: Handle exception table */
     for (index = 0; index < EXP_TABLE_SIZE; index++)
