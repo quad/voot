@@ -1,13 +1,11 @@
 /*  scixb_emu.h
 
-    $Id: scixb_emu.h,v 1.1 2002/08/04 05:48:05 quad Exp $
+    $Id: scixb_emu.h,v 1.2 2003/03/07 20:26:00 quad Exp $
 
 */
 
 #ifndef __COMMON_SCIXB_EMU__
 #define __COMMON_SCIXB_EMU__
-
-#define FIFO_INDEX_FROM_ROOT    0xb8
 
 typedef struct
 {
@@ -21,6 +19,5 @@ typedef struct
 /* STAGE: Module definitions. */
 
 void    scixb_init      (void);
-void    scixb_inject    (char data);
 
 #endif

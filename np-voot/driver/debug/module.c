@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.21 2003/03/06 07:37:56 quad Exp $
+    $Id: module.c,v 1.22 2003/03/07 20:25:59 quad Exp $
 
 DESCRIPTION
 
@@ -26,10 +26,6 @@ NOTES
 #include <vars.h>
 #include <anim.h>
 
-#include <exception.h>
-#include <ubc.h>
-#include <gamedata.h>
-
 #include <lwip/net.h>
 #include <lwip/voot.h>
 
@@ -37,7 +33,6 @@ NOTES
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
-static exception_handler_f      old_exception_handler;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
@@ -46,23 +41,6 @@ static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
 }
-
-static void* my_exception_handler (register_stack *stack, void *current_vector)
-{
-    /* STAGE: In the case of the customize function (channel B) exception. */
-
-    if (ubc_is_channel_break (UBC_CHANNEL_B))
-    {
-        //voot_printf (VOOT_PACKET_TYPE_DEBUG, "Write at %x from %x [new value is %x]", stack->spc, stack->pr, GAMEDATA_OPT->cust_emb.player.p1);
-        voot_printf (VOOT_PACKET_TYPE_DEBUG, "r0 [%x]", stack->r0);
-    }
-
-    if (old_exception_handler)
-        return old_exception_handler (stack, current_vector);
-    else
-        return current_vector;
-}
-
 
 /*
     NOTE: Module callback functions.
@@ -86,27 +64,12 @@ void module_configure (void)
 
     net_init ();
     voot_init ();
-
-    /* STAGE: Initialize the SCIXB emulation layer. */
-
-    //scixb_init ();
-
-    {
-        exception_table_entry   entry;
-
-        entry.type      = EXP_TYPE_GEN;
-        entry.code      = EXP_CODE_UBC;
-        entry.handler   = my_exception_handler;
-
-        exception_add_handler (&entry, &old_exception_handler);
-
-        //ubc_configure_channel (UBC_CHANNEL_B, (uint32) &(GAMEDATA_OPT->cust_emb.player.p1), UBC_BBR_WRITE | UBC_BBR_OPERAND);
-        ubc_configure_channel (UBC_CHANNEL_B, (uint32) 0x8c39e57e, UBC_BBR_READ | UBC_BBR_INSTRUCT);
-    }
+    scixb_init ();
 }
 
 void module_reconfigure (void)
 {
     net_init ();
     voot_init ();
+    scixb_init ();
 }

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.9 2003/03/06 07:37:56 quad Exp $
+    $Id: net.c,v 1.10 2003/03/07 20:25:45 quad Exp $
 
 DESCRIPTION
 
@@ -84,16 +84,6 @@ static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 
         net_dhcp_coarse_timer ();
         net_dhcp_fine_timer ();
-
-        //net_tcp_timer ();
-
-        {
-            struct ip_addr  ip;
-
-            ip = netif_default->ip_addr;
-
-            anim_printf_debug (0.0, 15.0, "IP: %d.%d.%d.%d", ip4_addr1(&ip), ip4_addr2(&ip), ip4_addr3(&ip), ip4_addr4(&ip));
-        }
     }
 
     if (old_anim_chain)
@@ -165,7 +155,6 @@ void net_init (void)
         netif_init ();
         ip_init ();
         udp_init ();
-        //tcp_init();
 
         /* STAGE: Initial IP configuration. */
 
