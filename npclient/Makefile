@@ -19,10 +19,10 @@ $(BIN): $(OBJS)
 	$(CC) $(INCS) -c $< -o $@
 
 clean:
-	-rm -f *.o $(BIN)
+	-rm -f *.o $(BIN) $(BIN).zip
 
 mrproper: clean
 	-rm -f *~ *.bak
 
 package: mrproper
-	(cd .. ; zip -r npclient/npclient.zip npclient/ ) 
+	(cd .. ; zip -r npclient/$(BIN).zip npclient/ ) 

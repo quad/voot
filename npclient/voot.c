@@ -15,11 +15,19 @@ CHANGELOG
         Changed the recvfrom() to recv(). I think it made a difference in
         the win32 port.
 
+    Thu Jan 24 00:51:03 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added data and debug packet sending functions.
+
+    Thu Jan 24 01:35:27 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added full parsing of incoming packets for ensuring of packet
+        availability and making sure we only get a certain # of pcakets.
+
 */
 
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 #include "voot.h"
 
 static bool voot_check_packet(voot_packet *packet, uint32 size)
@@ -51,12 +59,46 @@ voot_packet* voot_parse_buffer(unsigned char *buffer, unsigned int buffer_size)
     return packet;
 }
 
+uint32 voot_socket_verify_packet(int32 socket)
+{
+    voot_packet packet;
+    int32 packet_header_size;
+    int32 full_packet_size;
+
+    /* First check if there is an actual full packet header. */
+    fcntl(socket, F_SETFL, O_NONBLOCK);
+    packet_header_size = recv(socket, &packet, sizeof(voot_packet_header), MSG_PEEK);
+    fcntl(socket, F_SETFL, NULL);
+
+    /* Make sure we received a full packet. */
+    if (packet_header_size != sizeof(voot_packet_header))
+        return 0;
+
+    /* Now confirm the full packet is waiting for us. */
+    fcntl(socket, F_SETFL, O_NONBLOCK);
+    full_packet_size = recv(socket, &packet, sizeof(voot_packet_header) + ntohs(packet.header.size), MSG_PEEK);
+    fcntl(socket, F_SETFL, NULL);    
+
+    if (full_packet_size == (sizeof(voot_packet_header) + ntohs(packet.header.size)))
+        return full_packet_size;
+    else
+        return 0;
+}
+
 voot_packet* voot_parse_socket(int32 socket)
 {
     unsigned char data[BIUDP_SEGMENT_SIZE];
-    int rx;
+    int32 packet_size;
+    int32 rx;
 
-    rx = recv(socket, data, sizeof(data), 0);
+    /* Verify the packet existance and size. */
+    packet_size = voot_socket_verify_packet(socket);
+
+    /* If it's there, receive it. */
+    if (packet_size)
+        rx = recv(socket, data, packet_size, 0);
+    else
+        return NULL;
 
     return voot_parse_buffer(data, rx);
 }    
@@ -79,7 +121,7 @@ int32 voot_send_command(int32 socket, uint8 command)
     packet = malloc(sizeof(voot_packet));
 
     packet->header.type = VOOT_PACKET_TYPE_COMMAND;
-    packet->header.size = htons(1);
+    packet->header.size = htons(2);
     packet->buffer[0] = command;
 
     retval = voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
@@ -89,13 +131,13 @@ int32 voot_send_command(int32 socket, uint8 command)
     return retval;
 }
 
-void voot_send_data(int32 socket, uint8 *data, uint32 data_size)
+void voot_send_data(int32 socket, uint8 packet_type, uint8 *data, uint32 data_size)
 {
     voot_packet *packet;
 
     packet = malloc(sizeof(voot_packet));
 
-    packet->header.type = VOOT_PACKET_TYPE_DATA;
+    packet->header.type = packet_type;
     packet->header.size = htons(data_size);
     memcpy(packet->buffer, data, data_size);
 

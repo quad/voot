@@ -27,6 +27,14 @@ CHANGELOG
     Tue Jan 22 23:37:22 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added the debugging callback functionality.
 
+    Thu Jan 24 00:09:37 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added injection commands for debugging. strndup() macro equivalenies
+        and a bugfix in the command line options parser.
+
+    Thu Jan 24 00:50:21 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added inter-client communication via the input command parser. If
+        it's not a command, it's something to send via the DEBUG data route.
+
 */
 
 #include <stdlib.h>
@@ -270,8 +278,11 @@ void parse_options(int argc, char *argv[])
 
             case '?':
             default:
+            {
                 /* getopt() automatically responds with an unknown option message. */
+                command->type = C_NONE;
                 break;
+            }
         }
 
         if (command->type != C_NONE)
@@ -308,8 +319,10 @@ void input_handler(char *line)
         {
             char data[] = "12345678912345";
 
-            voot_send_data(system->slave_socket, data, strlen(data));
+            voot_send_data(system->slave_socket, VOOT_PACKET_TYPE_DATA, data, sizeof(data));
         }
+        else
+            voot_send_data(system->server_socket, VOOT_PACKET_TYPE_DEBUG, line, strlen(line) + 1);
           
         free(line);
     }
