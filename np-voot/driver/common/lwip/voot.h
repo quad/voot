@@ -1,6 +1,6 @@
 /*  voot.h
 
-    $Id: voot.h,v 1.1 2002/11/12 19:58:30 quad Exp $
+    $Id: voot.h,v 1.2 2002/12/16 07:51:00 quad Exp $
 
 */ 
 
@@ -53,7 +53,6 @@ typedef bool (* voot_packet_handler_f)  (voot_packet *, void *);
     #define voot_debug(args...)     ;
 #endif
 
-bool    voot_packet_handle_default  (voot_packet *packet, void *ref);
 void *  voot_add_packet_chain       (voot_packet_handler_f function);
 bool    voot_send_packet            (uint8 type, const uint8 *data, uint32 data_size);
 int32   voot_aprintf                (uint8 type, const char *fmt, va_list args);

@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.11 2002/11/24 14:56:45 quad Exp $
+    $Id: init.c,v 1.12 2002/12/16 07:50:55 quad Exp $
 
 DESCRIPTION
 
@@ -27,6 +27,7 @@ DESCRIPTION
 
 static exception_handler_f  old_init_handler;
 static bool                 have_bios_skip;
+static np_reconf_handler_f  np_reconfigure_handler_chain = module_reconfigure;
 
 #ifdef BIOS_VECTOR_BYPASS
 #warning Experimental BIOS vector code included in common library.
@@ -58,6 +59,10 @@ static void* init_handler (register_stack *stack, void *current_vector)
         /* STAGE: Configure ASIC interrupt core. */
 
         asic_init ();
+
+        /* STAGE: Locate and assign syMalloc functionality. (REQUIRED) */
+
+        malloc_init ();
 
         /* STAGE: Handle the first initialization. */
 
@@ -190,10 +195,6 @@ void np_configure (void)
 
     bfont_init (); 
 
-    /* STAGE: Locate and assign syMalloc functionality. (REQUIRED) */
-
-    malloc_init ();
-
     /* STAGE: Give the module configuration core a chance to set itself up. */
 
     module_configure ();
@@ -201,11 +202,24 @@ void np_configure (void)
 
 void np_reconfigure (void)
 {
-    /* STAGE: Locate and assign syMalloc functionality. (REQUIRED) */
+    /*
+        STAGE: Loop through a reinitialization vector for modules that need
+        it.
+    */
 
-    malloc_init ();
+    np_reconfigure_handler_chain ();
+}
 
-    /* STAGE: Give the module configuration core a chance to set itself up. */
+np_reconf_handler_f np_add_reconfigure_chain (np_reconf_handler_f function)
+{
+    np_reconf_handler_f old_function;
 
-    module_reconfigure ();
+    /* STAGE: Switch out the functions. */
+
+    old_function = np_reconfigure_handler_chain;
+    np_reconfigure_handler_chain = function;
+
+    /* STAGE: Give them the old one so they can properly handle it. */
+
+    return old_function;
 }

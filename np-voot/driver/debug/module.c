@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.16 2002/11/24 14:56:46 quad Exp $
+    $Id: module.c,v 1.17 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
@@ -32,14 +32,17 @@ NOTES
 #include <lwip/net.h>
 #include <lwip/voot.h>
 
+#include <rtl8139c.h>
+
 #include "scixb_emu.h"
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
+static uint32                   reconf_count;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active. [bid 60]");
+    anim_printf_debug (0.0, 0.0, "Test module active. [reconf %u]", reconf_count);
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
@@ -65,6 +68,8 @@ void module_configure (void)
 
     anim_add_render_chain (my_anim_chain, &old_anim_chain);
 
+#if 0
+
     /* STAGE: Initialize the networking drivers. */
 
     net_init ();
@@ -74,11 +79,20 @@ void module_configure (void)
     /* STAGE: Initialize the SCIXB emulation layer. */
 
     scixb_init ();
+#else
+
+    net_init ();
+    voot_init ();
+
+#endif
 }
 
 void module_reconfigure (void)
 {
-    /* NOTE: We don't need to reconfigure anything, yet. */
+    net_init ();
+    voot_init ();
+
+    reconf_count++;
 }
 
 void module_bios_vector (void)

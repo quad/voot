@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.9 2002/11/14 22:35:04 quad Exp $
+    $Id: customize.c,v 1.10 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
@@ -326,14 +326,14 @@ static void maybe_find_customize (void)
         /* STAGE: Try to locate one of the customization functions. */
 
         custom_func = (uint32) search_memory_at (custom_func_key, sizeof (custom_func_key), (const uint8 *) OVERLAY_MEM_START, (const uint8 *) SYS_MEM_END);
-
-        /* STAGE: Place the breakpoint on the customization function, if we found it. */
-
-        if (custom_func)
-            ubc_configure_channel (UBC_CHANNEL_B, custom_func, UBC_BBR_READ | UBC_BBR_INSTRUCT);
-        else
-            ubc_clear_channel (UBC_CHANNEL_B);
     }
+
+    /* STAGE: Place the breakpoint on the customization function, if we found it. */
+
+    if (custom_func)
+        ubc_configure_channel (UBC_CHANNEL_B, custom_func, UBC_BBR_READ | UBC_BBR_INSTRUCT);
+    else
+        ubc_clear_channel (UBC_CHANNEL_B);
 }
 
 static void maybe_load_customize (uint16 anim_mode_a, uint16 anim_mode_b)

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.7 2002/11/24 14:56:46 quad Exp $
+    $Id: net.c,v 1.8 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
@@ -14,15 +14,13 @@ TODO
 
     Add support for modem via SLIP.
 
-    Handle cases of soft-reset flushing our malloc-able memory. (maybe
-    switch lwIP back into static memory mode)
-
 */
 
 #include <vars.h>
 #include <anim.h>
 #include <util.h>
 #include <timer.h>
+#include <init.h>
 
 #include "bbaif.h"
 
@@ -34,6 +32,7 @@ TODO
 #include "net.h"
 
 static anim_render_chain_f  old_anim_chain;
+static np_reconf_handler_f  my_reconfigure_handler;
 static struct dhcp_state   *client;
 
 static void net_etharp_timer (void)
@@ -80,15 +79,39 @@ static void net_dhcp_fine_timer (void)
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    net_etharp_timer ();
+    if (client)
+    {
+        net_etharp_timer ();
 
-    net_dhcp_coarse_timer ();
-    net_dhcp_fine_timer ();
+        net_dhcp_coarse_timer ();
+        net_dhcp_fine_timer ();
 
-    //net_tcp_timer ();
+        //net_tcp_timer ();
+
+        {
+            struct ip_addr  ip;
+
+            ip = client->netif->ip_addr;
+
+            anim_printf_debug (0.0, 15.0, "IP: %d.%d.%d.%d", ip4_addr1(&ip), ip4_addr2(&ip), ip4_addr3(&ip), ip4_addr4(&ip));
+        }
+    }
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
+}
+
+static void net_handle_reconfigure ()
+{
+    /* STAGE: Clear out client data ... */
+
+    client = NULL;
+
+    /* STAGE: Release ownership of all interfaces. */
+
+    bbaif_set_netif (NULL);
+
+    return my_reconfigure_handler ();
 }
 
 void net_handle_tx (void *owner)
@@ -97,7 +120,10 @@ void net_handle_tx (void *owner)
 
     netif = (struct netif *) owner;
 
-    /* NOTE: Dummy function, for the moment. */
+    if (netif)
+    {
+        /* NOTE: Dummy function, for the moment. */
+    }
 }
 
 void net_handle_rx (void *owner)
@@ -106,9 +132,12 @@ void net_handle_rx (void *owner)
 
     netif = (struct netif *) owner;
 
-    /* NOTE: Dummy function, simply calls bbaif_input. */
+    if (netif)
+    {
+        /* NOTE: Dummy function, simply calls bbaif_input. */
 
-    while (bbaif_input (netif));
+        while (bbaif_input (netif));
+    }
 }
 
 void net_init (void)
@@ -121,34 +150,48 @@ void net_init (void)
     /* STAGE: Initialize the various timers. */
 
     timer_init ();
-    anim_init ();
 
-    anim_add_render_chain (my_anim_chain, &old_anim_chain);
+    /* STAGE: Ensure we're latched on the animation vector. */
 
-    /* STAGE: Initialize lwIP. */
+    if (!old_anim_chain)
+    {
+        anim_init ();
 
-    mem_init ();
-    memp_init ();
-    pbuf_init (); 
-    netif_init ();
-    ip_init ();
-    udp_init ();
-    //tcp_init();
-    dhcp_init ();
+        anim_add_render_chain (my_anim_chain, &old_anim_chain);
+    }
 
-    /* STAGE: Initial IP configuration. */
+    /* STAGE: Ensure lwIP is initialized. */
 
-    IP4_ADDR(&gw, 0,0,0,0);
-    IP4_ADDR(&ipaddr, 0,0,0,0);
-    IP4_ADDR(&netmask, 0,0,0,0);
+    if (!client)
+    {
+        mem_init ();
+        memp_init ();
+        pbuf_init (); 
+        netif_init ();
+        ip_init ();
+        udp_init ();
+        //tcp_init();
+        dhcp_init ();
 
-    /* STAGE: Enable the BBA network interface. */
+        /* STAGE: Initial IP configuration. */
 
-    netif = netif_add (&ipaddr, &netmask, &gw, bbaif_init, ip_input);
-  
-    netif_set_default (netif);
+        IP4_ADDR(&gw, 0,0,0,0);
+        IP4_ADDR(&ipaddr, 0,0,0,0);
+        IP4_ADDR(&netmask, 0,0,0,0);
 
-    /* STAGE: Enable address resolution via DHCP. */
+        /* STAGE: Enable the BBA network interface. */
 
-    client = dhcp_start (netif);
+        netif = netif_add (&ipaddr, &netmask, &gw, bbaif_init, ip_input);
+
+        netif_set_default (netif);
+
+        /* STAGE: Enable address resolution via DHCP. */
+
+        client = dhcp_start (netif);
+    }
+
+    /* STAGE: Make sure we're soft-reset clean. */
+
+    if (!my_reconfigure_handler)
+        my_reconfigure_handler = np_add_reconfigure_chain (net_handle_reconfigure);
 }

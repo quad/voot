@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.6 2002/11/24 14:56:46 quad Exp $
+    $Id: module.c,v 1.7 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
@@ -30,7 +30,7 @@ void module_configure (void)
 
 void module_reconfigure (void)
 {
-    /* TODO: Add in necessary reconfiguration for customization to last past Drimaga menu. */
+    /* NOTE: We don't need to reinitialize anything. */
 }
 
 void module_bios_vector (void)

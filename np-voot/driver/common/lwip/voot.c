@@ -1,19 +1,15 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.2 2002/11/14 20:56:08 quad Exp $
+    $Id: voot.c,v 1.3 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
-    VOOT netplay protocol debug implementation.
+    VOOT netplay protocol implementation.
 
 TODO
 
-    Remove biudp dependence and implement airhook layer.
-
     Write a better packet handler chain function. Something more general and
     portable to other handlers.
-
-    Handle initialization cleaner!
 
 */
 
@@ -21,15 +17,19 @@ TODO
 #include <util.h>
 #include <malloc.h>
 #include <printf.h>
+#include <init.h>
+
+#include <timer.h>
+
+#include "net.h"
 
 #include "lwip/udp.h"
 
 #include "voot.h"
 
-static voot_packet_handler_f    voot_packet_handler_chain = voot_packet_handle_default;
+static voot_packet_handler_f    voot_packet_handler_chain;
+static np_reconf_handler_f      my_reconfigure_handler;
 static struct udp_pcb          *voot_pcb;
-
-/* NOTE: This is guaranteed to be last in its chain. */
 
 static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr *addr, uint16 port)
 {
@@ -75,7 +75,9 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
     }
 }
 
-bool voot_packet_handle_default (voot_packet *packet, void *ref)
+/* NOTE: This is guaranteed to be last in its chain. */
+
+static bool voot_packet_handle_default (voot_packet *packet, void *ref)
 {
     switch (packet->header.type)
     {
@@ -92,10 +94,15 @@ bool voot_packet_handle_default (voot_packet *packet, void *ref)
             {
                 uint32  freesize;
                 uint32  max_freesize;
+                uint32  timer;
 
-                malloc_stat (&freesize, &max_freesize);
+                malloc_stat (&freesize, &max_freesize); 
 
+                timer = timer_free_count ();
                 voot_printf (VOOT_PACKET_TYPE_DEBUG, "VOX common, PRE-RELEASE [mem: %u block: %u]", freesize, max_freesize);
+                timer = timer_free_micro ((timer_free_count () > timer) ? (timer_free_count() - timer): (timer - timer_free_count()));
+
+                voot_printf (VOOT_PACKET_TYPE_DEBUG, "timer: %u", timer);
             }
 
             break;
@@ -106,6 +113,15 @@ bool voot_packet_handle_default (voot_packet *packet, void *ref)
     }
 
     return FALSE;
+}
+
+static void voot_handle_reconfigure ()
+{
+    /* STAGE: Clear out reinitialized data... */
+
+    voot_pcb = NULL;
+
+    return my_reconfigure_handler ();
 }
 
 void* voot_add_packet_chain (voot_packet_handler_f function)
@@ -121,7 +137,6 @@ void* voot_add_packet_chain (voot_packet_handler_f function)
 
     return old_function;
 }
-
 
 bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
 {
@@ -219,11 +234,19 @@ bool voot_send_command (uint8 type)
 
 void voot_init (void)
 {
-    voot_pcb = udp_new ();
+    /* STAGE: Configure lwIP for UDP reception, if necessary. */
 
-    if (voot_pcb)
+    if (!voot_pcb)
     {
+        voot_pcb = udp_new ();
+
         udp_bind (voot_pcb, IP_ADDR_ANY, VOOT_UDP_PORT);
         udp_recv (voot_pcb, voot_handle_packet, NULL);
     }
+
+    if (!voot_packet_handler_chain)
+        voot_packet_handler_chain = voot_packet_handle_default;
+
+    if (!my_reconfigure_handler)
+        my_reconfigure_handler = np_add_reconfigure_chain (voot_handle_reconfigure);
 }

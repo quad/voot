@@ -1,6 +1,6 @@
 /*  timer.c
 
-    $Id: timer.c,v 1.1 2002/11/12 08:52:33 quad Exp $
+    $Id: timer.c,v 1.2 2002/12/16 07:50:56 quad Exp $
 
 DESCRIPTION
 
@@ -20,11 +20,13 @@ static const uint8  timer_key[] = { 0x48, 0xd2, 0x00, 0xe3 };
 void timer_init (void)
 {
     if (!timer_root || memcmp (timer_root, timer_key, sizeof (timer_key)))
+    {
         timer_root = search_gamemem (timer_key, sizeof (timer_key));
 
-    timer_gen_set_clock (TIMER_CLOCK_DEFAULT);
-    timer_gen_set_count (0);
-    timer_gen_start ();
+        timer_gen_set_clock (TIMER_CLOCK_DEFAULT);
+        timer_gen_set_count (0);
+        timer_gen_start ();
+    }
 }
 
 uint32 timer_free_count (void)

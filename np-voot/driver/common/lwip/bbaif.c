@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.6 2002/11/24 14:56:46 quad Exp $
+    $Id: bbaif.c,v 1.7 2002/12/16 07:51:00 quad Exp $
 
 DESCRIPTION
 
@@ -11,13 +11,6 @@ DESCRIPTION
     CREDIT: Original ethernetif module, Copyright (c) 2001, 2002 Swedish
     Institute of Computer Science. All rights reserved. Author: Adam Dunkels
     <adam@sics.se>
-
-TODO
-
-    Add in the complete statistics package.
-
-    Determine why the netstack goes into constant reset mode after sustained
-    ping-flooding.
 
 */
 
@@ -39,29 +32,13 @@ TODO
 
 static err_t low_level_init (struct netif *netif)
 {
-    rtl_t  *devif;
-
-    /* STAGE: Allocate and initialize the device interface structure. */
-
-    devif = mem_malloc (sizeof (rtl_t));
-
-    if (!devif)
-        return ERR_MEM;
-  
-    devif->mac      = &(netif->hwaddr[0]);
-    devif->owner    = netif;
-
-    /* STAGE: Update the network interface structure. */
-    
-    netif->state    = devif;
-
-    if (rtl_init (netif->state))
+    if (rtl_init ())
         return ERR_OK;
     else
         return ERR_BUF;
 }
 
-static struct pbuf* low_level_input (rtl_t *devif)
+static struct pbuf* low_level_input ()
 {
     struct pbuf    *p;
     struct pbuf    *q;
@@ -72,7 +49,7 @@ static struct pbuf* low_level_input (rtl_t *devif)
         variable.
      */
 
-    len = rtl_rx_status (devif);
+    len = rtl_rx_status ();
 
     if (len <= 0)
         return NULL;
@@ -92,7 +69,7 @@ static struct pbuf* low_level_input (rtl_t *devif)
         {
             uint32  recv;
 
-            recv  = rtl_rx (devif, q->payload, q->len);
+            recv  = rtl_rx (q->payload, q->len);
 
             /* STAGE: If the packet was corrupt, abort. */
 
@@ -118,7 +95,7 @@ static struct pbuf* low_level_input (rtl_t *devif)
     {
         /* STAGE: Drop the frame, no memory to take it. */
 
-        rtl_rx (devif, NULL, 0);
+        rtl_rx (NULL, 0);
 
         pbuf_free (p);
         p = NULL;
@@ -134,20 +111,17 @@ static struct pbuf* low_level_input (rtl_t *devif)
 
 static err_t low_level_output (struct netif *netif, struct pbuf *p)
 {
-    rtl_t          *devif;
     struct pbuf    *q;
-
-    devif = netif->state;
 
     /* STAGE: Queue up all the data by iterating through the pbuf. */
 
     for(q = p; q != NULL; q = q->next)
     {
-        if (!rtl_tx_write (devif, q->payload, q->len))
+        if (!rtl_tx_write (q->payload, q->len))
         {
             /* STAGE: Something went wrong queuing for TX. */
 
-            rtl_tx_abort (devif);
+            rtl_tx_abort ();
 
             return ERR_BUF;
         }
@@ -155,9 +129,9 @@ static err_t low_level_output (struct netif *netif, struct pbuf *p)
 
     /* STAGE: Now all the data is queued, perform the transmission. */
 
-    if (!rtl_tx_final (devif))
+    if (!rtl_tx_final ())
     {
-        rtl_tx_abort (devif);
+        rtl_tx_abort ();
 
         return ERR_BUF;
     }
@@ -197,12 +171,10 @@ err_t bbaif_output (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
 
 bool bbaif_input (struct netif *netif)
 {
-    rtl_t          *devif;
     struct eth_hdr *ethhdr;
     struct pbuf    *p;
     struct pbuf    *q;
 
-    devif = netif->state;
     q = NULL;
 
     /*
@@ -210,7 +182,7 @@ bool bbaif_input (struct netif *netif)
         it.
     */
 
-    p = low_level_input (devif);
+    p = low_level_input ();
 
     if (p)
     {
@@ -228,7 +200,7 @@ bool bbaif_input (struct netif *netif)
             }
 
             case ETHTYPE_ARP :
-                q = etharp_arp_input (netif, (struct eth_addr *) devif->mac, p);
+                q = etharp_arp_input (netif, (struct eth_addr *) &(netif->hwaddr), p);
                 break;
 
             default :
@@ -263,6 +235,14 @@ bool bbaif_input (struct netif *netif)
     return !!p;
 }
 
+void bbaif_set_netif (struct netif *netif)
+{
+    rtl_set_owner (netif);
+
+    if (netif)
+        rtl_mac (netif->hwaddr);
+}
+
 void bbaif_init (struct netif *netif)
 {
     netif->name[0]      = IFNAME0;
@@ -273,9 +253,14 @@ void bbaif_init (struct netif *netif)
 
     /* STAGE: Initialize the actual network harware. */
   
-    low_level_init (netif);
+    if (!(low_level_init (netif)))
+    {
+        /* STAGE: Notify the callbacks of the proper owner. */
 
-    /* STAGE: Initialize the Ethernet/ARP layer. */
+        bbaif_set_netif (netif);
 
-    etharp_init ();
+        /* STAGE: Initialize the Ethernet/ARP layer. */
+
+        etharp_init ();
+    }
 }

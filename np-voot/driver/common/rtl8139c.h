@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.11 2002/11/12 18:15:33 quad Exp $
+    $Id: rtl8139c.h,v 1.12 2002/12/16 07:50:56 quad Exp $
 
 */
 
@@ -172,12 +172,12 @@
 typedef struct
 {
     bool            inited;
+    bool            irq_inited;
 
     uint16          cur_rx;                 /* NOTE: Current Rx DMA buffer tail index. */
     uint32          cur_rx_index;           /* NOTE: Current index into the Rx DMA buffered frame. */
     uint16          cur_tx;                 /* NOTE: Current Tx descriptor. */
     uint32          cur_tx_index;           /* NOTE: Current index into the Tx descriptor. */
-    uint8          *mac;                    /* NOTE: Cached MAC address. */
     bool            link_stable;            /* NOTE: Stability of media auto-configuration. */
 
     asic_handler_f  old_rtl_handler;
@@ -186,11 +186,13 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-bool    rtl_init        (rtl_t *rtl_info);
-int32   rtl_rx_status   (rtl_t *rtl_info);
-uint32  rtl_rx          (rtl_t *rtl_info, uint8 *data, uint32 data_size);
-bool    rtl_tx_write    (rtl_t *rtl_info, const uint8 *data, uint32 data_length);
-bool    rtl_tx_final    (rtl_t *rtl_info);
-bool    rtl_tx_abort    (rtl_t *rtl_info);
+bool    rtl_init        ();
+void    rtl_mac         (uint8 *mac);
+void    rtl_set_owner   (void *owner);
+int32   rtl_rx_status   ();
+uint32  rtl_rx          (uint8 *data, uint32 data_size);
+bool    rtl_tx_write    (const uint8 *data, uint32 data_length);
+bool    rtl_tx_final    ();
+bool    rtl_tx_abort    ();
 
 #endif
