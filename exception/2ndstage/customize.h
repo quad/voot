@@ -9,13 +9,6 @@ typedef enum
     RUN
 } customize_check_mode;
 
-typedef struct
-{
-    uint8 vr_type;
-
-    uint8 data[0x40F];
-} customize_data;
-
 typedef enum
 {
     C_IPC_START,
@@ -40,6 +33,11 @@ typedef enum
     VR_APHARMDS,
     VR_AJIM             /* 12 */
 } voot_vr_id;
+
+typedef struct
+{
+    uint8 palette[0x200];
+} customize_data;
 
 void customize_init(void);
 bool customize_reinit(void);
