@@ -13,8 +13,11 @@ DESCRIPTION
 #include "asic.h"
 #include "voot.h"
 #include "gamedata.h"
+#include "customize.h"
 
 #include "heartbeat.h"
+
+static char vm_mode;
 
 void init_heartbeat(void)
 {
@@ -30,6 +33,9 @@ void init_heartbeat(void)
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
+    /* STAGE: Make sure we have a valid customization break. */
+    customize_reinit();
+
     /* STAGE: Enable the various codes. */
     gamedata_enable_debug();
 

@@ -16,7 +16,6 @@ TODO
 #include "printf.h"
 #include "dumpio.h"
 #include "gamedata.h"
-#include "customize.h"
 
 #include "voot.h"
 
@@ -36,7 +35,6 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
-            customize_reinit();
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
