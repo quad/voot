@@ -27,13 +27,9 @@ CHANGELOG
 #define VOOT_PACKET_TYPE_DEBUG      'd'
 #define VOOT_PACKET_TYPE_DATA       '>'
 #define VOOT_PACKET_TYPE_HUD        'h'
-#define VOOT_PACKET_TYPE_GD_ULOAD   'g'
-#define VOOT_PACKET_TYPE_GD_DLOAD   'G'
 #define VOOT_PACKET_TYPE_COMMAND    'c'
 #define VOOT_PACKET_TYPE_DUMP       'D'
 
-#define VOOT_COMMAND_TYPE_INJECTTST 'i'
-#define VOOT_COMMAND_TYPE_NETSTAT   'n'
 #define VOOT_COMMAND_TYPE_HEALTH    'h'
 #define VOOT_COMMAND_TYPE_TIME      't'
 #define VOOT_COMMAND_TYPE_VERSION   'v'
