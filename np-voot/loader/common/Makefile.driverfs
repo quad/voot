@@ -1,0 +1,33 @@
+# Generate ROMFS with specified driver Makefile
+#
+# $Id: Makefile.driverfs,v 1.1 2002/06/12 00:34:54 quad Exp $
+
+include ../../Makefile.config
+
+ifdef LOADER_FILES
+	LOADER_FILES_REAL = $(foreach LOADER_FILE, $(LOADER_FILES), $(NP_BASE)/loader/$(LOADER_TARGET)/$(LOADER_FILE))
+endif
+
+all: clean $(DRIVER).o
+
+$(DRIVER).bin:
+	make -C $(NP_BASE)/driver/$(DRIVER)
+
+$(DRIVER).img: $(DRIVER).bin
+	cp $(NP_BASE)/driver/$(DRIVER)/$(DRIVER).bin romdisk/driver.bin
+    ifdef LOADER_FILES_REAL
+		cp $(LOADER_FILES_REAL) romdisk/
+    endif
+	$(KOS_GENROMFS) -f $(DRIVER).img -d romdisk -v
+
+$(DRIVER).o: $(DRIVER).img
+	echo "SECTIONS { .rodata : { _romdisk = .; *(.data); _romdisk_end = .; } }" > script.ld
+	$(DC_LD) --no-warn-mismatch --format binary --oformat elf32-shl $(DRIVER).img -o $(DRIVER).o -r -EL -T script.ld
+	rm -f script.ld
+
+clean:
+	rm -f romdisk/*
+	rm -f *.o
+	rm -f *.img
+	rm -f script.ld
+	rm -f $(CLEAN_COMMON)
