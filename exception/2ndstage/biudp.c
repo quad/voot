@@ -137,7 +137,7 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
     if (!netout)
         return 0;   /* We didn't print any data. */
 
-    netout->type = type;
+    netout->header.type = type;
 
 	va_start(args, fmt);
 	i = vsnprintf(netout->buffer, sizeof(netout->buffer), fmt, args);
@@ -145,7 +145,7 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 
     if (i)
     {
-        netout->size = htons(i);
+        netout->header.size = htons(i);
         biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + i);
     }
 

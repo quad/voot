@@ -76,14 +76,14 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             break;
 
 #endif
-        case 'i':
+        case VOOT_COMMAND_TYPE_INJECTTST:
         {
             char test_string[] = "SuperJoe";
             trap_inject_data(test_string, sizeof(test_string));
         }
             break;
 
-        case 'm':
+        case VOOT_COMMAND_TYPE_MALLOCTST:
         {
             uint8 *ba, *bb, *bc;
 
@@ -107,11 +107,11 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         }
             break;
 
-        case 'n':
+        case VOOT_COMMAND_TYPE_NETSTAT:
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u\n", rtl_max_wait_count);
             break;
 
-        case 'p':
+        case VOOT_COMMAND_TYPE_HEALTH:
         {
             volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
             volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
@@ -120,11 +120,11 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         }
             break;
 
-        case 't':
+        case VOOT_COMMAND_TYPE_TIME:
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "%u\n", time());
             break;
 
-        case 'v':
+        case VOOT_COMMAND_TYPE_VERSION:
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\n");
             break;
 
@@ -136,16 +136,16 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
 {
     /* STAGE: Fix the size byte order. */
-    packet->size = ntohs(packet->size);
+    packet->header.size = ntohs(packet->header.size);
 
-    switch (packet->type)
+    switch (packet->header.type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
             maybe_handle_command(packet->buffer[0], udp, udp_data_length);
             break;
 
         case VOOT_PACKET_TYPE_DATA:
-            trap_inject_data(packet->buffer, packet->size);
+            trap_inject_data(packet->buffer, packet->header.size);
             break;
 
         default:

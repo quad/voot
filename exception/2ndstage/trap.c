@@ -20,7 +20,12 @@
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
 */
 
-#define PHY_FIFO_SIZE   16
+/* TODO: Determine why the physical FIFO size is 13. It's a damn odd number.
+    The only reasoning I can figure is my code is working on a one-offset
+    and that each in/out FIFO can only support 14 bytes. Bullshit? I agree.
+    We'll figure this one out sometime in the future. */
+
+#define PHY_FIFO_SIZE   13
 #define NET_FIFO_SIZE   64
 
 struct
@@ -195,6 +200,7 @@ static uint32 phy_size(void)
 static uint32 phy_flush_fifo(uint8 *temp_buffer)
 {
     uint32 work_index, temp_index;
+    uint32 flush_count;
 
     /* STAGE: Flush all data not marked IN in the physical fifo meanwhile
         saving the remaining data in the temp_buffer */
@@ -216,6 +222,7 @@ static uint32 phy_flush_fifo(uint8 *temp_buffer)
     phy_fifo.start = phy_fifo.size = 0;
 
     /* STAGE: Flush/syncronize the SCIF fifo. */ 
+    flush_count = 0;
     while (*SCIF_R_FS & SCIF_FS_DR)
     {
         uint8 serial_data;
@@ -225,10 +232,9 @@ static uint32 phy_flush_fifo(uint8 *temp_buffer)
 
         /* STAGE: Drop a single character from the SCIF fifo. */
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
-    }
 
-    /* DEBUG: Notification of physical FIFO flush */
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical FIFO flush and syncronized!\n");
+        flush_count++;
+    }
 
     return temp_index;
 }
@@ -248,7 +254,7 @@ static void phy_sync(void)
     {
         if(!phy_fifo_add(temp_buffer[work_index], IN, TRUE))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in resynchronization!\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in resynchronization! %u bytes injected.\n", work_index);
             break;
         }
     }
@@ -256,7 +262,7 @@ static void phy_sync(void)
     /* STAGE: Transfer data from the net fifo to the physical fifo - marker IN */
     while (phy_size() < PHY_FIFO_SIZE && net_size())
     {
-        int8 net_in_data;
+        int32 net_in_data;
 
         net_in_data = net_fifo_del();
 

@@ -13,12 +13,24 @@
 #define VOOT_PACKET_TYPE_GD_DLOAD   'G'
 #define VOOT_PACKET_TYPE_COMMAND    'c'
 
+#define VOOT_COMMAND_TYPE_INJECTTST 'i'
+#define VOOT_COMMAND_TYPE_MALLOCTST 'm'
+#define VOOT_COMMAND_TYPE_NETSTAT   'n'
+#define VOOT_COMMAND_TYPE_HEALTH    'p'
+#define VOOT_COMMAND_TYPE_TIME      't'
+#define VOOT_COMMAND_TYPE_VERSION   'v'
+
 typedef struct
 {
     uint8   type __attribute__ ((packed));
     uint16  size __attribute__ ((packed));
-    uint8   buffer[BIUDP_SEGMENT_SIZE - VOOT_PACKET_HEADER_SIZE] __attribute__ ((packed));
-} voot_packet __attribute__ ((packed));
+} voot_packet_header;
+
+typedef struct
+{
+    voot_packet_header  header __attribute__ ((packed));
+    uint8               buffer[BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header)] __attribute__ ((packed));
+} voot_packet;
 
 /*
 
