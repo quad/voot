@@ -12,6 +12,9 @@ TODO
 
     Menu select side should be checked instead of game side in Cable Versus mode.
 
+    Re-reverse the entire system to have data transmitted across the line.
+    Customized heads are *for certain* not transmitted.
+
 */
 
 #include "vars.h"
