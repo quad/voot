@@ -68,6 +68,10 @@ CHANGELOG
         Switch from callback to normal readline usage. This removed the
         running loop for the old callback method.
 
+    Sun Nov 24 15:18:42 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added ability to connect to a different slave while running the
+        client.
+
 TODO
 
     Add support for the DUMPSELECT command.
@@ -353,6 +357,12 @@ void* input_poll(void *arg)
 
 void input_handler(char *line)
 {
+    npc_command_t *event;
+
+    event = malloc(sizeof(npc_command_t));
+
+    event->type = C_NONE;
+
     if (line)
     {
         char *line_saved;
@@ -397,6 +407,10 @@ void input_handler(char *line)
             voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, VOOT_DATA_EDIT);
         else if (!strcasecmp(command, "dump-vbr"))
             voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, 0x8c00f400);
+        else if (!strcasecmp(command, "connect-slave"))
+        {
+            client_parse_connect(event, command_args, C_CONNECT_SLAVE, "slave");
+        }
         else if (!strcasecmp(command, "send-voot"))
         {
             char *filename, *maybe_address;
@@ -450,15 +464,15 @@ void input_handler(char *line)
     }
     else
     {
-        npc_command_t *event;
-
         input_handler_poll = FALSE;
 
-        event = malloc(sizeof(npc_command_t));
         event->type = C_EXIT;
-
-        npc_add_event_queue(event);
     }
+
+    if (event->type)
+        npc_add_event_queue(event);
+    else
+        free(event);        
 }
 
 void logger_callback(npc_log_level severity, const char *format, ...)

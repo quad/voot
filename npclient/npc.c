@@ -71,6 +71,10 @@ CHANGELOG
     Sun Nov 24 14:46:48 PST 2002    Scott Robinson <scott_vo@quadhome.com>
         Fixed TCP_NODELAY warning.
 
+    Sun Nov 24 15:19:30 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Made C_CONNECT_SLAVE able to handle already-connected situations
+        cleanly.
+
 */
 
 #include <stdlib.h>
@@ -148,15 +152,28 @@ int32 npc_handle_command(npc_command_t *command)
             {
                 npc_command_t *event;
 
+                /*
+                    If there is already a thread checking the socket, then
+                    just switchover the socket and allow it to keep working.
+                */
+
+                event = NULL;
+
+                if (!npc_system.slave_socket)
+                {
+                    event = (npc_command_t *) malloc(sizeof(npc_command_t));
+                    event->type = C_LISTEN_SOCKET;
+                    event->listen_type = C_PACKET_FROM_SLAVE;
+                    event->listen_socket = &(npc_system.slave_socket);
+                    event->listen_socket_thread = &(npc_system.slave_poll_thread);
+                }
+                else
+                    npc_close_socket(&npc_system.slave_socket, "old slave");
+
                 npc_system.slave_socket = retval;
 
-                event = (npc_command_t *) malloc(sizeof(npc_command_t));
-                event->type = C_LISTEN_SOCKET;
-                event->listen_type = C_PACKET_FROM_SLAVE;
-                event->listen_socket = &(npc_system.slave_socket);
-                event->listen_socket_thread = &(npc_system.slave_poll_thread);
-
-                npc_add_event_queue(event);
+                if (event)
+                    npc_add_event_queue(event);
             }
             else
             {
@@ -176,6 +193,7 @@ int32 npc_handle_command(npc_command_t *command)
             if (retval >= 0)
             {
                 npc_command_t *event;
+
                 npc_system.server_socket = retval;
 
                 event = (npc_command_t *) malloc(sizeof(npc_command_t));
