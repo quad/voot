@@ -20,13 +20,15 @@
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
 */
 
+#define PHY_FIFO_SIZE   16
+
 struct
 {
     struct
     {
         uint8   data;
         dir_e   direction;
-    } data[16];
+    } data[PHY_FIFO_SIZE];
 
     uint32      start;
     uint32      size;
@@ -72,21 +74,40 @@ static void phy_sync(void)
     /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
 }
 
-static uint32 phy_fifo_add(uint8 in_data, dir_e dir)
+static bool phy_fifo_add(uint8 in_data, dir_e dir)
 {
-    /* TODO: Add the byte to the end of the physical fifo. */
+    /* STAGE: Do we have space in the physical fifo? */
+    if (phy_fifo.size >= PHY_FIFO_SIZE)
+    {
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo desynchronized!\n");
+        return FALSE;
+    }
+        
+    /* STAGE: Add the byte to the end of the physical fifo. */
+    phy_fifo.data[(phy_fifo.start + phy_fifo.size) % PHY_FIFO_SIZE].direction = dir;
+    phy_fifo.size++;
 
-    /* DEBUG: Interim for stubbing. */
-    return 1;
+    return TRUE;
 }
 
-static uint32 phy_fifo_del(uint8 check_data)
+static bool phy_fifo_del(uint8 check_data)
 {
-    /* TODO: Check if the first byte in the ring equals the passed byte. (check_data) */
-    /* TODO: Remove the first byte in the ring. */
+    /* STAGE: Do we even have data in the physical fifo? Also, check if the
+        first byte in the ring equals the passed byte. (check_data) */
+    if (!phy_fifo.size || (phy_fifo.data[phy_fifo.start].data != check_data))
+    {
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo desynchronized!\n");
+        return FALSE;
+    }
 
-    /* DEBUG: Interim for stubbing. */
-    return 1;
+    /* STAGE: Flush the current byte in the SCIF. */
+    *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+
+    /* STAGE: Flush the current byte in the physical fifo. */
+    phy_fifo.start = ++phy_fifo.start % PHY_FIFO_SIZE;
+    phy_fifo.size--;
+
+    return TRUE;
 }
 
 static uint32 phy_size(void)
@@ -162,7 +183,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 
             /* STAGE: Remove incoming data from physical fifo. */
             if(!phy_fifo_del(stack->r3))
-                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in reception!\n");
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in reception!\n");
 
             break;
     }
