@@ -105,6 +105,12 @@ unsigned int handle_npc_command(npc_command_t *command)
             free(command->packet);
             break;
 
+        case C_PACKET_FROM_SERVER:
+            fprintf(stderr, "[npc] received a packet from the server.\n");
+
+            free(command->packet);
+            break;
+
         case C_EXIT:
             npc_exit(command->code);
             break;
@@ -165,11 +171,10 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
 int npc_slave_connect(void)
 {
     struct hostent *host;
-    struct sockaddr_in slave_address, my_address;
+    struct sockaddr_in slave_address;
     int slave_socket;
 
     bzero(&slave_address, sizeof(slave_address));
-    bzero(&my_address, sizeof(my_address));
 
     /* Try to resolve the slave host name. */
     host = gethostbyname(npc_system.slave_name);
@@ -191,14 +196,10 @@ int npc_slave_connect(void)
         return 2;
     }
 
-    my_address.sin_family = slave_address.sin_family;
-    my_address.sin_addr.s_addr = htonl(INADDR_ANY);
-    my_address.sin_port = htons(0);
-
-    if (!bind(slave_socket, (struct sockaddr *) &my_address, sizeof(my_address)) < 0)
+    if (connect(slave_socket, (struct sockaddr *) &slave_address, sizeof(slave_address)))
     {
         close(slave_socket);
-        fprintf(stderr, "[npc] unable to bind a socket for the slave.\n");
+        fprintf(stderr, "[npc] unable to connect to the slave.\n");
         return 3;
     }
 
@@ -211,7 +212,6 @@ int npc_slave_connect(void)
 
     /* Update npc_system with socket and addressing information. */
     npc_system.slave_socket = slave_socket;
-    npc_system.slave_address = slave_address;
 
     return 0;
 }

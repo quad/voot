@@ -58,7 +58,6 @@ typedef struct
     char                *slave_name;
     uint16              slave_port;
     int32               slave_socket;
-    struct sockaddr_in  slave_address;
 
     char                *server_name;
     uint16              server_port;
