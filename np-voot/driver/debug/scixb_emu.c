@@ -1,6 +1,6 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.2 2002/11/12 19:58:05 quad Exp $
+    $Id: scixb_emu.c,v 1.3 2002/11/14 06:08:57 quad Exp $
 
 DESCRIPTION
 
@@ -22,8 +22,6 @@ DESCRIPTION
 
 #include "scixb_emu.h"
 
-#define SERIAL_PASSTHROUGH
-
 static uint16      *init_tx_root;
 static const uint8  init_tx_key[]   = {
                                         0xe6, 0x2f, 0xd6, 0x2f, 0xc6, 0x2f,
@@ -38,18 +36,40 @@ static const uint8  main_tx_key[]   = {
                                         0x86, 0x2f, 0x22, 0x4f, 0xfc, 0x7f,
                                         0x0f, 0xdd, 0x11, 0xdc, 0x0b, 0x4d
                                       };
+static uint16      *init_link_root;
+static const uint8  init_link_key[] = {
+                                        0xe6, 0x2f, 0x48, 0x24, 0xd6, 0x2f,
+                                        0xc6, 0x2f, 0xb6, 0x2f
+                                      };
+extern void         init_link_continue  (void);
+asm ("
+_init_link_continue:
+init_link_emulate_start:
+    mov.l   r14, @-r15
+init_link_return:
+    mov.l   _init_link_root, r0
+    add     #2, r0
+    jmp     @r0
+    nop
+");
 
 static const uint8  fifo_key[]      = {
                                         0x07, 0xd3, 0x2b, 0x43, 0x09, 0x00,
                                         0x07, 0xd3
                                       };
 
-static bool                 inited;
-static exception_handler_f  old_trap_handler;
-static scixb_fifo_t        *voot_fifo;
-static scixb_fifo_t         delay_fifo;
+static bool                     inited;
+static bool                     init_link_lock;
+static uint32                   init_link_lock_time;
+static exception_handler_f      old_trap_handler;
+#ifdef DEBUG_RX
+static exception_handler_f      old_rxi_handler;
+#endif
+static scixb_fifo_t            *voot_fifo;
+static scixb_fifo_t             delay_fifo;
 
-static anim_render_chain_f  old_anim_chain;
+static anim_render_chain_f      old_anim_chain;
+static voot_packet_handler_f    old_voot_packet_handler;
 
 /*
     CREDIT: Reimplementation of the SCIXB interrupt handler.
@@ -103,6 +123,30 @@ static int32 fifo_pull (scixb_fifo_t *fifo)
     return retchar;
 }
 
+static bool my_voot_packet_handler (voot_packet *packet, void *ref)
+{
+    switch (packet->header.type)
+    {
+        case VOOT_PACKET_TYPE_DATA :
+        {
+            if (voot_fifo)
+            {
+                uint32  index;
+
+                for (index = 0; index < (packet->header.size - 1); index++)
+                    fifo_push (voot_fifo, packet->buffer[index]);
+
+                if (init_link_lock)
+                    init_link_lock = FALSE;
+            }
+
+            break;
+        }
+    }
+
+    return old_voot_packet_handler (packet, ref);
+}
+
 static void my_anim_chain (uint16 anim_mode_a, uint16 anim_mode_b)
 {
     /* STAGE: Handle all cached bytes. */
@@ -128,6 +172,9 @@ static void my_anim_chain (uint16 anim_mode_a, uint16 anim_mode_b)
         }
     }
 
+    anim_printf_debug (0.0, 15.0, "vf->size = %u", voot_fifo->size);
+    anim_printf_debug (0.0, 30.0, "vf->head end = [%u %u]", voot_fifo->head, voot_fifo->end);
+
     if (old_anim_chain)
         return old_anim_chain (anim_mode_a, anim_mode_b);
 }
@@ -142,11 +189,26 @@ static void tx_handler (uint8 in_data, bool main_tx)
     {
         voot_send_packet (VOOT_PACKET_TYPE_DATA, &in_data, sizeof (in_data));
 
+        init_link_lock      = TRUE;
+        init_link_lock_time = 0;
 #ifdef SERIAL_PASSTHROUGH
         serial_write_char (in_data);
 #endif
     }
 }
+
+#ifdef DEBUG_RX
+static void* rxi_handler (register_stack *stack, void *current_vector)
+{
+    if (init_link_lock)
+        init_link_lock = FALSE;
+
+    if (old_rxi_handler)
+        return old_rxi_handler (stack, current_vector);
+    else
+        return current_vector;
+}
+#endif
 
 static void* trap_handler (register_stack *stack, void *current_vector)
 {
@@ -156,14 +218,47 @@ static void* trap_handler (register_stack *stack, void *current_vector)
     {
         case TRAP_CODE_SCIXB_TXI :
             tx_handler (stack->r4, FALSE);
-            spc_set ((void *) stack->pr);
+            stack->spc = stack->pr;
             break;
 
         case TRAP_CODE_SCIXB_TXM :
             tx_handler (stack->r4, TRUE);
-            spc_set ((void *) stack->pr);
+            stack->spc = stack->pr;
             break;
-    
+
+        case TRAP_CODE_SCIXB_ILK :
+        {
+            switch (stack->r4)
+            {
+                case 0x0 :
+                    if (init_link_lock && time () < init_link_lock_time)
+                    {
+                        stack->r0   = 1;
+                        stack->spc  = stack->pr;
+                    }
+                    else
+                    {
+                        init_link_lock = FALSE;
+
+                        if (!init_link_lock_time)
+                        {
+                            init_link_lock      = TRUE;
+                            init_link_lock_time = time () + 10;
+                        }
+
+                        stack->spc = (uint32) init_link_continue;
+                    }
+                    break;
+
+                case 0x1 :
+                    init_link_lock = FALSE;
+                    stack->spc = (uint32) init_link_continue;
+                    break;
+            }
+
+            break;
+        }
+
         default :
             break;
     }
@@ -183,6 +278,7 @@ void scixb_init (void)
 {
     uint16  init_trap;
     uint16  main_trap;
+    uint16  link_trap;
 
     /*
         STAGE: Set the SCIF into loopback mode, so we don't have to worry
@@ -193,6 +289,7 @@ void scixb_init (void)
 
     init_trap = ubc_generate_trap (TRAP_CODE_SCIXB_TXI);
     main_trap = ubc_generate_trap (TRAP_CODE_SCIXB_TXM);
+    link_trap = ubc_generate_trap (TRAP_CODE_SCIXB_ILK);
 
     /* STAGE: Locate both TX functions. */
 
@@ -201,6 +298,11 @@ void scixb_init (void)
 
     if (!main_tx_root || memcmp (main_tx_root, &main_trap, sizeof (main_trap)))
         main_tx_root = search_gamemem (main_tx_key, sizeof (main_tx_key));
+
+    /* STAGE: Locate the link initalization function. */
+
+    if (!init_link_root || memcmp (init_link_root, &link_trap, sizeof (link_trap)))
+        init_link_root = search_gamemem (init_link_key, sizeof (init_link_key));
 
     /*
         STAGE: If we haven't already, configure the exception table to pass
@@ -217,14 +319,26 @@ void scixb_init (void)
 
         inited = exception_add_handler (&new_entry, &old_trap_handler);
 
+#ifdef DEBUG_RX
+        new_entry.type      = EXP_TYPE_INT;
+        new_entry.code      = EXP_CODE_RXI;
+        new_entry.handler   = rxi_handler;
+
+        exception_add_handler (&new_entry, &old_rxi_handler);
+#endif
+
         anim_add_render_chain (my_anim_chain, &old_anim_chain);
     }
 
-    if (init_tx_root && main_tx_root && inited)
+    if (init_tx_root && main_tx_root && init_link_root && inited)
     {
         /* STAGE: Locate the SCIXB FIFO. */
 
         voot_fifo = (scixb_fifo_t *) *( ( (uint32 *) search_gamemem (fifo_key, sizeof (fifo_key)) ) - 1 );
+
+        /* STAGE: Add ourselves to the VOOT packet handling chain. */
+
+        old_voot_packet_handler = voot_add_packet_chain (my_voot_packet_handler);
 
         /* STAGE: (Re-)Initialize the delay FIFO. */
 
@@ -238,7 +352,8 @@ void scixb_init (void)
 
         /* STAGE: Write the trappoints out... */
 
-        init_tx_root[0] = init_trap;
-        main_tx_root[0] = main_trap;
+        init_tx_root[0]     = init_trap;
+        main_tx_root[0]     = main_trap;
+        init_link_root[0]   = link_trap;
     }
 }

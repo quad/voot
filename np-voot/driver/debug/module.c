@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.13 2002/11/12 19:58:05 quad Exp $
+    $Id: module.c,v 1.14 2002/11/14 06:08:57 quad Exp $
 
 DESCRIPTION
 
@@ -9,53 +9,38 @@ DESCRIPTION
     This one simply initializes the network library and passes on the
     callback handle for VOOT command handler.
 
+NOTES
+
+    8c0397d8 (byte) - actual TX
+    8c018dd8 (init, data, data_size) = {0 continue, 3 syncing, 1 success} - actual TX function in INIT
+    8c018c06 (init, ?data, ?data_size) = {0 abort, 1 continue, 2 success} - actual INIT function
+
+    8c093ca4 - voot RX fifo
+    8c03990c (void) = {byte} - uni RX routine
+
+    8c018ab6 - second stage init RX handler
+    8c018dd8 - first stage init RX/TX sync handler
+
 */
 
 #include <vars.h>
 #include <anim.h>
-#include <lwip/net.h>
 #include <timer.h>
+
+#include <lwip/net.h>
 #include <lwip/voot.h>
 
 #include "scixb_emu.h"
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
-static voot_packet_handler_f    old_voot_packet_handler;
-static uint32                   version_count;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active. [%u]", version_count++);
+    anim_printf_debug (0.0, 0.0, "Test module active.");
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
-}
-
-static bool my_voot_packet_handler (voot_packet *packet, void *ref)
-{
-    switch (packet->header.type)
-    {
-        case VOOT_PACKET_TYPE_COMMAND :
-        {
-            /* STAGE: Ensure there is actually a command. */
-
-            if (!(packet->header.size))
-                break;
-
-            /* STAGE: Handle the version command. */
-
-            if (packet->buffer[0] == VOOT_COMMAND_TYPE_VERSION)
-                version_count++;
-
-            break;
-        }
-
-        default :
-            break;
-    }
-
-    return old_voot_packet_handler (packet, ref);
 }
 
 /*
@@ -83,17 +68,9 @@ void module_configure (void)
     net_init ();
     voot_init ();
 
-    old_voot_packet_handler = voot_add_packet_chain (my_voot_packet_handler);
-
     /* STAGE: Initialize the SCIXB emulation layer. */
 
     scixb_init ();
-
-#ifdef SCIXB
-    /* STAGE: Initialize the serial buffer. */
-
-    scixb_init ();
-#endif
 }
 
 void module_bios_vector (void)
@@ -103,4 +80,3 @@ void module_bios_vector (void)
         driver core.
     */
 }
-
