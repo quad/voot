@@ -1,7 +1,6 @@
 /*  biudp.c
 
     Bi-directional UDP communications code.
-
 */
 
 #include "vars.h"
@@ -14,8 +13,6 @@ biudp_control_t control;
 
 void biudp_init(const biudp_control_t *in_control)
 {
-    ubc_serial_write_str("[UBC] Setting biudp control structure.\r\n");
-
     /* STAGE: Copy the input control into global control structure. */
     memcpy(&control, in_control, sizeof(biudp_control_t));
 
