@@ -76,7 +76,7 @@ Total Guesstimated System Memory:
 */
 
 #define VOOT_MEM_START      0x8CCF0000
-#define VOOT_MEM_END        0x8CCFA2CC
+#define VOOT_MEM_END        0x8CCFFFFF
 
 #define VOOT_MODULE_NAME    0x8CCF9ECC
 

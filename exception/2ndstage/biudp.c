@@ -111,8 +111,7 @@ bool biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
             return FALSE;
 
         /* STAGE: Delay so we don't flood the receiving system. */
-        if (index)
-            vid_waitvbl();
+        vid_waitvbl();
     }
 
     remain = in_data_length % BIUDP_SEGMENT_SIZE;

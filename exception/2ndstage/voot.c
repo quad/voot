@@ -20,13 +20,18 @@ TODO
 
 #include "voot.h"
 
-static bool maybe_handle_command(uint8 command, voot_packet *packet)
+static bool maybe_handle_command(uint8 command, uint32 option, voot_packet *packet)
 {
     switch(command)
     {
-        case VOOT_COMMAND_TYPE_HEALTH:
-            voot_debug("Deprecated from health OSD.");
+        case VOOT_COMMAND_TYPE_DEBUG:
+        {
+            uint8 *cust_menu_id = (uint8 *) 0x8c275224;
+
+            *cust_menu_id = 0x1a;
+
             break;
+        }
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_debug("%u", time());
@@ -43,23 +48,11 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             break;
         }
 
-        case VOOT_COMMAND_TYPE_PASVON:
-            voot_debug("Deprecated with new serial interface.");
-            break;
-
         case VOOT_COMMAND_TYPE_DUMPON:
         {
-            uint32 *buffer_index;
-            uint32 address;
+            dump_start(option);
 
-            buffer_index = &(((uint32 *) packet->buffer)[1]);
-            
-            /* The packet is byte-aligned, but the data buffer isn't. */
-            SAFE_UINT32_COPY(address, buffer_index);
-
-            dump_start(address);
-
-            voot_debug("Processed DUMPON command. (%x)", address);
+            voot_debug("Processed DUMPON command. (%x)", option);
 
             break;
         }
@@ -92,6 +85,10 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             voot_dump_buffer((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
             break;
 
+        case VOOT_COMMAND_TYPE_DUMPSELECT:
+            voot_dump_buffer((const uint8 *) option, 1024);
+            break;
+
         default:
             break;
     }
@@ -107,7 +104,26 @@ static bool maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
     switch (packet->header.type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
-            return maybe_handle_command(packet->buffer[0], packet);
+        {
+            uint32 option;
+
+            option = 0;
+
+            /* STAGE: Check if an option was passed along. */
+            if (packet->header.size >= 8)
+            {
+                uint8 *buffer_index;
+
+                /* STAGE: The address isn't byte aligned, so we're forced to copy it this way. */
+                buffer_index = (uint8 *) (((uint32 *) packet->buffer) + 1);
+                ((uint8 *) (&option))[0] = buffer_index[0];
+                ((uint8 *) (&option))[1] = buffer_index[1];
+                ((uint8 *) (&option))[2] = buffer_index[2];
+                ((uint8 *) (&option))[3] = buffer_index[3];
+            }
+
+            return maybe_handle_command(packet->buffer[0], option, packet);
+        }
 
         case VOOT_PACKET_TYPE_DATA:
 #if 0
