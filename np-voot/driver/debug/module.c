@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.11 2002/11/04 18:42:38 quad Exp $
+    $Id: module.c,v 1.12 2002/11/07 02:24:05 quad Exp $
 
 DESCRIPTION
 
@@ -15,7 +15,6 @@ DESCRIPTION
 #include <anim.h>
 
 #include "scixb_emu.h"
-#include "net-lwip.h"
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
