@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.4 2002/12/17 11:31:58 quad Exp $
+    $Id: voot.c,v 1.5 2002/12/17 11:55:01 quad Exp $
 
 DESCRIPTION
 
@@ -18,8 +18,6 @@ TODO
 #include <malloc.h>
 #include <printf.h>
 #include <init.h>
-
-#include <timer.h>
 
 #include "net.h"
 
@@ -182,19 +180,18 @@ bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
 int32 voot_aprintf (uint8 type, const char *fmt, va_list args)
 {
     int32           i;
-    voot_packet    *packet_size_check;
     char           *printf_buffer;
 
     /* STAGE: Allocate the largest possible buffer for the printf. */
 
-    printf_buffer = malloc (sizeof (packet_size_check->buffer));
+    printf_buffer = malloc (VOOT_PACKET_BUFFER_SIZE);
 
     if (!printf_buffer)
         return 0;
 
     /* STAGE: Actually perform the printf. */
 
-    i = vsnprintf (printf_buffer, sizeof (packet_size_check->buffer), fmt, args);
+    i = vsnprintf (printf_buffer, VOOT_PACKET_BUFFER_SIZE, fmt, args);
 
     /* STAGE: Send the packet, if we need to, and maintain correctness. */
 
@@ -222,9 +219,7 @@ int32 voot_printf (uint8 type, const char *fmt, ...)
 
 bool voot_send_command (uint8 type)
 {
-    /* STAGE: Return with a true boolean. */
-
-    return !!voot_printf (VOOT_PACKET_TYPE_COMMAND, "%c", type);
+    return voot_send_packet (VOOT_PACKET_TYPE_COMMAND, &type, sizeof (type));
 }
 
 void voot_init (void)

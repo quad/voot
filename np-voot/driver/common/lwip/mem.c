@@ -1,15 +1,11 @@
 /*  mem.c
 
-    $Id: mem.c,v 1.3 2002/11/14 20:56:08 quad Exp $
+    $Id: mem.c,v 1.4 2002/12/17 11:55:01 quad Exp $
 
 DESCRIPTION
 
     Interface module emulating lwIP's bss space memory manager. This
     translates the functions over to the Katana heap.
-
-TODO
-
-    Finish integrating the debugging statistics functions.
 
 */
 

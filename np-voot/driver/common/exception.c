@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.11 2002/11/20 00:02:15 quad Exp $
+    $Id: exception.c,v 1.12 2002/12/17 11:55:00 quad Exp $
 
 DESCRIPTION
 
@@ -10,10 +10,7 @@ DESCRIPTION
 
 #include "vars.h"
 #include "ubc.h"
-#include "video.h"
-#include "asic.h"
 #include "util.h"
-#include "init.h"
 
 #include "exception.h"
 

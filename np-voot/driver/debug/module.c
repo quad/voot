@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.17 2002/12/16 07:51:00 quad Exp $
+    $Id: module.c,v 1.18 2002/12/17 11:55:01 quad Exp $
 
 DESCRIPTION
 
@@ -31,8 +31,6 @@ NOTES
 
 #include <lwip/net.h>
 #include <lwip/voot.h>
-
-#include <rtl8139c.h>
 
 #include "scixb_emu.h"
 #include "module.h"
@@ -68,8 +66,6 @@ void module_configure (void)
 
     anim_add_render_chain (my_anim_chain, &old_anim_chain);
 
-#if 0
-
     /* STAGE: Initialize the networking drivers. */
 
     net_init ();
@@ -78,19 +74,14 @@ void module_configure (void)
 
     /* STAGE: Initialize the SCIXB emulation layer. */
 
-    scixb_init ();
-#else
-
-    net_init ();
-    voot_init ();
-
-#endif
+    //scixb_init ();
 }
 
 void module_reconfigure (void)
 {
     net_init ();
     voot_init ();
+    dump_init ();
 
     reconf_count++;
 }

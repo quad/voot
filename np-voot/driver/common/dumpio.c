@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.11 2002/11/14 20:56:02 quad Exp $
+    $Id: dumpio.c,v 1.12 2002/12/17 11:55:00 quad Exp $
 
 DESCRIPTION
 
@@ -237,5 +237,6 @@ void dump_init (void)
 {
     /* STAGE: Add ourselves to the VOOT packet handling chain. */
 
-    old_voot_packet_handler = voot_add_packet_chain (dump_packet_handler);
+    if (!old_voot_packet_handler)
+        old_voot_packet_handler = voot_add_packet_chain (dump_packet_handler);
 }

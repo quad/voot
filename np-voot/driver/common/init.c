@@ -1,6 +1,6 @@
-/*  main.c
+/*  init.c
 
-    $Id: init.c,v 1.12 2002/12/16 07:50:55 quad Exp $
+    $Id: init.c,v 1.13 2002/12/17 11:55:00 quad Exp $
 
 DESCRIPTION
 
