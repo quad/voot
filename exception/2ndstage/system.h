@@ -60,10 +60,10 @@ typedef struct
     uint32 r0;
 } register_stack;
 
-extern uint32 dbr(void);
+extern void * dbr(void);
 extern void dbr_set(const void *set);
 
-extern uint32 vbr(void);
+extern void * vbr(void);
 extern void vbr_set(const void *set);
 
 extern uint32 r15(void);

@@ -10,22 +10,19 @@ DESCRIPTION
 #include "vars.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
-#include "util.h"
 #include "assert.h"
-#include "warez_load.h"
+#include "util.h"
 
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
 void handle_bios_vector(void)
 {
-    assert(0);
+    assert(dbr() == exception_handler_lowlevel);
 }
 
-int32 dc_main(int32 do_warez)
+int32 dc_main(void)
 {
-    unsigned long bin_size;
-
     /* STAGE: Initialize the UBC. */
     *UBC_R_BBRA = *UBC_R_BBRB = 0;
     *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
@@ -38,35 +35,15 @@ int32 dc_main(int32 do_warez)
     /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();
 
-    /* STAGE: Handle the 1ST_READ.BIN */
-#if 1
-    if (do_warez)
-    {
-        warez_load(*((unsigned long *) REAL_LOAD_POINT));
-    }
-    else
-    {
-        /* STAGE: Relocate the 1st_read.bin */
-        bin_size = *((unsigned long *) REAL_LOAD_POINT);
-        memmove((uint8 *) REAL_LOAD_POINT, (uint8 *) LOADED_POINT, bin_size);
+    /* STAGE: Patch the c000 handler so the BIOS won't crash. */
+    bios_patch_handler = handle_bios_vector;    /* This must occur before the copy. */
+    memcpy((uint32 *) 0x8c00c000, bios_patch_base, bios_patch_end - bios_patch_base);
 
-        /* STAGE: Flush the cache so we're actually going to where we want. */
-        flush_cache();
-
-        /* STAGE: Execute the 1ST_READ.BIN */
-        (*(void (*)()) REAL_LOAD_POINT) ();
-    }
-#else
-
-    //bios_patch_handler = handle_bios_vector;    /* This must occur before the copy. */
-    //memcpy((uint32 *) 0x8c00c000, bios_patch_base, bios_patch_end - bios_patch_base);
-
+    /* STAGE: Make sure the cache is invalidated before jumping to a changed future. */
     flush_cache();
 
-    /* Half-assed reboot. */
-    (*(void (*)()) 0x8c0000e0) (1);
-
-#endif
+    /* STAGE: Special BIOS reboot. Doesn't kill the DBR. */
+    (*(uint32 (*)()) (*(uint32 *) 0x8c0000e0)) (-3);
 
     /* STAGE: Freeze it in an interesting fashion. */
     assert(0);

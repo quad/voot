@@ -23,6 +23,6 @@ go:
 main_addr:
     .long   _dc_main
 .L_edata_addr:
-        .long   __bss_start
+    .long   __bss_start
 .L_end_addr:
-        .long   _end
+    .long   _end

@@ -9,7 +9,7 @@ OBJS += crt0.o
 OBJS += exception.o exception-lowlevel.o system.o asic.o
 
 # THIRD - loading code, also required
-OBJS += main.o warez_load.o
+OBJS += main.o
 
 # All the others...
 OBJS += util.o printf.o

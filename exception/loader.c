@@ -4,14 +4,9 @@ DESCRIPTION
 
     The first stage loader of low-memory driver:
 
-    1) Load a game's 1ST_READ.BIN
-    2) Load the low-memory driver into memory
-    3) Execute the low-memory driver
-
-TODO
-
-    Parse the IP.BIN and load the appropriate game binary instead of hard
-    coding '1ST_READ.BIN'
+    1) Ensure a valid disc is inserted.
+    2) Load the low-memory driver into memory.
+    3) Execute the low-memory driver.
 
 */
 
@@ -22,14 +17,7 @@ TODO
 #include "gdrom.h"
 #include "2ndstage.h"
 
-#define FIRST_LOAD_POINT    0x8C300000
-#define FIRST_RUN_POINT     0x8C010000
-
-#define FIRST_LOAD_FILE     "/1st_read.bin"
-
 static char *stage_buffer = (char *) 0x8C004000;
-static char *first_load_buffer = (char *) FIRST_LOAD_POINT;
-static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
 static int warez_enable = 1;
 
 static char startup_msg[] = {
@@ -58,45 +46,20 @@ static char bad_disc_msg[] = {
 #define COLOR_BOOT_INIT     0, 0, 100
 #define COLOR_ERROR         100, 0, 0
 
-static void boot_loader(unsigned char *bootstrap_name)
+static void boot_loader(void)
 {
-    int fd, bin_size;
-    int do_warez;
-
     vc_clear(COLOR_BOOT_INIT);
 
     vc_puts("Initializing ...");
 
-    cdrom_reinit();
-    iso_init();
-
-    vc_puts("Accessing ...");
-    do_warez = open_gd_or_cd(&fd, bootstrap_name);
-    
-    if (!fd)
-    {
-        vc_clear(COLOR_ERROR);
-
-        vc_puts(bad_disc_msg);
-
-        return;
-    }
-
-    /* Load the actual bootstrap into memory */
-    bin_size = iso_total(fd);
-    vc_puts("Loading ...");
-    iso_read(fd, first_load_buffer, bin_size);
-    iso_close(fd);
-
-    if (do_warez)
+    if (gdrom_disc_type() != GD_TYPE_GDROM)
         vc_puts("WAREZ_LOAD active! Bad pirate.");
 
-    /* Copy the second stage into the IP.BIN area and execute it */
+    /* STAGE: Copy the second stage into driver area and execute it */
     memcpy(stage_buffer, stage_two_bin, stage_two_bin_size);
 
     vc_puts("Go!");
-    *first_load_size = bin_size;
-    (*(void (*)()) stage_buffer) (do_warez);
+    (*(void (*)()) stage_buffer) ();
 }
 
 void dc_main(void)
@@ -112,18 +75,20 @@ void dc_main(void)
     vc_puts(startup_msg);
     vc_puts(stage_two_build_time);
 
+    /* STAGE: Keep us looping until a valid disc is inserted. */
     for (;;)
     {
         vc_puts("\nPlease insert a Virtual-On GD-ROM.");
         wait_for_gdrom();
 
+        /* STAGE: Ensure it is a GD-ROM, unless the warez support is enabled. */
         if (!warez_enable && (gdrom_disc_type() != GD_TYPE_GDROM))
         {
             vc_clear(COLOR_ERROR);
 
-            vc_puts("The media inserted is not a GD-ROM.");
+            vc_puts(bad_disc_msg);
         }
         else
-            boot_loader(FIRST_LOAD_FILE);
+            boot_loader();
     }
 }
