@@ -54,11 +54,13 @@ CHANGELOG
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <pthread.h>
 
@@ -224,13 +226,9 @@ int32 npc_handle_command(npc_command_t *command)
                 }
 
                 case VOOT_PACKET_TYPE_COMMAND:
-                {
-                    voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
-                    break;
-                }
-
                 case VOOT_PACKET_TYPE_DATA:
                 {
+                    NPC_LOG(npc_system, LOG_DEBUG, "Received DATA or COMMAND from server...");
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
                 }
@@ -407,6 +405,17 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
         return -2;
     }
 
+    /* If we're dealing with a stream, be sure to disable Nagle's algorithm. */
+    if (conntype == SOCK_STREAM)
+    {
+        int opt_length;
+
+        opt_length = 1;
+
+        if(!setsockopt(new_socket, SOL_TCP, TCP_NODELAY, (char *) &opt_length, sizeof(opt_length)))
+            NPC_LOG(npc_system, LOG_CRIT, "Could not set TCP_NODELAY on socket %d.", new_socket);
+    }
+
     if (connect(new_socket, (struct sockaddr *) &address, sizeof(address)))
     {
         close(new_socket);
@@ -532,7 +541,7 @@ npc_data_t* npc_expose(void)
         we'll have created an accessor function for it. However, I'll leave
         the functionality in just-in-case. */
 
-    fprintf(stderr, "[npc] npc_system exposed!");
+    NPC_LOG(npc_system, LOG_DEBUG, "npc_system exposed!");
 
     return &npc_system;
 }

@@ -88,3 +88,18 @@ int32 voot_send_command(int32 socket, uint8 command)
     
     return retval;
 }
+
+void voot_send_data(int32 socket, uint8 *data, uint32 data_size)
+{
+    voot_packet *packet;
+
+    packet = malloc(sizeof(voot_packet));
+
+    packet->header.type = VOOT_PACKET_TYPE_DATA;
+    packet->header.size = htons(data_size);
+    memcpy(packet->buffer, data, data_size);
+
+    voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
+
+    free(packet);
+}

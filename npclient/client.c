@@ -29,8 +29,6 @@ CHANGELOG
 
 */
 
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -87,6 +85,33 @@ static const char *npc_log_level_desc[] = {
     "DEBUG"
 };
 
+/*
+ * min()/max() macros that also do
+ * strict type-checking.. See the
+ * "unnecessary" pointer comparison.
+ */
+#define min(x,y) ({ \
+	const typeof(x) _x = (x);	\
+	const typeof(y) _y = (y);	\
+	(void) (&_x == &_y);		\
+	_x < _y ? _x : _y; })
+
+#define max(x,y) ({ \
+	const typeof(x) _x = (x);	\
+	const typeof(y) _y = (y);	\
+	(void) (&_x == &_y);		\
+	_x > _y ? _x : _y; })
+
+#define my_strndup(s, n)                                                      \
+  (__extension__                                                              \
+    ({                                                                        \
+      const char *__old = (s);                                                \
+      size_t __len = min(strlen (__old), n);                                  \
+      char *__new = (char *) malloc (__len + 1);                              \
+      __new[__len] = '\0';                                                    \
+      (char *) memcpy (__new, __old, __len);                                  \
+    }))
+
 void display_start_banner(void)
 {
     printf(banner_text);
@@ -126,7 +151,7 @@ void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command typ
         char *host;
         uint16 port;
 
-        host = strndup(opt_arg, (size_t) (tokidx - opt_arg));
+        host = my_strndup(opt_arg, (size_t) (tokidx - opt_arg));
         port = atoi(tokidx);
 
         command->text = host;
@@ -266,7 +291,26 @@ void input_handler(char *line)
 {
     if (line)
     {
-        printf("[client] received '%s'.\n", line);
+        int32 string_index;
+        npc_data_t *system;
+
+        system = npc_expose();
+
+        /* First, lowercase the damn string. */
+        string_index = 0;
+        while((line[string_index] = tolower(line[string_index])))
+            string_index++;
+
+        /* Now parse simple commands. */
+        if (!strcmp(line, "c-inject"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
+        else if (!strcmp(line, "inject"))
+        {
+            char data[] = "12345678912345";
+
+            voot_send_data(system->slave_socket, data, strlen(data));
+        }
+          
         free(line);
     }
     else

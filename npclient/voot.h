@@ -53,5 +53,6 @@ voot_packet* voot_parse_buffer(uint8 *buffer, uint32 buffer_size);
 voot_packet* voot_parse_socket(int32 socket);
 int32 voot_send_packet(int32 socket, voot_packet *packet, uint32 size);
 int32 voot_send_command(int32 socket, uint8 command);
+void voot_send_data(int32 socket, uint8 *data, uint32 data_size);
 
 #endif __VOOT_H__

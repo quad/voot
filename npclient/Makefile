@@ -23,3 +23,6 @@ clean:
 
 mrproper: clean
 	-rm -f *~ *.bak
+
+package: mrproper
+	(cd .. ; zip -r npclient/npclient.zip npclient/ ) 
