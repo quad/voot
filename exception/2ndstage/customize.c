@@ -6,7 +6,8 @@ DESCRIPTION
 
 TODO
 
-    Get Oratan champion heads working. (silver and gold)
+    Test heads in cable versus, which is just about the only mode they work
+    in.
 
 */
 
@@ -47,19 +48,23 @@ void customize_init(void)
     add_exception_handler(&new);
 }
 
-static void customize_clear_player(uint32 side)
+static void customize_clear_player(uint32 player, bool do_head)
 {
     uint32 vr;
+    uint8 *cust_head = (uint8 *) (0x8ccf9ecc + 0x4b);
 
-    /* STAGE: Free and null out all the customization for a particular side. */
+    /* STAGE: Free and null out all the customization for a particular player. */
     for (vr = 0; vr < CUSTOMIZE_VR_COUNT ; vr++)
     {
-        if (colors[side][vr])
+        if (colors[player][vr])
         {
-            free(colors[side][vr]);
-            colors[side][vr] = NULL;
+            free(colors[player][vr]);
+            colors[player][vr] = NULL;
         }
     }
+
+    if (do_head)
+        cust_head[player] = 0x0;
 }
 
 static void* my_customize_handler(register_stack *stack, void *current_vector)
@@ -74,9 +79,14 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
     if ((vr >= 0 && vr < CUSTOMIZE_VR_COUNT) && (player == 0 || player == 1))
     {
         if (colors[player][vr])
-            memcpy((uint8 *) stack->r6, colors[player][vr], sizeof(customize_data));
+        {
+            uint8 *cust_head = (uint8 *) (0x8ccf9ecc + 0x4b);
 
-        customize_clear_player(player);
+            memcpy((uint8 *) stack->r6, colors[player][vr]->palette, sizeof(customize_data));
+            cust_head[player] = colors[player][vr]->head;
+        }
+
+        customize_clear_player(player, FALSE);
     }
 
     return current_vector;
@@ -112,12 +122,18 @@ static void maybe_load_customize(void)
         player = *control_port;
 
         /* STAGE: Make sure the colors for this player are cleared out. */
-        customize_clear_player(player); 
+        customize_clear_player(player, TRUE); 
 
         /* STAGE: Begin the mount scan for a VMS. */
         *data_port = VMU_PORT_A1;
         ipc = C_IPC_MOUNT_SCAN_1;
         file_number = 0;
+
+        /* STAGE: Let them know we're loading the data. */
+        if (side)
+            VIDEO_BORDER_COLOR = VIDEO_COLOR_RED;
+        else
+            VIDEO_BORDER_COLOR = VIDEO_COLOR_BLUE;
 
         vmu_mount(*data_port);
     }
@@ -140,12 +156,18 @@ static void maybe_load_customize(void)
         player = !(*control_port);
 
         /* STAGE: Make sure the colors for this player are cleared out. */
-        customize_clear_player(player); 
+        customize_clear_player(player, TRUE); 
 
         /* STAGE: Begin the mount scan for a VMS. */
         *data_port = VMU_PORT_B1;
         ipc = C_IPC_MOUNT_SCAN_1;
         file_number = 0;
+
+        /* STAGE: Let them know we're loading the data. */
+        if (side)
+            VIDEO_BORDER_COLOR = VIDEO_COLOR_RED;
+        else
+            VIDEO_BORDER_COLOR = VIDEO_COLOR_BLUE;
 
         vmu_mount(*data_port);
     }
@@ -177,6 +199,9 @@ static void maybe_load_customize(void)
             {
                 vmu_load_file(*data_port, filename, file_buffer, CUSTOMIZE_VMU_SIZE);
 
+                /* STAGE: And we're all done loading... */
+                VIDEO_BORDER_COLOR = VIDEO_COLOR_WHITE;
+
                 ipc = C_IPC_LOAD;
             }
             else
@@ -198,6 +223,9 @@ static void maybe_load_customize(void)
         {
             *data_port = VMU_PORT_NONE;
 
+            /* STAGE: And we're all done loading... */
+            VIDEO_BORDER_COLOR = VIDEO_COLOR_BLACK;
+
             ipc = C_IPC_START;
         }
     }
@@ -208,22 +236,28 @@ static void maybe_load_customize(void)
 
         vr = file_buffer[CUSTOMIZE_VMU_VR_IDX];
 
-        /* STAGE: If it is one of the VR types we're storing, copy the data over. */
-        if (vr < CUSTOMIZE_VR_COUNT && !colors[side][vr])
+        /* STAGE: If it is one of the VR types we're storing, copy the data
+            over. If we already stored one, skip it. */
+        if (vr < CUSTOMIZE_VR_COUNT && !colors[player][vr])
         {
-            customize_data temp;
+            customize_data temp_color;
+            uint8 temp_head;
 
             /* STAGE: This whole trick is to keep memory from becoming very
                 fragmented. With only 64k, it's good to keep this in mind. */
 
-            memcpy(&temp, file_buffer + CUSTOMIZE_VMU_COLOR_IDX + (side * CUSTOMIZE_PALETTE_SIZE), CUSTOMIZE_PALETTE_SIZE);
+            memcpy(temp_color.palette, file_buffer + CUSTOMIZE_VMU_COLOR_IDX + (side * CUSTOMIZE_PALETTE_SIZE), CUSTOMIZE_PALETTE_SIZE);
+            temp_head = file_buffer[CUSTOMIZE_VMU_HEAD_IDX];
 
             free(file_buffer);
             colors[player][vr] = malloc(sizeof(customize_data));
 
             /* STAGE: Make sure we actually obtained the memory for the customization. */
             if (colors[player][vr])
-                memcpy(colors[player][vr], &temp, sizeof(customize_data));
+            {
+                memcpy(colors[player][vr]->palette, temp_color.palette, CUSTOMIZE_PALETTE_SIZE);
+                colors[player][vr]->head = temp_head;
+            }
         }
         else
             free(file_buffer);
@@ -269,8 +303,8 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         /* STAGE: If we move back to the main menu, clear all the information. */
         if (*anim_mode_a == 0x2 && !(*anim_mode_b == 0x9 || *anim_mode_b == 0xa))
         {
-            customize_clear_player(0);
-            customize_clear_player(1);
+            customize_clear_player(0, TRUE);
+            customize_clear_player(1, TRUE);
         }
 
         /* STAGE: Make sure we don't catch next time around. */
