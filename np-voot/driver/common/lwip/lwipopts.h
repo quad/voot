@@ -135,8 +135,8 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* IP reassembly and segmentation. These are orthogonal even
  * if they both deal with IP fragments */
-#define IP_REASSEMBLY           1
-#define IP_FRAG                 1
+#define IP_REASSEMBLY           0
+#define IP_FRAG                 0
 
 /* ---------- ICMP options ---------- */
 #define ICMP_TTL                255

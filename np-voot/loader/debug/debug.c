@@ -1,6 +1,6 @@
 /*  debug.c
 
-    $Id: debug.c,v 1.5 2002/11/07 02:16:02 quad Exp $
+    $Id: debug.c,v 1.6 2002/12/18 00:18:48 quad Exp $
 
 DESCRIPTION
 
@@ -23,11 +23,19 @@ CHANGELOG
     Tue Jun 11 17:38:41 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Fixed a bug in the warez detection logic.
 
+    Tue Dec 17 16:17:38 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added variable driver addressing through data passed in the .desc
+        file.
+
 */
 
 #include <kos.h>
 #include <conio/conio.h>
+
+#include <stdlib.h>
+
 #include <boot.h>
+
 #include "gdrom.h"
 
 #include "debug.h"
@@ -63,6 +71,7 @@ void wait_for_user (void)
 int main (void)
 {
     FILE   *in_desc;
+    uint8  *driver_location;
 
     /* STAGE: If the START button is pressed, exit out of the loader completely. */
 
@@ -82,6 +91,10 @@ int main (void)
     conio_clear ();
     conio_gotoxy (0, 0);
 
+    /* STAGE: Set the default driver location. */
+
+    driver_location = (uint8 *) 0x8c250000;
+
     /* STAGE: Open the description file. Parse and display it. */
 
     in_desc = fopen ("/rd/driver.desc", "r");
@@ -89,6 +102,9 @@ int main (void)
     if (in_desc)
     {
         char    line[80];
+
+        if (fgets (line, sizeof (line), in_desc))
+            driver_location = (uint8 *) strtoul (line, (char **) NULL, 0);
 
         while (fgets (line, sizeof (line), in_desc))
         {
@@ -137,7 +153,7 @@ int main (void)
             conio_putstr (bad_disc_msg);
         else
         {
-            boot_loader ("/rd/driver.bin");
+            boot_loader ("/rd/driver.bin", driver_location);
 
             conio_putstr (broken_dist_msg);
         }

@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.1 2002/11/07 02:16:00 quad Exp $
+    $Id: boot.c,v 1.2 2002/12/18 00:18:48 quad Exp $
 
 DESCRIPTION
 
@@ -21,19 +21,24 @@ CHANGELOG
         Added the filename option and "merged" the two versions of the same
         bootloader.
 
+    Tue Dec 17 16:04:16 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Made the caller responsible for specifying the driver load location.
+        Added a paranoia if statement to the beginning of the boot_loader
+        process.
+
 */
 
 #include <kos.h>
 
 #include "boot.h"
 
-void boot_loader (const char *filename)
+void boot_loader (const char *filename, uint8 *stage_buffer)
 {
     int     in_driver;
     uint8  *driver_buffer;
-    uint8  *stage_buffer;
-    
-    stage_buffer = (uint8 *) 0x8c250000;
+
+    if (!filename || !stage_buffer)
+        return;
 
     /* STAGE: Open and read in the driver binary. */
 
