@@ -1,12 +1,12 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.14 2002/11/08 19:47:41 quad Exp $
+    $Id: rtl8139c.c,v 1.15 2002/11/12 02:00:50 quad Exp $
 
 DESCRIPTION
 
     Driver code for the RealTek 8139c network chipset.
 
-    This module should only be accessed the ethernet layer. (ether)
+    This module should only be accessed the lwIP interface layer. (bbaif)
 
     CREDIT: RealTek (http://www.realtek.com.tw/) has been great and released
     Engrish documentation about their card.
@@ -15,17 +15,14 @@ DESCRIPTION
     code and even better personal support in #dcdev@EFNet. Give the guy a
     damn hand.
 
-TODO
-
-    Remove rtl_rx_all function and replace with a completely interrupt
-    driven driver.
-
 */
 
 #include "vars.h"
 #include "util.h"
 #include "malloc.h"
 #include "asic.h"
+
+#include "lwip/net.h"
 
 #include "rtl8139c.h"
 
@@ -34,7 +31,7 @@ TODO
     handling. However, it's also explicitly accessed and released.
 */
 
-rtl_t   *rtl_irq_info;
+static rtl_t   *rtl_irq_info;
 
 /* NOTE: TX descriptor addresses. */
 
@@ -167,19 +164,12 @@ static void rtl_negotiate_media (void)
     NOTE: Packet reception logic!
 */
 
-static uint8* rtl_copy_frame (const uint8 *src, uint32 size)
+
+static uint8* rtl_copy_frame (uint8 *dest, const uint8 *src, uint32 size)
 {
-    uint8  *dest;
     uint8  *dma_buffer_end;
 
     dma_buffer_end = (uint8 *) RTL_DMA_BYTE + RX_BUFFER_LEN;
-
-    /* STAGE: Make sure we have a buffer large enough to hold the frame. */
-
-    dest = malloc (size);
-
-    if (!dest)
-        return NULL;
 
     /*
         STAGE: Copy straight from the DMA if possible, otherwise wrap around
@@ -207,79 +197,6 @@ static uint8* rtl_copy_frame (const uint8 *src, uint32 size)
     }
 
     return dest;
-}
-
-static void rtl_rx_all (rtl_t *rtl_info)
-{
-    /*
-        STAGE: Keep receiving frames until they're all gone...
-        
-        or we run into a frame still being read by the hardware...
-        
-        or of the network layer tells us to stop receiving.
-    */
-
-    while (!(RTL_IO_BYTE(RTL_CHIPCMD) & RTL_CMD_RX_BUF_EMPTY))
-    {
-        uint8  *frame_in;
-        uint32  rx_status;
-        uint32  rx_size;
-        uint32  frame_size;
-        uint8  *frame_data;
-
-        frame_in    = NULL;
-
-        /* STAGE: Get pointers to frame size and status. */
-
-        rx_status   = RTL_DMA_SHORT[rtl_info->cur_rx/2];
-        rx_size     = RTL_DMA_SHORT[rtl_info->cur_rx/2 + 1];
-
-        /*
-            STAGE: Check if the RTL is still copying frames - if so, try
-            again.
-            
-            NOTE: This should never happen because we're driven by
-            interrupts.
-         */
-
-        if (rx_size == RTL_DMA_FRAME_COPYING)
-            break;
-
-        frame_size = rx_size - 4;
-
-        /* STAGE: If the frame is done being transferred via DMA. */
-
-        if (rx_status & 1)
-        {
-            /* NOTE: + 4 to skip the header. */
-
-            frame_data = (uint8 *) ((((uint32) RTL_DMA_BYTE) + rtl_info->cur_rx) + 4);
-
-            frame_in = rtl_copy_frame (frame_data, frame_size);
-        }
-
-        /*
-            STAGE: Align the next frame on a 32-bit boundray...
-
-            NOTE: + 4 (Rx header)
-                  + 3 (so no collision)
-        */
-
-        rtl_info->cur_rx = (((rtl_info->cur_rx + rx_size + 4) + 3) & ~3) % RX_BUFFER_LEN;
-
-        /* STAGE: Reset both buffers to within our data scope. */
-
-        RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info->cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
-
-        /* STAGE: Don't release the frame if network layer instructs us too... */
-
-        if (frame_in && ether_handle_frame (frame_in, frame_size))
-            continue;
-
-        /* STAGE: free () the frame, otherwise. */
-
-        free (frame_in);
-    }
 }
 
 /*
@@ -339,14 +256,11 @@ static void* rtl_irq_handler (void *passer, register_stack *stack, void *current
     /* STAGE: Check if we received frames. */
 
     else if (intr & RTL_INT_RX_OK)
-    {
-        /* TODO: Notify the IP stack we have packets. Handling occurs semi-out of band. */
-    }
-    else if (intr & RTL_INT_TX_OK)
-    {
-        /* TODO: Notify the IP stack we can transmit. Handling occurs semi-out of band. */
-    }
-
+        net_handle_rx (rtl_irq_info->owner);
+        //ether_handle_rx (rtl_irq_info->owner);
+    else if (intr & RTL_INT_TX_OK);
+        net_handle_tx (rtl_irq_info->owner);
+        //ether_handle_rx (rtl_irq_info->owner);
 
     if (rtl_irq_info->old_rtl_handler)
         return rtl_irq_info->old_rtl_handler (passer, stack, my_exception_finish);
@@ -399,6 +313,10 @@ static bool rtl_int_configure (rtl_t *rtl_info)
 
         return FALSE;
     }
+
+    /* STAGE: Ensure the IRQ handler has a usable device structure. */
+
+    rtl_irq_info = rtl_info;
 
     /* STAGE: Clear the interrupt status. */
 
@@ -515,7 +433,9 @@ static bool rtl_init_real (rtl_t *rtl_info)
 
     rtl_cache_mac (rtl_info);
 
-    rtl_info->cur_rx = rtl_info->cur_tx = 0;
+    rtl_info->cur_rx = rtl_info->cur_rx_index = 0;
+    rtl_info->cur_tx = rtl_info->cur_tx_index = 0;
+    rtl_info->link_stable = FALSE;
 
     return TRUE;
 }
@@ -535,13 +455,113 @@ bool rtl_init (rtl_t *rtl_info)
     return rtl_info->inited;
 }
 
+int32 rtl_rx_status (rtl_t *rtl_info)
+{
+    if (!(rtl_info->inited))
+        return 0;
+
+    /* STAGE: Check if we have any data in the RX ring. */
+
+    if (!(RTL_IO_BYTE(RTL_CHIPCMD) & RTL_CMD_RX_BUF_EMPTY))
+    {
+        uint32  rx_status;
+        uint32  rx_size;
+
+        rx_status   = RTL_DMA_SHORT[rtl_info->cur_rx/2];
+        rx_size     = RTL_DMA_SHORT[rtl_info->cur_rx/2 + 1];
+
+        if (rx_size == RTL_DMA_FRAME_COPYING)
+            return -1;
+        else
+            return rx_size - 4;     /* NOTE: -4 skips the rx_status + rx_size header. */
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+uint32 rtl_rx (rtl_t *rtl_info, uint8 *data, uint32 data_size)
+{
+    int32  frame_size;
+
+    if (!(rtl_info->inited))
+        return 0;
+
+    frame_size = rtl_rx_status (rtl_info);
+
+    if (frame_size > 0)
+    {
+        uint32  rx_status;
+        uint8  *frame_data;
+
+        rx_status = RTL_DMA_SHORT[rtl_info->cur_rx/2];
+
+        /* NOTE: + 4 to skip the header. */
+
+        frame_data = (uint8 *) ((uint32) RTL_DMA_BYTE + ((rtl_info->cur_rx + 4 + rtl_info->cur_rx_index) % RX_BUFFER_LEN));
+
+        /* STAGE: Ensure we don't have an overside data_size. */
+
+        if (data_size > (frame_size - rtl_info->cur_rx_index))
+            data_size = frame_size - rtl_info->cur_rx_index;
+
+        /*
+            STAGE: Receive the frame, if it's error free and we have space
+            for it.
+        */
+
+        if (rx_status & RTL_RX_STATUS_OK && data && data_size)
+        {
+            rtl_copy_frame (data, frame_data, data_size);
+
+            rtl_info->cur_rx_index += data_size;
+        }
+        else
+        {
+            /*
+                STAGE: Since the packet is invalid (or we don't have a valid
+                place to put it) we drop it on the floor.
+            */
+
+            rtl_info->cur_rx_index += frame_size;
+            data_size = 0;
+        }
+
+        /* STAGE: Check if we're done receiving the frame, if so finish up. */
+
+        if (rtl_info->cur_rx_index >= frame_size)
+        {
+            /*
+                STAGE: Align the next frame on a 32-bit boundray...
+
+                NOTE: + 8 (Rx header and CRC)
+                      + 3 (so no collision)
+            */
+
+            rtl_info->cur_rx = (((rtl_info->cur_rx + frame_size + 8) + 3) & ~3) % RX_BUFFER_LEN;
+            rtl_info->cur_rx_index = 0;
+
+            /* STAGE: Reset both buffers to within our data scope. */
+
+            RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info->cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
+        }
+
+        return data_size;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 bool rtl_tx_write (rtl_t *rtl_info, const uint8 *data, uint32 data_length)
 {
     uint32  maybe_frame_length;
 
     /* STAGE: Ensure the driver is initialized. */
 
-    if (!rtl_info->inited)
+    if (!(rtl_info->inited))
         return FALSE;
 
     /* STAGE: Limit the total frame to a certain size. */
@@ -609,7 +629,7 @@ bool rtl_tx_abort (rtl_t *rtl_info)
         initialized, I'll only check if we have data in the TX descriptor.
     */
 
-    if (!rtl_info->cur_tx_index)
+    if (!(rtl_info->cur_tx_index))
         return FALSE;
 
     /*

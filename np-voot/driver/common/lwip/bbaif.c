@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.2 2002/11/08 19:47:49 quad Exp $
+    $Id: bbaif.c,v 1.3 2002/11/12 02:00:55 quad Exp $
 
 DESCRIPTION
 
@@ -14,12 +14,17 @@ DESCRIPTION
 
 TODO
 
-    Move the rtl_info structure from statically defined inside rtl8139c.o
-    into the device information structure.
+    Implement an etharp timer.
+
+    Add in the complete statistics package.
+
+    Determine why the netstack goes into constant reset mode after sustained
+    ping-flooding.
 
 */
 
 #include <vars.h>
+#include <rtl8139c.h>
 
 #include <lwip/opt.h>
 #include <lwip/def.h>
@@ -29,52 +34,56 @@ TODO
 
 #include <netif/etharp.h>
 
-#include <rtl8139c.h>
+#include "bbaif.h"
 
 #define IFNAME0 'r'
 #define IFNAME1 't'
 
-static const struct eth_addr ethbroadcast = {{0xff,0xff,0xff,0xff,0xff,0xff}};
-
-static void low_level_init (struct netif *netif)
+static err_t low_level_init (struct netif *netif)
 {
-    rtl_init (netif->state);
-}
+    rtl_t  *devif;
 
-static err_t low_level_output (rtl_t *bbaif, struct pbuf *p)
-{
-    struct pbuf *q;
+    /* STAGE: Allocate and initialize the device interface structure. */
 
-    for(q = p; q != NULL; q = q->next)
-        rtl_tx_write (bbaif, q->payload, q->len);
+    devif = mem_malloc (sizeof (rtl_t));
 
-    rtl_tx_final (bbaif);
+    if (!devif)
+        return ERR_MEM;
   
-#ifdef LINK_STATS
-    stats.link.xmit++;
-#endif /* LINK_STATS */      
+    devif->mac      = &(netif->hwaddr[0]);
+    devif->owner    = netif;
 
-    return ERR_OK;
+    /* STAGE: Update the network interface structure. */
+    
+    netif->state    = devif;
+
+    if (rtl_init (netif->state))
+        return ERR_OK;
+    else
+        return ERR_BUF;
 }
 
-static struct pbuf* low_level_input (rtl_t *bbaif)
+static struct pbuf* low_level_input (rtl_t *devif)
 {
     struct pbuf    *p;
     struct pbuf    *q;
     uint16          len;
 
     /*
-        TODO: Obtain the size of the packet and put it into the "len"
+        STAGE: Obtain the size of the packet and put it into the "len"
         variable.
      */
 
-    len = NULL;
+    len = rtl_rx_status (devif);
 
-    /* We allocate a pbuf chain of pbufs from the pool. */
+    if (len <= 0)
+        return NULL;
+
+    /* STAGE: We allocate a pbuf chain of pbufs from the pool. */
 
     p = pbuf_alloc (PBUF_LINK, len, PBUF_POOL);
-  
-    if(p != NULL)
+
+    if (p)
     {
         /*
             STAGE: We iterate over the pbuf chain until we have read the
@@ -83,15 +92,20 @@ static struct pbuf* low_level_input (rtl_t *bbaif)
 
         for(q = p; q != NULL; q = q->next)
         {
-            /*
-                STAGE: Read enough bytes to fill this pbuf in the chain. The
-                avaliable data in the pbuf is given by the q->len variable.
-            */
+            uint32  recv;
 
-            read data into (q->payload, q->len);
+            recv  = rtl_rx (devif, q->payload, q->len);
+
+            /* STAGE: If the packet was corrupt, abort. */
+
+            if (!recv)
+            {
+                pbuf_free (p);
+                p = NULL;
+
+                break;
+            }
         }
-
-        acknowledge that packet has been read();
 
 #ifdef LINK_STATS
         stats.link.recv++;
@@ -99,7 +113,12 @@ static struct pbuf* low_level_input (rtl_t *bbaif)
     }
     else
     {
-        drop packet ();
+        /* STAGE: Drop the frame, no memory to take it. */
+
+        rtl_rx (devif, NULL, 0);
+
+        pbuf_free (p);
+        p = NULL;
 
 #ifdef LINK_STATS
         stats.link.memerr++;
@@ -110,11 +129,41 @@ static struct pbuf* low_level_input (rtl_t *bbaif)
     return p;  
 }
 
-static void arp_timer (void *arg)
+static err_t low_level_output (struct netif *netif, struct pbuf *p)
 {
-    etharp_tmr ();
+    rtl_t          *devif;
+    struct pbuf    *q;
 
-    sys_timeout (ARP_TMR_INTERVAL, (sys_timeout_handler) arp_timer, NULL);
+    devif = netif->state;
+
+    /* STAGE: Queue up all the data by iterating through the pbuf. */
+
+    for(q = p; q != NULL; q = q->next)
+    {
+        if (!rtl_tx_write (devif, q->payload, q->len))
+        {
+            /* STAGE: Something went wrong queuing for TX. */
+
+            rtl_tx_abort (devif);
+
+            return ERR_BUF;
+        }
+    }
+
+    /* STAGE: Now all the data is queued, perform the transmission. */
+
+    if (!rtl_tx_final (devif))
+    {
+        rtl_tx_abort (devif);
+
+        return ERR_BUF;
+    }
+  
+#ifdef LINK_STATS
+    stats.link.xmit++;
+#endif /* LINK_STATS */      
+
+    return ERR_OK;
 }
 
 err_t bbaif_output (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
@@ -122,7 +171,14 @@ err_t bbaif_output (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
     p = etharp_output (netif, ipaddr, p);
 
     if (p)
-        return low_level_output (netif->state, p);
+    {
+        low_level_output (netif, p);
+
+        /* STAGE: Clean any ARP left-overs. Needed in this lwIP CVS. */
+
+        etharp_output_sent (p);
+        p = NULL;
+    }
 
     return ERR_OK;
 }
@@ -134,14 +190,14 @@ void bbaif_input (struct netif *netif)
     struct pbuf    *p;
     struct pbuf    *q;
 
-    q = NULL;
     devif = netif->state;
+    q = NULL;
 
     /*
         STAGE: Attempt to receive an actual packet, if we get one process
         it.
     */
-  
+
     p = low_level_input (devif);
 
     if (p)
@@ -151,7 +207,7 @@ void bbaif_input (struct netif *netif)
 #endif /* LINK_STATS */
 
         ethhdr = p->payload;
-    
+
         switch (htons (ethhdr->type))
         {
             case ETHTYPE_IP :
@@ -186,7 +242,7 @@ void bbaif_input (struct netif *netif)
 
         if (q)
         {
-            low_level_output (devif, q);
+            low_level_output (netif, q);
             pbuf_free (q);
         }
     }
@@ -194,26 +250,10 @@ void bbaif_input (struct netif *netif)
 
 void bbaif_init (struct netif *netif)
 {
-    rtl_t  *devif;
-
-    /* STAGE: Allocate the device interface structure. */
-
-    devif = mem_malloc (sizeof (rtl_t));
-
-    if (!devif)
-        return;
-
-    /* STAGE: Initialize the network interface structure. */
-    
-    netif->state = devif;
-    netif->name[0] = IFNAME0;
-    netif->name[1] = IFNAME1;
-    netif->output = bbaif_output;
-    netif->linkoutput = low_level_ouput;
-
-    /* STAGE: Allocate and initialize the device interface structure. */
-  
-    devif->mac = &(netif->hwaddr[0]);
+    netif->name[0]      = IFNAME0;
+    netif->name[1]      = IFNAME1;
+    netif->output       = bbaif_output;
+    netif->linkoutput   = low_level_output;
 
     /* STAGE: Initialize the actual network harware. */
   
@@ -222,8 +262,4 @@ void bbaif_init (struct netif *netif)
     /* STAGE: Initialize the Ethernet/ARP layer. */
 
     etharp_init ();
-
-    /* TODO: Determine how the ARP logic works, and get it working right. */
-
-    sys_timeout (ARP_TMR_INTERVAL, (sys_timeout_handler) arp_timer, NULL);
 }

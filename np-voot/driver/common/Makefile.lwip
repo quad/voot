@@ -1,6 +1,6 @@
 # Makefile for the lwip library
 #
-# $Id: Makefile.lwip,v 1.3 2002/11/08 19:47:41 quad Exp $
+# $Id: Makefile.lwip,v 1.4 2002/11/12 02:00:49 quad Exp $
 
 LWIP_CORE_PATH = ./lwip
 LWIP_PATH = $(LWIP_CORE_PATH)/lwip/src
@@ -9,7 +9,7 @@ DRIVER_TARGET = liblwip
 DRIVER_INCS = -I./lwip -I$(LWIP_PATH)/include -I$(LWIP_PATH)/include/ipv4 -I./
 
 # lwIP core modules
-DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, inet.o memp.o netif.o pbuf.o stats.o sys.o udp.o)
+DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, inet.o memp.o netif.o pbuf.o stats.o sys.o udp.o dhcp.o)
 
 # lwIP TCP modules
 DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, tcp.o tcp_in.o tcp_out.o)
@@ -17,8 +17,11 @@ DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, tcp.o tcp_in.o tcp_out.o)
 # lwIP IPv4 modules
 DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/ipv4/, ip.o icmp.o ip_addr.o)
 
+# lwIP ethernet modules
+DRIVER_OBJS += $(addprefix $(LWIP_PATH)/netif/, etharp.o)
+
 # np-voot lwIP interface modules
-DRIVER_OBJS += $(addprefix $(LWIP_CORE_PATH)/, bbaif.o mem.o)
+DRIVER_OBJS += $(addprefix $(LWIP_CORE_PATH)/, bbaif.o mem.o net.o)
 
 all: $(DRIVER_TARGET).a
 

@@ -1,6 +1,6 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.6 2002/07/09 10:19:23 quad Exp $
+    $Id: ether.c,v 1.7 2002/11/12 02:00:49 quad Exp $
 
 DESCRIPTION
 
@@ -24,7 +24,12 @@ TODO
 #include "malloc.h"
 #include "net.h"
 
+#include "assert.h"
+
 #include "ether.h"
+
+static rtl_t   *rtl_info;
+static uint8    mac[ETHER_MAC_SIZE];
 
 /* NOTE: Miscellaneous utility functions. No logic occurs within these. */
 
@@ -32,21 +37,21 @@ static bool ether_tx_write (const uint8 *data, uint32 data_size)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx_write (data, data_size);
+    return rtl_tx_write (rtl_info, data, data_size);
 }
 
 static bool ether_tx_final (void)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx_final ();
+    return rtl_tx_final (rtl_info);
 }
 
 static bool ether_tx_abort (void)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx_abort ();
+    return rtl_tx_abort (rtl_info);
 }
 
 /*
@@ -109,7 +114,14 @@ bool ether_init (void)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_init ();
+    rtl_info = malloc (sizeof (rtl_t));
+
+    if (!rtl_info)
+        return FALSE; 
+
+    rtl_info->mac = mac;
+
+    return rtl_init (rtl_info);
 }
 
 
@@ -147,7 +159,7 @@ uint8* ether_mac (void)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_mac ();    
+    return rtl_info->mac;
 }
 
 bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
@@ -177,7 +189,39 @@ bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
     }
 }
 
-void ether_handle_tx (void)
+void ether_handle_rx (void *owner)
+{
+    uint32  frame_size;
+
+    frame_size = rtl_rx_status (rtl_info);
+
+    if (frame_size > 0)
+    {
+        uint8  *frame_in;
+
+        /* STAGE: Try to allocate space for the frame. */
+
+        frame_in = malloc (frame_size);
+
+        if (frame_in)
+        {
+            rtl_rx (rtl_info, frame_in, frame_size);
+
+            if (!(ether_handle_frame (frame_in, frame_size)))
+                free (frame_in);
+        }
+        else
+        {
+            /* STAGE: Drop the frame. */
+
+            rtl_rx (rtl_info, NULL, 0);
+
+            assert (0);
+        }
+    }
+}
+
+void ether_handle_tx (void *owner)
 {
     /*
         TODO: Dummy function called from the hardware layer. It's notifying
@@ -187,7 +231,7 @@ void ether_handle_tx (void)
 
 void ether_reverse_frame (ether_info_packet_t *frame)
 {
-    char            temp_mac[ETHER_MAC_SIZE];
+    char    temp_mac[ETHER_MAC_SIZE];
 
     /* STAGE: Ether - point to our origiantor. */
 
