@@ -29,6 +29,7 @@ TODO
 static char *stage_buffer = (char *) 0x8C004000;
 static char *first_load_buffer = (char *) FIRST_LOAD_POINT;
 static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
+static int warez_enable = 1;
 
 static char startup_msg[] = {
     "Netplay VOOT Extensions (np-voot-slave) - BETA\n"
@@ -38,14 +39,22 @@ static char startup_msg[] = {
     "This program is distributed in the hope that it\n"
     "will be useful, but WITHOUT ANY WARRANTY; without\n"
     "even the implied warranty of MERCHANTABILITY or\n"
-    "FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
+    "FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n"
     "General Public License for more details.\n"
     "\n"
     "(loader built at " __TIME__" on " __DATE__ ")"
 };
 
+static char bad_disc_msg[] = {
+    "Unable to access the inserted disc.\n"
+    "\n"
+    "This is due either to the disc being unreadable or\n"
+    "because the disc is not a Virtual-On GD-ROM."
+};
+
 #define COLOR_FIRST_WAIT    0, 0, 0
 #define COLOR_BOOT_INIT     0, 0, 100
+#define COLOR_ERROR         100, 0, 0
 
 static void boot_loader(unsigned char *bootstrap_name)
 {
@@ -64,13 +73,15 @@ static void boot_loader(unsigned char *bootstrap_name)
     
     if (!fd)
     {
-        vc_puts("We are not familiar with the media inserted.\n");
+        vc_clear(COLOR_ERROR);
+
+        vc_puts(bad_disc_msg);
+
         return;
     }
 
     /* Load the actual bootstrap into memory */
     bin_size = iso_total(fd);
-    /* vc_printf("Loading %s (%ub)...", bootstrap_name, bin_size); */
     vc_puts("Loading ...");
     iso_read(fd, first_load_buffer, bin_size);
     iso_close(fd);
@@ -83,7 +94,7 @@ static void boot_loader(unsigned char *bootstrap_name)
 
     vc_puts("Go!");
     *first_load_size = bin_size;
-    (*(void (*)()) stage_buffer) (do_warez);    /* If you don't screw with R4. */
+    (*(void (*)()) stage_buffer) (do_warez);
 }
 
 void dc_main(void)
@@ -98,15 +109,19 @@ void dc_main(void)
     /* STAGE: Display our welcome and copyright text. */ 
     vc_puts(startup_msg);
     vc_puts(stage_two_build_time);
-    vc_puts("");
 
-    while (1)
+    for (;;)
     {
-        vc_puts("Please insert a Virtual-On GD-ROM.");
+        vc_puts("\nPlease insert a Virtual-On GD-ROM.");
         wait_for_gdrom();
 
-        boot_loader(FIRST_LOAD_FILE);
+        if (!warez_enable && (gdrom_disc_type() != GD_TYPE_GDROM))
+        {
+            vc_clear(COLOR_ERROR);
 
-        vc_puts("An error occured accessing your GD-ROM.");
+            vc_puts("The media inserted is not a GD-ROM.");
+        }
+        else
+            boot_loader(FIRST_LOAD_FILE);
     }
 }
