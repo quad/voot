@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.15 2002/12/17 11:31:57 quad Exp $
+# $Id: Makefile,v 1.16 2003/03/07 20:43:04 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 DRIVER_CLEAN = lwip.a-clean
@@ -25,7 +25,7 @@ DRIVER_OBJS += rtl8139c.o dumpio.o
 DRIVER_OBJS += gamedata.o
 
 # VOOT internal accessors.
-DRIVER_OBJS += malloc.o controller.o vmu.o timer.o
+DRIVER_OBJS += malloc.o controller.o vmu.o timer.o scixb_emu.o
 
 # VOOT animation/render cycle patch.
 DRIVER_OBJS += anim.o
