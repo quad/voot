@@ -1,0 +1,60 @@
+/*  exception.c
+
+    Handle incoming exceptions in readable C-code.
+*/
+
+#include "vars.h"
+#include "system.h"
+#include "serial.h"
+#include "util.h"
+#include "exception.h"
+#include "exception-lowlevel.h"
+
+/* The VBR Buffer - we better find out how large VO's actually is */
+uint8 vbr_buffer[VO_VBR_SIZE];
+
+#define UPSCALE_5_STYLE(bits)   (((bits) << 3) | ((bits) >> 2))
+#define UPSCALE_6_STYLE(bits)   (((bits) << 2) | ((bits) >> 4))
+
+#define RED_565_TO_INT(color)   UPSCALE_5_STYLE((color) & 0x1F)
+#define GREEN_565_TO_INT(color) UPSCALE_6_STYLE(((color) >> 5) & 0x3F)
+#define BLUE_565_TO_INT(color)  UPSCALE_5_STYLE(((color) >> 11) & 0x1F)
+
+
+void* exception_handler(register_stack *stack)
+{
+    static uint32 ubc_count = 0;
+    static bool inited = 0;
+    
+    ubc_count++;
+
+    if (!inited && ubc_count >= 60)
+    {
+        ubc_serial_init(57600);
+
+        ubc_serial_write_str("[UBC] Screenshot dumper enabled. Press any key to dump.\r\n");
+
+        inited = 1;
+    }
+    else if(!(ubc_count % 60) && (ubc_serial_read() >= 0))   /* ... every step I take ... */
+    {
+        uint16 *vram_start;
+
+        ubc_serial_flush();
+
+        /* Flush the input buffer */
+        ubc_serial_write_str("[UBC] Flushing serial input... ");
+        while(ubc_serial_read() >= 0);
+        ubc_serial_write_str("done!\r\n");
+
+        vram_start = (uint16 *) (0xa5000000 + *((volatile unsigned int *)0xa05f8050));    /* Buffer start ? */
+
+        ubc_serial_write_str("[UBC] Dumping NOW #");
+
+        ubc_serial_write_buffer((uint8 *) vram_start, 640*480*2);
+
+        ubc_serial_write_str("#\r\b[UBC] Done with dump.\r\n");
+    }    
+
+    return my_exception_finish;
+}
