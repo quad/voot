@@ -14,7 +14,6 @@ DESCRIPTION
 #include "voot.h"
 #include "gamedata.h"
 #include "customize.h"
-#include "controller.h"
 
 #include "heartbeat.h"
 
@@ -39,7 +38,10 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
     gamedata_enable_debug();
 
     /* STAGE: See if we need to load customization information. */
-    if (*anim_mode_a == 0x0 && *anim_mode_b == 0x2)
+    if ((*anim_mode_a == 0x0 && *anim_mode_b == 0x2) ||     /* Training Mode select. */
+        (*anim_mode_a == 0x0 && *anim_mode_b == 0x5) ||     /* Single Player 3d select. */
+        (*anim_mode_a == 0x2 && *anim_mode_b == 0x9) ||     /* Single Player quick select. */
+        (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
         maybe_load_customize();
 
     return current_vector;

@@ -41,6 +41,7 @@ typedef struct
 
 void customize_init(void);
 bool customize_reinit(void);
+void customize_clear_player(uint32 side);
 void* customize_handler(register_stack *stack, void *current_vector);
 void maybe_load_customize();
 

@@ -165,6 +165,7 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Handle ASIC exceptions. */
         init_asic_handler();
 
+#ifdef NETWORK_SUPPORT
         /* STAGE: Initialize the BBA. */
         if (pci_detect())
         {
@@ -173,6 +174,7 @@ void* exception_handler(register_stack *stack)
                 rtl_init();
             }
         }
+#endif
 
         /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();

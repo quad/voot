@@ -23,7 +23,6 @@ TODO
 #include "customize.h"
 
 static const uint8 osd_func_key[] = { 0xe6, 0x2f, 0xd6, 0x2f, 0xc6, 0x2f, 0xb6, 0x2f, 0xa6, 0x2f, 0x96, 0x2f, 0x86, 0x2f, 0xfb, 0xff, 0x22, 0x4f, 0xfc, 0x7f, 0x43, 0x6d, 0x00, 0xe4, 0x43, 0x6b };
-/* e6 2f 53 6e d6 2f ef 63 c6 2f 38 23 */
 static const uint8 custom_func_key[] = { 0xe6, 0x2f, 0x53, 0x6e, 0xd6, 0x2f, 0xef, 0x63, 0xc6, 0x2f, 0x38, 0x23 };
 static char module_save[20];
 static uint32 custom_func;
@@ -36,6 +35,7 @@ void customize_init(void)
 
     /* STAGE: Break on the secondary animation vector. */
     *UBC_R_BARA = 0x8ccf022a;
+    //*UBC_R_BARA = 0x8c30cd1e;
     *UBC_R_BAMRA = UBC_BAMR_NOASID;
     *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_OPERAND;
     //*UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
@@ -50,12 +50,23 @@ void customize_init(void)
     add_exception_handler(&new);
 }
 
+void customize_clear_player(uint32 side)
+{
+    uint32 vr;
+
+    for (vr = 0; vr < 13 ; vr++)
+    {
+        free(colors[side][vr]);
+        colors[side][vr] = NULL;
+    }
+}
+
 static void* my_customize_handler(register_stack *stack, void *current_vector)
 {
-    voot_debug("customize (VR %x, PLAYER %u, CUSTOMIZE %x, CMAP %x)", stack->r4, stack->r5, stack->r6, stack->r7);
-
     if (colors[stack->r5][stack->r4])
-        stack->r6 = (uint32) colors[stack->r5][stack->r4]; 
+        memcpy((uint8 *) stack->r6, colors[stack->r5][stack->r4], sizeof(customize_data));
+
+    customize_clear_player(stack->r5);
 
     return current_vector;
 }
@@ -69,21 +80,14 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
     uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
     uint16 *anim_mode_b = (uint16 *) 0x8ccf022a;
 
-/*
-    8c389468
-    customize (VR %u, PLR %u, CUST %x, CMAP %x)
-*/
-
     /* STAGE: This code occurs are every animation changeover. (game code latch) */
-    if ((save_mode_a != *anim_mode_a || save_mode_b != *anim_mode_b) && spc() > 0x8c270000)
+    if ((save_mode_a != *anim_mode_a || save_mode_b != *anim_mode_b))
     {
         /* STAGE: Detect module changeovers and search for the customization function. */
         if (memcmp((uint8 *) custom_func, custom_func_key, sizeof(custom_func_key)) && strcmp(module_save, (const char *) VOOT_MODULE_NAME))
         {
             strncpy(module_save, (const char *) VOOT_MODULE_NAME, sizeof(module_save));
             custom_func = (uint32) search_sysmem_at(custom_func_key, sizeof(custom_func_key), GAME_MEM_START, SYS_MEM_END);
-
-            voot_debug("custom_func = %x", custom_func);
 
             /* STAGE: Place the breakpoint on the customization function, if we found it. */
             if (custom_func)
@@ -96,6 +100,13 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
                 *UBC_R_BBRB = 0;
 
             ubc_wait();
+        }
+
+        /* STAGE: If we move back to the main menu, clear all the information. */
+        if (*anim_mode_a == 0x2 && !(*anim_mode_b == 0x9 || *anim_mode_b == 0xa))
+        {
+            customize_clear_player(0);
+            customize_clear_player(1);
         }
 
         /* STAGE: Make sure we don't catch next time around. */
@@ -158,8 +169,10 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
 void maybe_load_customize()
 {
     static customize_ipc ipc = C_IPC_START;
-    static uint32 player = 0;
-    static uint32 side = 0;
+
+    static uint8 player = 0;
+    static uint8 side = 0;
+
     vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
     static uint8 file_number = 0;
     static uint8 *file_buffer = NULL;
@@ -169,27 +182,54 @@ void maybe_load_customize()
     /* STAGE: [Step 1-P1] First player requests customization load. */
     if ((check_controller_press(CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y) && !ipc)
     {
-        /* STAGE: Clear out the entire customization structure. */
-        for (side = 0; side < 2; side++)
-        {
-            for (player = 0; player < 13; player++)
-            {
-                free(colors[side][player]);
-                colors[side][player] = NULL;
-            }
-        }
-        
-        /* STAGE: Right here is where we would perform the huge logic check
-            to find out which VR (1 or 2) the owner of this controller is. 
-            However, since this is debugging code, we'll assume it's player
-            1. */
+        uint8 *control_port = (uint8 *) 0x8ccf9f1a;
+        uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
+        uint8 *game_side = (uint8 *) 0x8ccf96f8;
 
-        player = side = 0;
+        /* STAGE: If the control port is 0 (A), our side is equal to the DNA/RNA select.
+                  If the control port is 1 (B), our side is equal to the reverse of the DNA/RNA select.
+                  Our player is the controlling port.
+        */
+                 
+        if (*control_port)
+            side = !(*game_side);
+        else
+            side = *game_side;
+        player = *control_port;
 
-        voot_debug("Beginning search for customization data.");
+        /* STAGE: Make sure the colors for this player are cleared out. */
+        customize_clear_player(player); 
 
         /* STAGE: Begin the mount scan for a VMS. */
         *data_port = VMU_PORT_A1;
+        ipc = C_IPC_MOUNT_SCAN_1;
+        file_number = 0;
+
+        vmu_mount(*data_port);
+    }
+    /* STAGE: [Step 1-P2] Second player requests customization load. */
+    else if ((check_controller_press(CONTROLLER_PORT_B0) & CONTROLLER_MASK_BUTTON_Y) && !ipc)
+    {
+        uint8 *control_port = (uint8 *) 0x8ccf9f1a;
+        uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
+        uint8 *game_side = (uint8 *) 0x8ccf96f8;
+
+        /* STAGE: If the control port is 0 (A), our side is equal to the reverse of the DNA/RNA select.
+                  If the control port is 1 (B), our side is equal to DNA/RNA select.
+                  Our player is the controlling port.
+        */
+                 
+        if (!(*control_port))
+            side = !(*game_side);
+        else
+            side = *game_side;
+        player = !(*control_port);
+
+        /* STAGE: Make sure the colors for this player are cleared out. */
+        customize_clear_player(player); 
+
+        /* STAGE: Begin the mount scan for a VMS. */
+        *data_port = VMU_PORT_B1;
         ipc = C_IPC_MOUNT_SCAN_1;
         file_number = 0;
 
@@ -215,8 +255,6 @@ void maybe_load_customize()
         /* STAGE: We found the file! Now lets start accessing it... */
         if (!retval)
         {
-            voot_debug("Found '%s' on port %u and loading.", filename, *data_port);
-
             /* STAGE: Give us a 10 block temporary file buffer. */
             file_buffer = malloc(512 * 10);
 
@@ -236,8 +274,6 @@ void maybe_load_customize()
         /* STAGE: Didn't find a customization file on this VMU, so check the next port. */
         else if (ipc == C_IPC_MOUNT_SCAN_1)
         {
-            voot_debug("No customization on port %u, trying next port...", *data_port);
-
             (*data_port)++;
             file_number = 0;
 
@@ -248,8 +284,6 @@ void maybe_load_customize()
         /* STAGE: Apparently it wasn't found on either port. Abort. */
         else if (ipc == C_IPC_MOUNT_SCAN_2)
         {
-            voot_debug("No customization data on port %u, giving up.", *data_port);
-
             *data_port = VMU_PORT_NONE;
 
             ipc = C_IPC_START;
@@ -260,68 +294,7 @@ void maybe_load_customize()
     {
         voot_vr_id vr;
 
-        voot_debug("Customization data loaded. [%x]", file_buffer[0]);
-
         vr = file_buffer[0x2A0];
-
-        switch (vr)
-        {
-            case VR_DORDRAY:
-                voot_debug("VR: DORDRAY");
-                break;
-
-            case VR_BALSERIES:
-                voot_debug("VR: BALSERIES");
-                break;
-
-            case VR_CYPHER:
-                voot_debug("VR: CYPHER");
-                break;
-
-            case VR_GRYSVOK:
-                voot_debug("VR: GRYSVOK");
-                break;
-
-            case VR_APHARMDB:
-                voot_debug("VR: APHARMDB");
-                break;
-
-            case VR_APHARMDB_B:
-                voot_debug("VR: APHARMDB_B");
-                break;
-
-            case VR_RAIDEN:
-                voot_debug("VR: RAIDEN");
-                break;
-
-            case VR_TEMJIN:
-                voot_debug("VR: TEMJIN");
-                break;
-
-            case VR_FEIYEN:
-                voot_debug("VR: FEIYEN");
-                break;
-
-            case VR_ANGELAN:
-                voot_debug("VR: ANGELAN");
-                break;
-
-            case VR_SPECINEFF:
-                voot_debug("VR: SPECINEFF");
-                break;
-
-            case VR_APHARMDS:
-                voot_debug("VR: APHARMDS");
-                break;
-
-            case VR_AJIM:
-                voot_debug("VR: AJIM");
-                break;
-
-            default:
-                voot_debug("VR: Unknown [%x]", vr);
-                break;
-        }
 
         /* STAGE: If it is one of the VR types we're storing, copy the data over. */
         if (vr < 13 && !colors[side][vr])
@@ -334,11 +307,11 @@ void maybe_load_customize()
             memcpy(&temp, file_buffer + 0x2b0 + (side * 0x200), sizeof(customize_data));
 
             free(file_buffer);
-            colors[side][vr] = malloc(sizeof(customize_data));
+            colors[player][vr] = malloc(sizeof(customize_data));
 
             /* STAGE: Make sure we actually obtained the memory for the customization. */
-            if (colors[side][vr])
-                memcpy(colors[side][vr], &temp, sizeof(customize_data));
+            if (colors[player][vr])
+                memcpy(colors[player][vr], &temp, sizeof(customize_data));
         }
         else
             free(file_buffer);
