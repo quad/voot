@@ -112,9 +112,9 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
-    temp_ipaddr = ip->source;
-    ip->source = ip->dest;
-    ip->dest = temp_ipaddr;
+    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
+    memcpy(&ip->source, &ip->dest, sizeof(uint32));
+    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
@@ -175,9 +175,9 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
-    temp_ipaddr = ip->source;
-    ip->source = ip->dest;
-    ip->dest = temp_ipaddr;
+    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
+    memcpy(&ip->source, &ip->dest, sizeof(uint32));
+    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, ip_header_size);
@@ -227,9 +227,9 @@ static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_lengt
 
         ip = (ip_header_t *) frame->data;
         memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
-        control.source_ip = ip->dest;
-        control.dest_ip = ip->source;
-        control.port = ntohs(udp->dest);
+        memcpy(&control.source_ip, &ip->dest, sizeof(uint32));
+        memcpy(&control.dest_ip, &ip->source, sizeof(uint32));
+        control.port = udp->src;
 
         biudp_init(&control);
     }
@@ -292,8 +292,8 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     udp->checksum = 0;
 
     /* STAGE: Construct the UDP psuedo-header. */
-    udp_top.source_ip = ip->source;
-    udp_top.dest_ip = ip->dest;
+    memcpy(&udp_top.source_ip, &ip->source, sizeof(uint32));
+    memcpy(&udp_top.dest_ip, &ip->dest, sizeof(uint32));
     udp_top.zero = 0;
     udp_top.protocol = ip->protocol;
     udp_top.length = udp->length;

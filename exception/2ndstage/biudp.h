@@ -14,6 +14,7 @@ typedef struct
 
 void biudp_init(const biudp_control_t *in_control);
 void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length);
+void biudp_write(const uint8 in);
 void biudp_write_str(const uint8 *in_string);
 
 /* SERIAL DEFS

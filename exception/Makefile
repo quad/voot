@@ -34,8 +34,10 @@ $(BIN).bin: $(BIN).elf
 $(BIN).elf: $(OBJS)
 	$(CC) -Wl,-Ttext,0x8C010000 -nostartfiles -o $(BIN).elf $(OBJS) $(LIBS)
 
-2ndstage.c: bin2c
-	make -C 2ndstage
+2ndstage/2ndstage.bin:
+	make -C 2ndstage 2ndstage.bin
+
+2ndstage.c: bin2c 2ndstage/2ndstage.bin
 	./bin2c 2ndstage/2ndstage.bin stage_two_bin 2ndstage.c
 
 %.o: %.c

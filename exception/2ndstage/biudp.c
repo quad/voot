@@ -7,7 +7,6 @@
 #include "net.h"
 #include "rtl8139c.h"
 #include "serial.h"
-#include "util.h"
 #include "biudp.h"
 
 biudp_control_t control;
@@ -31,17 +30,16 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     uint16 ip_header_length;
     uint16 ip_length;
     udp_header_t *udp;
-    char ibuffer[10];
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
     frame_out = (ether_ii_header_t *) rtl_info.frame_out_buffer;
-    ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t));
+    ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t)); 
     ip_length = sizeof(ip_header_t) + sizeof(udp_header_t) + in_data_length;
 
     /* STAGE: Setup the frame layer. */
     memcpy(frame_out->source, rtl_info.mac, ETHER_MAC_SIZE);
     memcpy(frame_out->dest, control.dest_mac, ETHER_MAC_SIZE);
-    frame_out->ethertype = 0x0800;
+    frame_out->ethertype = htons(0x0800);
 
     /* STAGE: Setup the IP layer. */
     ip->version_ihl = 0x45;     /* 4 is the IP version, 5 is the size of the header in 32-bit segments. No options and no padding. */
@@ -53,23 +51,8 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     ip->protocol = IP_PROTO_UDP;
     ip->checksum = 0;
 
-    ubc_serial_write_str("[UBC] @frame_out = 0x");
-    ubc_serial_write_hex((uint32) frame_out);
-    ubc_serial_write_str(" @ip->source = 0x");
-    ubc_serial_write_hex((uint32) &ip->source);
-    ubc_serial_write_str("\r\n");
-
-    ubc_serial_write_str("[UBC] Crash Point: pre [");
-
-    uint_to_string(ip->source, ibuffer);
-    ubc_serial_write_str(ibuffer);
-    ubc_serial_write_str("]");
-
-    ip->source = control.source_ip;
-    ip->dest = control.dest_ip;
-
-    ubc_serial_write_str(" post\r\n");
-    ubc_serial_flush();
+    memcpy(&ip->source, &control.source_ip, sizeof(uint32));
+    memcpy(&ip->dest, &control.dest_ip, sizeof(uint32));
 
     /* STAGE: Calculate the IP checksum last. */
     ip_header_length = IP_HEADER_SIZE(ip);
@@ -79,8 +62,9 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     udp = (udp_header_t *) ((uint8 *) ip + ip_header_length);
 
     /* STAGE: Setup the UDP layer. */
-    udp->src = udp->dest = control.port;
-    udp->length = htonl(sizeof(udp_header_t) + in_data_length);
+    udp->src = htons(VOOT_UDP_PORT);
+    udp->dest = control.port;
+    udp->length = htons(sizeof(udp_header_t) + in_data_length);
 
     /* STAGE: So, how about that data? */
     memcpy((uint8 *) udp + sizeof(udp_header_t), in_data, in_data_length);
@@ -90,6 +74,11 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: ... and transmit it, god willing. */
     rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
+}
+
+void biudp_write(const uint8 in)
+{
+    biudp_write_buffer(&in, sizeof(uint8));
 }
 
 void biudp_write_str(const uint8 *in_string)
