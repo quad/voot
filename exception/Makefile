@@ -12,7 +12,6 @@ OBJS += vconsole.o gdrom.o
 # LAST for easy debugging
 OBJS += 2ndstage.o
 
-LIBDREAM_BASE = ./libdream/
 INCS = -I$(LIBDREAM_BASE)/include
 LIBS = -L$(LIBDREAM_BASE)/lib -ldream
 
