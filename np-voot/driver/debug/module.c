@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.4 2002/06/12 10:29:03 quad Exp $
+    $Id: module.c,v 1.5 2002/06/13 01:08:35 quad Exp $
 
 DESCRIPTION
 
@@ -25,6 +25,8 @@ static uint8           *level_select    = (uint8 *)     0x8c2d13ac;
 
 static uint16          *anim_mode_a     = (uint16 *)    0x8ccf0228;
 static uint16          *anim_mode_b     = (uint16 *)    0x8ccf022a;
+
+static uint8           *vr_select       = (uint8 *)     0x8ccf61c5;
 
 static uint16          *p1_health_real  = (uint16 *)    0x8ccf6284;
 static uint16          *p1_health_stat  = (uint16 *)    0x8ccf6286;
@@ -57,7 +59,7 @@ void module_configure (void)
     /* STAGE: Configure the UBC channels for the animation and level select breakpoints. */
 
     ubc_configure_channel (UBC_CHANNEL_A, (uint32) anim_mode_b, UBC_BBR_READ | UBC_BBR_OPERAND);
-    ubc_configure_channel (UBC_CHANNEL_B, (uint32) level_select, UBC_BBR_READ | UBC_BBR_OPERAND);
+    ubc_configure_channel (UBC_CHANNEL_B, (uint32) vr_select, UBC_BBR_READ | UBC_BBR_OPERAND);
 
     /* STAGE: Add our handler to the queue. */
 
@@ -95,6 +97,8 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
     static uint32   osd_vector          = 0;
     static int32    p1_health_save[2]   = {-1, -1};
     static int32    p2_health_save[2]   = {-1, -1};
+
+    gamedata_enable_debug ();
 
     /*
         STAGE: Health OSD segment.
@@ -165,9 +169,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
 
 static void* my_debug_handler (register_stack *stack, void *current_vector)
 {
-    /* STAGE: Forces our level to be Tangram's stage. */    
-
-    *level_select = 0x14;
+    *vr_select = (uint8) VR_BRADTOS;
 
     return current_vector;
 }
