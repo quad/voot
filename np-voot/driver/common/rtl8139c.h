@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.8 2002/07/09 10:19:23 quad Exp $
+    $Id: rtl8139c.h,v 1.9 2002/11/08 19:47:41 quad Exp $
 
 */
 
@@ -177,7 +177,7 @@ typedef struct
     uint16          cur_rx;                 /* NOTE: Current Rx DMA buffer tail index. */
     uint16          cur_tx;                 /* NOTE: Current Tx descriptor. */
     uint32          cur_tx_index;           /* NOTE: Current index into the Tx descriptor. */
-    uint8           mac[ETHER_MAC_SIZE];    /* NOTE: Cached MAC address. */
+    uint8           *mac;                   /* NOTE: Cached MAC address. */
     bool            link_stable;            /* NOTE: Stability of media auto-configuration. */
 
     asic_handler_f  old_rtl_handler;
@@ -185,10 +185,9 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-bool    rtl_init        (void);
-bool    rtl_tx_write    (const uint8 *data, uint32 data_length);
-bool    rtl_tx_final    (void);
-bool    rtl_tx_abort    (void);
-uint8 * rtl_mac         (void);
+bool    rtl_init        (rtl_t *rtl_info);
+bool    rtl_tx_write    (rtl_t *rtl_info, const uint8 *data, uint32 data_length);
+bool    rtl_tx_final    (rtl_t *rtl_info);
+bool    rtl_tx_abort    (rtl_t *rtl_info);
 
 #endif

@@ -1,6 +1,6 @@
 /*  malloc.c
 
-    $Id: malloc.c,v 1.2 2002/06/29 12:57:04 quad Exp $
+    $Id: malloc.c,v 1.3 2002/11/08 19:47:41 quad Exp $
 
 DESCRIPTION
 
@@ -49,4 +49,20 @@ void free (void *data)
 {
     if (malloc_root)
         return (*(void (*)()) (malloc_root + MALLOC_FREE_INDEX)) (data);
+}
+
+void* realloc (void *data, uint32 size)
+{
+    void *mem;
+
+    if (data && malloc_root)
+    {
+        mem = (*(void* (*)()) (malloc_root + MALLOC_REALLOC_INDEX)) (data, size);
+
+        return mem;
+    }
+    else
+    {
+        return NULL;
+    }
 }
