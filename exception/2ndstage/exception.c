@@ -25,8 +25,8 @@ static void init_vbr_table(void)
             interrupt_sub_handler,
             interrupt_sub_handler_end - interrupt_sub_handler);
 
-    /* STAGE: Relocate the Katana VBR index */
-    vbr_buffer_katana = vbr_buffer + (4 * 2);
+    /* STAGE: Relocate the Katana VBR index - bypass our entry logic */
+    vbr_buffer_katana = vbr_buffer + (sizeof(uint16) * 4);
 
     /* STAGE: Flush cache after modifying application memory */
     flush_cache();
@@ -37,7 +37,15 @@ static void init_vbr_table(void)
 
 static bool is_vbr_switch_time(void)
 {
-    return exp_table.ubc_exception_count >= 5;
+    uint32 int_installed;
+
+    /* STAGE: Check to see if our interrupt hooks are still installed. */
+    int_installed = memcmp(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
+                            interrupt_sub_handler,
+                            interrupt_sub_handler_end - interrupt_sub_handler);
+
+    /* Have we had enough exceptions to make it worthwhile? */
+    return exp_table.ubc_exception_count >= 5 && int_installed;
 }
 
 uint32 add_exception_handler(exception_table_entry new_entry)
@@ -96,7 +104,7 @@ void* exception_handler(register_stack *stack)
     }
 
     /* STAGE: Handle the first initialization */
-    if (!exp_table.vbr_switched && is_vbr_switch_time())
+    if (is_vbr_switch_time())
     {
 #ifdef DEBUG
         /* STAGE: Initialize the serial port */
