@@ -199,6 +199,28 @@ bool ip_handle_packet(ether_info_packet_t *frame)
     }
 }
 
+static void ip_reverse_packet(ether_info_packet_t *frame)
+{
+    char temp_mac[ETHER_MAC_SIZE];
+    uint32 temp_ipaddr;
+    ip_header_t *ip;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: Ether - point to our origiantor. */
+    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
+
+    /* STAGE: IP - point to our originator. */
+    SAFE_UINT32_COPY(temp_ipaddr, ip->source);
+    SAFE_UINT32_COPY(ip->source, ip->dest);
+    SAFE_UINT32_COPY(ip->dest, temp_ipaddr);
+
+    /* STAGE: Compute IP checksum. */
+    ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
+}
+
 /*
  *
  *  ICMP Sub-System
@@ -225,8 +247,6 @@ uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length)
 
 static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
 {
-    char temp_mac[ETHER_MAC_SIZE];
-    uint32 temp_ipaddr;
     ip_header_t *ip;
 
     ip = (ip_header_t *) frame->data;
@@ -234,18 +254,8 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     /* STAGE: We want to reply to a ping. */
     icmp->type = ICMP_TYPE_ECHO_REPLY;
 
-    /* STAGE: Ether - point to our origiantor. */
-    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-    SAFE_UINT32_COPY(temp_ipaddr, ip->source);
-    SAFE_UINT32_COPY(ip->source, ip->dest);
-    SAFE_UINT32_COPY(ip->dest, temp_ipaddr);
-
-    /* STAGE: Compute IP checksum. */
-    ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
+    /* STAGE: Reverse the packet's direction. */
+    ip_reverse_packet(frame);
 
     /* STAGE: Compute ICMP checksum. */
     icmp->checksum = icmp_checksum(icmp, icmp_data_length);
@@ -327,8 +337,6 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
 
 static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
-    char temp_mac[ETHER_MAC_SIZE];
-    uint32 temp_ipaddr;
     uint16 temp_port;
     uint16 ip_header_size;
     ip_header_t *ip;
@@ -336,18 +344,8 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     ip = (ip_header_t *) frame->data;
     ip_header_size = IP_HEADER_SIZE(ip);
 
-    /* STAGE: Ether - point to our origiantor. */
-    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-    SAFE_UINT32_COPY(temp_ipaddr, ip->source);
-    SAFE_UINT32_COPY(ip->source, ip->dest);
-    SAFE_UINT32_COPY(ip->dest, temp_ipaddr);
-
-    /* STAGE: Compute IP checksum. */
-    ip->checksum = ip_checksum(ip, ip_header_size);
+    /* STAGE: Reverse the packet's direction. */
+    ip_reverse_packet(frame);
 
     /* STAGE: UDP - we want to reply from our echo port to their port. */
     temp_port = udp->src;
