@@ -4,12 +4,16 @@
 */
 
 #include "vars.h"
+#include "voot.h"
 #include "net.h"
 #include "rtl8139c.h"
 #include "util.h"
+#include <stdarg.h>
+#include "printf.h"
 #include "biudp.h"
 
 biudp_control_t control;
+voot_packet netout;
 
 void biudp_init(const biudp_control_t *in_control)
 {
@@ -114,11 +118,20 @@ void biudp_write_str(const uint8 *in_string)
     biudp_write_buffer(in_string, strlen(in_string));
 }
 
-void biudp_write_hex(uint32 val)
+int32 biudp_printf(uint8 type, const char *fmt, ...)
 {
-    uint8 uint_buffer[10];
+	va_list args;
+	int32 i;
 
-    uint_to_string(val, uint_buffer);
+    netout.type = type;
 
-    biudp_write_str(uint_buffer);
+	va_start(args, fmt);
+	i = vsnprintf(netout.buffer, sizeof(netout.buffer), fmt, args);
+	va_end(args);
+
+    netout.size = i;
+
+    biudp_write_buffer((uint8 *) &netout, VOOT_PACKET_HEADER_SIZE + netout.size);
+
+	return i;
 }

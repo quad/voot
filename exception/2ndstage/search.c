@@ -1,6 +1,9 @@
 /*  search.c
 
     Search DC system memory for arbitrary data.
+
+    DEPRECATED
+
 */
 
 #include "vars.h"

@@ -2,7 +2,23 @@
 #define __VOOT_H__
 
 #include "vars.h"
+#include "biudp.h"
 #include "net.h"
+
+#define VOOT_PACKET_HEADER_SIZE     3
+#define VOOT_PACKET_TYPE_DEBUG      'd'
+#define VOOT_PACKET_TYPE_DATA       '>'
+#define VOOT_PACKET_TYPE_HUD        'h'
+#define VOOT_PACKET_TYPE_GD_ULOAD   'g'
+#define VOOT_PACKET_TYPE_GD_DLOAD   'G'
+#define VOOT_PACKET_TYPE_COMMAND    'c'
+
+typedef struct
+{
+    uint8   type __attribute__ ((packed));
+    uint16  size __attribute__ ((packed));
+    uint8   buffer[BIUDP_SEGMENT_SIZE - VOOT_PACKET_HEADER_SIZE] __attribute__ ((packed));
+} voot_packet __attribute__ ((packed));
 
 /*
 

@@ -4,7 +4,7 @@
 #include "vars.h"
 #include "net.h"
 
-#define BIUDP_SEGMENT_SIZE  1024
+#define BIUDP_SEGMENT_SIZE  1025
 
 typedef struct
 {
@@ -19,6 +19,6 @@ void biudp_init(const biudp_control_t *in_control);
 void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length);
 void biudp_write(const uint8 in);
 void biudp_write_str(const uint8 *in_string);
-void biudp_write_hex(uint32 val);
+int32 biudp_printf(uint8 type, const char *fmt, ...);
 
 #endif

@@ -7,8 +7,8 @@
 #include "vars.h"
 #include "biudp.h"
 #include "exception.h"
-#include "search.h"
 #include "trap.h"
+#include "biudp.h"
 #include "voot.h"
 
 static void dump_framebuffer_udp(void)
@@ -42,10 +42,15 @@ static void dump_framebuffer_udp(void)
     }
 }
 
-static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16 udp_data_length)
+static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_data_length)
 {
-    switch (maybe_command)
+    biudp_write_str("[UBC] command = '");
+    biudp_write(command);
+    biudp_write_str("'\r\n");
+
+    switch(command)
     {
+#ifdef DEPRECATED_VOOT_NET
         /* STAGE: Gamedata upload logic. */
         case '1':
             biudp_write_buffer((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
@@ -76,8 +81,25 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
             biudp_write_buffer((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
             break;
 
+#endif
+
         case 'v':
-            biudp_write_str("[UBC] Netplay VOOT Extensions, BETA\r\n");
+            biudp_write_str("[UBC] Handling version.\r\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "[UBC] Netplay VOOT Extensions, BETA\r\n");
+            break;
+
+        default:
+            break;
+    }
+}
+
+static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
+{
+    switch (packet->type)
+    {
+        case VOOT_PACKET_TYPE_COMMAND:
+            biudp_write_str("[UBC] Handling VOOT_PACKET_TYPE_COMMAND.\r\n");
+            maybe_handle_command(packet->buffer[0], udp, udp_data_length);
             break;
 
         default:
@@ -87,7 +109,7 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
 
 void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
-    uint8 *command;
+    voot_packet *packet;
 
     /* STAGE: Use the information from the ICMP echo to fill out our
         biudp information. */
@@ -104,6 +126,6 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
         biudp_init(&control);
     }
 
-    command = (uint8 *) udp + sizeof(udp_header_t);
-    maybe_respond_command(*command, udp, udp_data_length);
+    packet = (voot_packet *) ((uint8 *) udp + sizeof(udp_header_t));
+    maybe_handle_voot(packet, udp, udp_data_length);
 }
