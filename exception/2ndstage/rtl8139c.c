@@ -384,9 +384,10 @@ bool rtl_tx(const uint8* frame, uint32 length)
 
 void rtl_rx_all(void)
 {
-    /* STAGE: Keep receiving packets until they're all gone - I hope we
-        don't get flooded.
-    */
+    /* STAGE: Keep receiving packets until they're all gone, or we run into
+       a packet still being read by the hardware, or of the network layer
+       tells us to stop receiving. */
+
     while(!(RTL_IO_BYTE(RTL_CHIPCMD) & RTL_CMD_RX_BUF_EMPTY))
     {
         uint32 rx_status, rx_size;
@@ -425,9 +426,9 @@ void rtl_rx_all(void)
         /* Reset both buffers to within our scope. */
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
-        /* STAGE: Only handle if the frame is complete. */
-        if (frame_in)
-            net_handle_frame(frame_in, packet_size);
+        /* STAGE: Stop processing if network layer instructs us too... */
+        if (frame_in && net_handle_frame(frame_in, packet_size))
+            break;
 
         /* STAGE: free() it, no matter what. */
         free(frame_in);

@@ -14,6 +14,7 @@
 #include "rtl8139c.h"
 #include "util.h"
 #include "bswap.h"
+#include "biudp.h"
 #include "voot.h"
 
 #include "net.h"
@@ -161,7 +162,7 @@ uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length)
     return calc_checksum;
 }
 
-void ip_handle_packet(ether_info_packet_t *frame)
+bool ip_handle_packet(ether_info_packet_t *frame)
 {
     ip_header_t *ip;
     uint16 ip_data_length;
@@ -175,22 +176,20 @@ void ip_handle_packet(ether_info_packet_t *frame)
 
     /* STAGE: Sanity checks on the IP packet. */
     if (ip_packet_ok(frame, ip_header_length, ip_data_length))
-        return;
+        return FALSE;
 
     /* STAGE: And handle the appropriate protocol type! */
     switch (ip->protocol)
     {
         case IP_PROTO_ICMP:
-            icmp_handle_packet(frame, ip_header_length, ip_data_length);
-            break;
+            return icmp_handle_packet(frame, ip_header_length, ip_data_length);
 
         case IP_PROTO_UDP:
-            udp_handle_packet(frame, ip_header_length, ip_data_length);
-            break;
+            return udp_handle_packet(frame, ip_header_length, ip_data_length);
 
         /* case IP_PROTO_TCP: */
         default:    /* Yeah, we don't support this. */
-            return;
+            return FALSE;
     }
 }
 
@@ -255,7 +254,7 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     net_transmit(frame);
 }
 
-void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
+bool icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
 {
     icmp_header_t *icmp;
 
@@ -263,7 +262,7 @@ void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uin
 
     /* STAGE: ICMP header checksum */
     if (icmp->checksum != icmp_checksum(icmp, icmp_data_length))
-        return;
+        return FALSE;
 
     /* STAGE: Handle ICMP packet types */
     switch (icmp->type)
@@ -276,6 +275,8 @@ void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uin
         default:    /* Whatever it is, we don't support it yet. */
             break;
     }
+
+    return FALSE;
 }
 
 /*
@@ -369,7 +370,7 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     net_transmit(frame);
 }
 
-void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
+bool udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
 {
     udp_header_t *udp;
 
@@ -386,7 +387,21 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
             checksum = 0xffff;
 
         if (checksum != udp->checksum)
-            return;
+            return FALSE;
+    }
+
+    /* STAGE: This really shouldn't be here, but I can't think of a better location. */
+    {
+        biudp_control_t control;
+        ip_header_t *ip;
+
+        ip = (ip_header_t *) frame->data;
+        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
+        IP_ADDR_COPY(control.source_ip, ip->dest);
+        IP_ADDR_COPY(control.dest_ip, ip->source);
+        control.port = udp->src;
+
+        biudp_init(&control);
     }
 
     /* STAGE: Handle UDP packets based on port. */
@@ -397,12 +412,13 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
             break;
 
         case 5007:  /* now the official VOOT network protocol port. */
-            voot_handle_packet(frame, udp, udp_data_length);
-            break;
+            return voot_handle_packet(frame, udp, udp_data_length);
 
         default:    /* Drop on the floor any network data we couldn't possibly understand. */
             break;
     }
+
+    return FALSE;
 }
 
 /*
@@ -411,7 +427,7 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
  *
  */
 
-void net_handle_frame(uint8 *frame_data, uint32 frame_size)
+bool net_handle_frame(uint8 *frame_data, uint32 frame_size)
 {
     ether_info_packet_t frame;
 
@@ -420,10 +436,9 @@ void net_handle_frame(uint8 *frame_data, uint32 frame_size)
     {
         /* STAGE: Handle TCP/IP type frames. */
         case 0x0800:    /* = TCP/IP in the network byte order world. */
-            ip_handle_packet(&frame);
-            break;
+            return ip_handle_packet(&frame);
 
         default:        /* Ignore unknown ethertypes. */
-            break;
+            return FALSE;
     }
 }

@@ -12,12 +12,12 @@
 
 #include "voot.h"
 
-#ifdef DEPRECATED_VOOT_NET
-
-static void dump_framebuffer_udp(void)
+static void dump_framebuffer(void)
 {
     uint32 index;
     uint16 *vram_start;
+
+    voot_send_command(VOOT_COMMAND_TYPE_DUMPON);
 
     #define UPSCALE_5_STYLE(bits)   (((bits) << 3) | ((bits) >> 2))
     #define UPSCALE_6_STYLE(bits)   (((bits) << 2) | ((bits) >> 4))
@@ -41,13 +41,13 @@ static void dump_framebuffer_udp(void)
         strip[index % STRIP_SIZE][2] = BLUE_565_TO_INT(vram_start[index]);
 
         if ((index % STRIP_SIZE) == STRIP_SIZE - 1)
-            biudp_write_buffer((uint8 *) strip, sizeof(strip));
+            voot_send_packet(VOOT_PACKET_TYPE_DUMP, (uint8 *) strip, sizeof(strip));
     }
+
+    voot_send_command(VOOT_COMMAND_TYPE_DUMPOFF);
 }
 
-#endif
-
-static void maybe_handle_command(uint8 command)
+static bool maybe_handle_command(uint8 command)
 {
     switch(command)
     {
@@ -64,10 +64,6 @@ static void maybe_handle_command(uint8 command)
             biudp_write_str("[UBC] Uploaded game data.\r\n");
             break;
 
-        /* STAGE: Do we take a screenshot? */
-        case 's':
-            dump_framebuffer_udp();
-            break;
 
         /* STAGE: Dump 16mb of system memory. */
         case 'S':
@@ -75,6 +71,13 @@ static void maybe_handle_command(uint8 command)
             break;
 
 #endif
+
+        case VOOT_COMMAND_TYPE_SCREEN:
+        {
+            dump_framebuffer();
+            break;
+        }
+
         case VOOT_COMMAND_TYPE_INJECTTST:
         {
             char test_string[] = "SuperJoe";
@@ -139,15 +142,21 @@ static void maybe_handle_command(uint8 command)
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
+        {
+
+
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
             break;
+        }
 
         default:
             break;
     }
+
+    return FALSE;
 }
 
-static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
+static bool maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
 {
     /* STAGE: Fix the size byte order. */
     packet->header.size = ntohs(packet->header.size);
@@ -155,8 +164,7 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
     switch (packet->header.type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
-            maybe_handle_command(packet->buffer[0]);
-            break;
+            return maybe_handle_command(packet->buffer[0]);
 
         case VOOT_PACKET_TYPE_DATA:
             trap_inject_data(packet->buffer, packet->header.size - 1);
@@ -165,31 +173,16 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
         default:
             break;
     }
+
+    return FALSE;
 }
 
-void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
+bool voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
     voot_packet *packet;
 
-#ifndef HARDCODE_IP
-    /* STAGE: Use the information from the UDP packet to fill out our biudp
-        information. */
-    {
-        biudp_control_t control;
-        ip_header_t *ip;
-
-        ip = (ip_header_t *) frame->data;
-        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
-        IP_ADDR_COPY(control.source_ip, ip->dest);
-        IP_ADDR_COPY(control.dest_ip, ip->source);
-        control.port = udp->src;
-
-        biudp_init(&control);
-    }
-#endif
-
     packet = (voot_packet *) ((uint8 *) udp + sizeof(udp_header_t));
-    maybe_handle_voot(packet, udp, udp_data_length);
+    return maybe_handle_voot(packet, udp, udp_data_length);
 }
 
 bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
@@ -221,6 +214,11 @@ bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
     free(netout);
 
     return TRUE;
+}
+
+bool voot_send_command(uint8 type)
+{
+    return voot_printf(VOOT_PACKET_TYPE_COMMAND, "%c", type);
 }
 
 int32 voot_printf(uint8 type, const char *fmt, ...)

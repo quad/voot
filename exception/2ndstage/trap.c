@@ -60,10 +60,13 @@ struct
 } pf_fifo;
 
 static bool trap_passive_monitor = FALSE;
+static uint32 rxi_count = 0;
 
 /*
  *  Module Initialization Functions
  */
+
+#define FIND_TRANS_LOC
 
 void init_ubc_b_serial(void)
 {
@@ -89,7 +92,7 @@ void init_ubc_b_serial(void)
     new.handler = rxi_handler;
 
     add_exception_handler(&new);
-} 
+}
 
 /*
  *  Per-Frame FIFO Interface Wrapper
@@ -211,23 +214,22 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
     return TRUE;
 }
 
-static int32 phy_fifo_del(uint8 check_data, bool touch_serial)
+static bool phy_fifo_del(bool touch_serial)
 {
     /* STAGE: Do we even have data in the physical fifo? */
     if (!phy_fifo.size)
-        return -1;
+        return FALSE;
 
     /* STAGE: Flush the current byte in the SCIF, if requested. */
     if (touch_serial)
     {
-        check_data = *SCIF_R_FRD;
+        uint8 temp_data;
+
+        /* TODO: Check on whether the second *SCIF_R_FS access is required.
+            It wasn't for the rxi_handler to cause flushes. */
+        temp_data = *SCIF_R_FRD;
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
     }
-
-    /* STAGE: Ensure the data in the fifo is syncronized with the actual
-        physical layer. */
-    if (phy_fifo.data[phy_fifo.start].data != check_data)
-        return -2;
 
     /* DEBUG: Just a little thing I like to call paranoia. */
     if (phy_fifo.data[phy_fifo.start].direction != IN)
@@ -237,7 +239,7 @@ static int32 phy_fifo_del(uint8 check_data, bool touch_serial)
     phy_fifo.start = ++phy_fifo.start % PHY_FIFO_SIZE;
     phy_fifo.size--;
 
-    return check_data;
+    return TRUE;
 }
 
 static dir_e phy_fifo_next(uint8 *data)
@@ -359,10 +361,7 @@ uint32 trap_inject_data(const uint8 *data, uint32 size)
 
     /* STAGE: If we're passively monitoring, drop it on the floor. */
     if (trap_passive_monitor)
-    {
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Dropped injection due to passive.");
         return 0;
-    }
 
     /* STAGE: Add incoming data to net fifo. */
     for (data_index = 0; data_index < size; data_index++)
@@ -423,6 +422,9 @@ void* rxi_handler(register_stack *stack, void *current_vector)
 {
     void *return_vector;
 
+    /* STAGE: Keep our count up to date! */
+    rxi_count++;
+
     /* STAGE: Passive listening intead of active code. */
     if (trap_passive_monitor)
         return current_vector;
@@ -430,13 +432,18 @@ void* rxi_handler(register_stack *stack, void *current_vector)
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
 
-    /* STAGE: Synchronize the physical fifo. */
-    if (phy_fifo_next(NULL) != IN)
-        phy_sync();
+    /* TODO: Work out better optimized conditions for resyncronization. */
+    phy_sync();
 
-    /* STAGE: If there is any remaining data in the physical fifo, pass on the interrupt. */
-    if (phy_size())
+    /* STAGE: Synchronize the physical fifo. */
+    if (phy_fifo_next(NULL) == IN)
+    {
+        /* STAGE: Remove incoming data from physical fifo. */
+        if (!phy_fifo_del(FALSE))
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!");
+
         return_vector = current_vector;
+    }
 
     return return_vector;
 }
@@ -446,12 +453,19 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
     uint8 serial_data;
     enum { TX, RX, NONE } serial_type;
 
+#ifdef REAL_BAUDRATE
     /* STAGE: Reconfigure serial port for testing. */
     serial_set_baudrate(57600);
+#endif
 
     /* STAGE: Only do loopback if we're actually processing the data. */
     if (trap_passive_monitor)
+    {
         *SCIF_R_FC &= ~(SCIF_FC_LOOP);
+
+        /* DEBUG: !!! Se if we're affecting here. */
+        return current_vector;
+    }
     else
         *SCIF_R_FC |= SCIF_FC_LOOP;
 
@@ -521,27 +535,11 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
     }
     else if (serial_type == RX)
     {
-        int32 error_code;
-
-        if (trap_passive_monitor)
-        {
-            /* STAGE: Immediate mode dumping of incoming serial data. */
-            if (serial_data)
-                voot_printf(VOOT_PACKET_TYPE_DEBUG, "R '%c' [%x]", serial_data, serial_data);
-            else
-                voot_printf(VOOT_PACKET_TYPE_DEBUG, "R NULL");
-        }
+        /* STAGE: Immediate mode dumping of incoming serial data. */
+        if (serial_data)
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "R '%c' [%x] : rxi_count [%d] ", serial_data, serial_data, rxi_count);
         else
-        {
-            /* STAGE: Remove incoming data from physical fifo. */
-            error_code = phy_fifo_del(serial_data, FALSE);
-            if (error_code < 0)
-                voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX! [%d]", error_code);
-
-            /* STAGE: Synchronize the physical fifo. */
-            if (phy_fifo_next(NULL) != IN)
-                phy_sync();
-        }
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "R NULL : rxi_count [%d]", rxi_count);
     }
 
     return current_vector;

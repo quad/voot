@@ -12,6 +12,7 @@
 #define VOOT_PACKET_TYPE_GD_ULOAD   'g'
 #define VOOT_PACKET_TYPE_GD_DLOAD   'G'
 #define VOOT_PACKET_TYPE_COMMAND    'c'
+#define VOOT_PACKET_TYPE_DUMP       'D'
 
 #define VOOT_COMMAND_TYPE_INJECTTST 'i'
 #define VOOT_COMMAND_TYPE_PRINTFTST 'p'
@@ -21,6 +22,9 @@
 #define VOOT_COMMAND_TYPE_TIME      't'
 #define VOOT_COMMAND_TYPE_VERSION   'v'
 #define VOOT_COMMAND_TYPE_PASVON    'P'
+#define VOOT_COMMAND_TYPE_DUMPON    'D'
+#define VOOT_COMMAND_TYPE_DUMPOFF   'd'
+#define VOOT_COMMAND_TYPE_SCREEN    's'
 
 typedef struct
 {
@@ -47,8 +51,9 @@ Initial Focus:
 #define VOOT_MEM_START      0x8CCF9ECC
 #define VOOT_MEM_END        0x8CCFA2CC
 
-void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length);
+bool voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length);
 bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size);
+bool voot_send_command(uint8 type);
 int32 voot_printf(uint8 type, const char *fmt, ...);
 
 #endif
