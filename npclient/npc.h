@@ -17,6 +17,9 @@ CHANGELOG
         Added callback structure and definitions for the new client assisted
         callback functionality.
 
+    Sun Nov 24 05:39:12 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added condition for lower processor usage threading.
+
 */
 
 #ifndef __NPC_H__
@@ -128,6 +131,7 @@ typedef struct
     uint32              event_queue_size;
     uint32              event_queue_tail;
     pthread_mutex_t     event_queue_busy;
+    pthread_cond_t      event_queue_alert;
 
     npc_callbacks_t     callbacks;
 } npc_data_t;

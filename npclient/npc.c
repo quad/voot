@@ -60,6 +60,10 @@ CHANGELOG
     Sun Feb 24 02:55:02 PST 2002    Scott Robinson <scott_vo@quadhome.com>
         Added dump IO logs.
 
+    Sun Nov 24 05:41:02 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added a condition to the event queue. This should remove any need
+        for a running loop and reduce processor consumption.
+
 */
 
 #include <stdlib.h>
@@ -336,6 +340,7 @@ bool npc_add_event_queue(npc_command_t *command)
     npc_system.event_queue_size++;
 
     pthread_mutex_unlock(&(npc_system.event_queue_busy));
+    pthread_cond_signal(&(npc_system.event_queue_alert));
 
     return FALSE;
 }
@@ -344,9 +349,10 @@ npc_command_t* npc_get_event_queue(void)
 {
     npc_command_t *command;
 
+    pthread_mutex_lock(&(npc_system.event_queue_busy));
+    
     if (!npc_system.event_queue_size)
-        return NULL;
-    else if(pthread_mutex_lock(&(npc_system.event_queue_busy)));
+        pthread_cond_wait(&(npc_system.event_queue_alert), &(npc_system.event_queue_busy));
 
     command = npc_system.event_queue[npc_system.event_queue_tail];
 
@@ -365,6 +371,10 @@ npc_command_t* npc_get_event(void)
     if ((event = npc_get_event_queue()));
     else if (!event)
     {
+        /* NOTE: This should never occur! */
+
+        NPC_LOG(npc_system, LOG_DEBUG, "Empty event passback!");
+
         event = (npc_command_t *) malloc(sizeof(npc_command_t));
         event->type = C_NONE;
     }
@@ -591,6 +601,7 @@ void npc_init(npc_callbacks_t *callbacks)
     memcpy(&npc_system.callbacks, callbacks, sizeof(npc_callbacks_t));
 
     pthread_mutex_init(&npc_system.event_queue_busy, NULL);
+    pthread_cond_init(&npc_system.event_queue_alert, NULL);
 }
 
 npc_data_t* npc_expose(void)

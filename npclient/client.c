@@ -64,6 +64,10 @@ CHANGELOG
     Mon Nov 18 17:20:37 PST 2002    Scott Robinson <scott_vo@quadhome.com>
         Fixed a debugging chat bug.
 
+    Sun Nov 24 05:39:56 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Switch from callback to normal readline usage. This removed the
+        running loop for the old callback method.
+
 TODO
 
     Add support for the DUMPSELECT command.
@@ -170,14 +174,13 @@ static void frontend_init(char *pname)
 {
     prog_name = strdup(pname);
 
-    rl_callback_handler_install("npclient> ", input_handler);
     input_handler_poll = TRUE;
     pthread_create(&input_poll_thread, NULL, input_poll, NULL);
 }
 
 static void frontend_cleanup(void)
 {
-    rl_callback_handler_remove();
+    input_handler_poll = FALSE;
     free(prog_name);
 }
 
@@ -343,7 +346,7 @@ static size_t dump_file_to_buffer (FILE *infile, uint8 **ibuffer)
 void* input_poll(void *arg)
 {
     while(input_handler_poll)
-        rl_callback_read_char();
+        input_handler(readline("npclient> "));
 
     return NULL;
 }
