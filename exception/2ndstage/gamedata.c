@@ -21,11 +21,11 @@ bool replace_game_text(const char *key, const char *repl)
 {
     char *repl_string;
 
-    repl_string = search_sysmem_at(key, sizeof(key), GAME_MEM_START, SYS_MEM_END);
+    repl_string = search_sysmem_at(key, strlen(key), GAME_MEM_START, SYS_MEM_END);
 
     if (repl_string)
     {
-        strncpy(repl_string, repl, strlen(repl_string) + 1);
+        strncpy(repl_string, repl, strlen(key) + 1);
 
         return TRUE;
     }

@@ -17,8 +17,6 @@ TODO
 #include "dumpio.h"
 #include "gamedata.h"
 
-#include "customize.h"
-
 #include "voot.h"
 
 static bool maybe_handle_command(uint8 command, voot_packet *packet)
@@ -27,9 +25,9 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
     {
         case VOOT_COMMAND_TYPE_HEALTH:
         {
-            volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
-            volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
-
+            uint16 *p1_health = (uint16 *) 0x8CCF6284;
+            uint16 *p2_health = (uint16 *) 0x8CCF7402;
+            
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
 
             break;
@@ -37,7 +35,6 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
-            do_osd++;
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
