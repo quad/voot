@@ -39,6 +39,10 @@ CHANGELOG
         Added usage of fcntl for non-blocking IO because cygwin might
         support it above MSG_NONBLOCK in recv().
 
+    Tue Jan 22 17:27:15 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Dropped the port configuration events and wrapped them into the
+        connection and listening events.
+
 TODO
 
     Remove console system assumptions. All IO logic should be handled by the client itself.
@@ -70,22 +74,9 @@ int32 handle_npc_command(npc_command_t *command)
 
     switch (command->type)
     {
-        case C_SET_SLAVE_PORT:
-            npc_system.slave_port = command->port;
-            retval = npc_system.slave_port;
-
-            fprintf(stderr, "[npc] set slave port to %u.\n", npc_system.slave_port);
-            break;
-
-        case C_SET_SERVER_PORT:
-            npc_system.server_port = command->port;
-            retval = npc_system.server_port;
-
-            fprintf(stderr, "[npc] set server port to %u.\n", npc_system.server_port);
-            break;
-
         case C_CONNECT_SLAVE:
             npc_system.slave_name = command->text;
+            npc_system.slave_port = command->port;
 
             retval = npc_connect(npc_system.slave_name, npc_system.slave_port, SOCK_DGRAM);
 
@@ -104,11 +95,14 @@ int32 handle_npc_command(npc_command_t *command)
                 npc_add_event_queue(event);
             }
             else
+            {
                 fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
+            }
             break;
 
         case C_CONNECT_SERVER:
             npc_system.server_name = command->text;
+            npc_system.server_port = command->port;
 
             retval = npc_connect(npc_system.server_name, npc_system.server_port, SOCK_STREAM);
 
@@ -126,7 +120,9 @@ int32 handle_npc_command(npc_command_t *command)
                 npc_add_event_queue(event);
             }
             else
+            {
                 fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
+            }
             break;
 
         case C_LISTEN_SOCKET:
@@ -148,6 +144,7 @@ int32 handle_npc_command(npc_command_t *command)
             break;
 
         case C_LISTEN_SERVER:
+            npc_system.server_port = command->port;
             retval = npc_server_listen();
 
             if (retval)
@@ -342,7 +339,7 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     host = gethostbyname(dest_name);
     if (!host)
     {
-        fprintf(stderr, "[npc] unable to resolve %s.\n", dest_name);
+        fprintf(stderr, "[npc] could not resolve '%s'.\n", dest_name);
         return -1;
     }
 
@@ -456,6 +453,8 @@ int32 npc_server_listen(void)
 
 void npc_exit(int code)
 {
+    free(npc_system.slave_name);
+
     /* Clean up the sockets, if necessary. */
     if (npc_system.slave_socket >= 0)
     {
@@ -465,6 +464,7 @@ void npc_exit(int code)
             fprintf(stderr, "[npc] closed slave socket.\n");
     }
 
+    free(npc_system.server_name);
     if (npc_system.server_socket >= 0)
     {
         if (close(npc_system.server_socket))
@@ -476,20 +476,10 @@ void npc_exit(int code)
 
 void npc_init(void)
 {
-    npc_command_t command;
-
     memset(&npc_system, 0x0, sizeof(npc_system));
     npc_system.slave_socket = npc_system.server_socket = npc_system.server_socket_wait = -1;
 
     pthread_mutex_init(&npc_system.event_queue_busy, NULL);
-
-    command.type = C_SET_SLAVE_PORT;
-    command.port = VOOT_SLAVE_PORT;
-    handle_npc_command(&command);
-
-    command.type = C_SET_SERVER_PORT;
-    command.port = VOOT_SERVER_PORT;
-    handle_npc_command(&command);
 }
 
 npc_data_t* npc_expose(void)

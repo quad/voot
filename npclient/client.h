@@ -9,7 +9,7 @@
 
 char banner_text[] = {
     "Console Netplay VOOT Client (npclient), built " __DATE__ " at " __TIME__ "\n"
-    "Copyright (C) 2001, Scott Robinson. All Rights Reserved.\n"
+    "Copyright (C) 2001, 2002, Scott Robinson. All Rights Reserved.\n"
 };
 
 char gpl_text[] = {
@@ -21,9 +21,9 @@ char gpl_text[] = {
 };
 
 uint8 help_text[] = {
-    "-c [hostname/IP]       Connect to the specified slave.\n"
-    "-s [hostname/IP]       Connect to the specified server.\n"
-    "-l                     Change into server mode.\n"
+    "-c <hostname/IP[:port]>    Connect to the specified slave.\n"
+    "-s <hostname/IP[:port]>    Connect to the specified server.\n"
+    "-l[port]                   Change into server mode.\n"
     "\n"
 };
 
@@ -42,5 +42,8 @@ void frontend_init(char *pname);
 void frontend_cleanup(void);
 
 void parse_options(int32 argc, char *argv[]);
+
+void* input_poll(void *arg);
+void input_handler(char *line);
 
 #endif

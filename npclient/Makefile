@@ -5,7 +5,7 @@ OBJS += client.o npc.o voot.o
 CC = gcc -g -Wall
 
 INCS =
-LIBS = -lpthread
+LIBS = -lpthread -lreadline
 
 all: $(BIN)
 
@@ -20,3 +20,6 @@ $(BIN): $(OBJS)
 
 clean:
 	-rm -f *.o $(BIN)
+
+mrproper: clean
+	-rm -f *~ *.bak

@@ -13,12 +13,10 @@ typedef enum
     C_HELP,                 /* Display the help text. */
 
     C_CONNECT_SLAVE,        /* Connect to the given slave. */
+
     C_CONNECT_SERVER,       /* Connect to the given server. */
 
     C_LISTEN_SERVER,        /* Listens on the server port. */
-
-    C_SET_SLAVE_PORT,       /* Sets the port used for UDP slave connections. */
-    C_SET_SERVER_PORT,      /* Sets the port used for TCP reliable connections. */
 
     C_PACKET_FROM_SLAVE,    /* On reception of a packet from the slave. */
     C_CLOSE_SLAVE,          /* Need to close the slave socket. */
@@ -36,12 +34,12 @@ typedef struct
     npc_command     type;
 
     /*
-        C_CONNECT_SLAVE
+        C_CONNECT_SLAVE, C_CONNECT_SERVER
     */
     char            *text;
 
     /*
-        C_SET_SLAVE_PORT, C_SET_SERVER_PORT
+        C_CONNECT_SLAVE, C_CONNECT_SERVER, C_LISTEN_SERVER
     */
     uint16          port;
 
