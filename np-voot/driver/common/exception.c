@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: exception.c,v 1.3 2002/06/12 10:32:32 quad Exp $
 
 DESCRIPTION
 
@@ -10,12 +10,7 @@ TODO
 
     Move to using a chain system on exceptions.
 
-    Consider combining the exception and ASIC interrupt handling code
-    together.
-
     Ensure duplicate table entries cannot be added.
-
-    Reinitialize the ASIC when reinitializing the VBR table.
 
 */
 

@@ -1,6 +1,6 @@
 /*  asic.c
 
-    $Id: asic.c,v 1.1 2002/06/11 23:31:10 quad Exp $
+    $Id: asic.c,v 1.2 2002/06/12 10:32:31 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,10 @@ TODO
 
     Convert the code to an intelligent chaining method of recognizing the
     interrupts.
+
+    Reinitialize the ASIC when reinitializing the VBR table.
+
+    Ensure duplicate table entries cannot be added.
 
 */
 
