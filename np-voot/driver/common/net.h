@@ -1,6 +1,6 @@
 /*  net.h
 
-    $Id: net.h,v 1.3 2002/06/20 10:20:05 quad Exp $
+    $Id: net.h,v 1.4 2002/06/23 23:18:05 quad Exp $
 
 */
 
@@ -9,6 +9,7 @@
 
 #include "vars.h"
 #include "bswap.h"
+#include "ether.h"
 
 /*
     NOTE: Maximum packet size.
@@ -17,8 +18,6 @@
 */
 
 #define NET_MAX_PACKET          1500
-
-#define ETHER_MAC_SIZE          6
 
 #define IP_HEADER_SIZE(hdr)     ((hdr->version_ihl & 0x0f) * 4)
 
@@ -42,36 +41,6 @@
 #define htonl                   bswap32
 #define ntohs                   bswap16
 #define htons                   bswap16
-
-typedef struct
-{
-    uint8   dest[ETHER_MAC_SIZE]    __attribute__ ((packed));
-    uint8   source[ETHER_MAC_SIZE]  __attribute__ ((packed));
-    uint16  ethertype               __attribute__ ((packed));
-} ether_ii_header_t;
-
-typedef struct
-{
-    uint8   dest[ETHER_MAC_SIZE]    __attribute__ ((packed));
-    uint8   source[ETHER_MAC_SIZE]  __attribute__ ((packed));
-    uint16  length                  __attribute__ ((packed));
-    uint8   dsap                    __attribute__ ((packed));
-    uint8   ssap                    __attribute__ ((packed));
-    uint8   control                 __attribute__ ((packed));
-    uint8   vendor_code[3]          __attribute__ ((packed));
-    uint16  ethertype               __attribute__ ((packed));
-} ether_8023_header_t;
-
-typedef struct
-{
-    uint8   dest[ETHER_MAC_SIZE]    __attribute__ ((packed));
-    uint8   source[ETHER_MAC_SIZE]  __attribute__ ((packed));
-    uint16  ethertype               __attribute__ ((packed));
-
-    uint32  length                  __attribute__ ((packed));
-    uint8  *data                    __attribute__ ((packed));
-    uint16  crc                     __attribute__ ((packed));
-} ether_info_packet_t;
 
 typedef struct
 {

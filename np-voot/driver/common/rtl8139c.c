@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.6 2002/06/23 22:01:30 quad Exp $
+    $Id: rtl8139c.c,v 1.7 2002/06/23 23:18:05 quad Exp $
 
 DESCRIPTION
 
@@ -15,12 +15,17 @@ DESCRIPTION
     code and even better personal support in #dcdev@EFNet. Give the guy a
     damn hand.
 
+TODO
+
+    Ensure card cannot be accessed unless initialized.
+
 */
 
 #include "vars.h"
 #include "util.h"
 #include "video.h"
 #include "malloc.h"
+#include "asic.h"
 #include "exception-lowlevel.h"
 
 #include "rtl8139c.h"
@@ -443,7 +448,7 @@ static void rtl_rx_all (void)
 
         /* STAGE: Stop processing if network layer instructs us too... */
 
-        if (frame_in && net_handle_frame (frame_in, packet_size))
+        if (frame_in && ether_handle_frame (frame_in, packet_size))
             break;
 
         /* STAGE: free() the packet, no matter what. */

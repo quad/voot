@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.3 2002/06/23 22:01:30 quad Exp $
+    $Id: rtl8139c.h,v 1.4 2002/06/23 23:18:05 quad Exp $
 
 */
 
@@ -8,8 +8,7 @@
 #define __COMMON_RTL8139C_H__
 
 #include "vars.h"
-#include "asic.h"
-#include "net.h"
+#include "ether.h"
 #include "system.h"
 
 /* NOTE: PCI/G2 register definitions. */

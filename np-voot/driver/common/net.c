@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.4 2002/06/20 10:20:05 quad Exp $
+    $Id: net.c,v 1.5 2002/06/23 23:18:05 quad Exp $
 
 DESCRIPTION
 
@@ -19,7 +19,7 @@ TODO
 */
 
 #include "vars.h"
-#include "rtl8139c.h"
+#include "ether.h"
 #include "util.h"
 #include "malloc.h"
 #include "bswap.h"
@@ -64,61 +64,13 @@ bool net_transmit (ether_info_packet_t *frame_in)
 
     /* STAGE: Transmit the packet. */
 
-    retval = rtl_tx ((uint8 *) frame_out, frame_out_length);
+    retval = ether_tx ((uint8 *) frame_out, frame_out_length);
 
     /* STAGE: Free output buffer. */
 
     free (frame_out);
 
     return retval;
-}
-
-static ether_info_packet_t eth_discover_frame (uint8 *frame_data, uint32 frame_size)
-{
-    ether_8023_header_t    *frame_8023;
-    ether_ii_header_t      *frame_ii;
-    ether_info_packet_t     frame;
-    uint16                  maybe_ethertype;
-
-    frame_8023  = (ether_8023_header_t *) frame_data;
-    frame_ii    = (ether_ii_header_t *) frame_data;
-
-    maybe_ethertype = ntohs (frame_ii->ethertype);
-
-    /* STAGE: Determine Ethernet frame type. */
-
-    if (maybe_ethertype >= 0x0600)
-    {
-        /* STAGE: It's an Ethernet II packet. */
-
-        memcpy (frame.dest, frame_ii->dest, sizeof (frame.dest));
-        memcpy (frame.source, frame_ii->source, sizeof (frame.source));
-
-        frame.ethertype = maybe_ethertype;
-
-        frame.length    = frame_size - sizeof (ether_ii_header_t);
-        frame.data      = frame_data + sizeof (ether_ii_header_t);
-    }
-    else if (frame_8023->dsap == 0xAA)
-    {
-        /* STAGE: 802.3 SNAP provides backwards compatibility to Ethernet II. */
-
-        memcpy (frame.dest, frame_8023->dest, sizeof (frame.dest));
-        memcpy (frame.source, frame_8023->source, sizeof (frame.source));
-
-        frame.ethertype = ntohs (frame_8023->ethertype);
-
-        frame.length    = ntohs (frame_8023->length);
-        frame.data      = frame_data + sizeof (ether_8023_header_t);
-    }
-    else
-    {
-        /* STAGE: We couldn't determine the frame type. */
-
-        frame.ethertype = 0x0;
-    }
-
-    return frame;
 }
 
 /*
@@ -472,25 +424,4 @@ bool udp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, uin
     }
 
     return FALSE;
-}
-
-/*
-    Top level networking
-*/
-
-bool net_handle_frame (uint8 *frame_data, uint32 frame_size)
-{
-    ether_info_packet_t frame;
-
-    frame = eth_discover_frame (frame_data, frame_size);
-    switch (frame.ethertype)
-    {
-        /* STAGE: Handle TCP/IP type frames. */
-
-        case 0x0800 :    /* NOTE: TCP/IP in the network byte order world. */
-            return ip_handle_packet (&frame);
-
-        default :
-            return FALSE;
-    }
 }

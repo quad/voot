@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.4 2002/06/20 10:20:04 quad Exp $
+    $Id: biudp.c,v 1.5 2002/06/23 23:18:05 quad Exp $
 
 DESCRIPTION
 
@@ -9,7 +9,7 @@ DESCRIPTION
 */
 
 #include "vars.h"
-#include "rtl8139c.h"
+#include "ether.h"
 #include "util.h"
 #include "malloc.h"
 
@@ -62,7 +62,7 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: Setup the frame layer. */
 
-    memcpy (frame_out->source, rtl_mac (), ETHER_MAC_SIZE);
+    memcpy (frame_out->source, ether_mac (), ETHER_MAC_SIZE);
     memcpy (frame_out->dest, control.dest_mac, ETHER_MAC_SIZE);
 
     frame_out->ethertype = htons(0x0800);
@@ -107,7 +107,7 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: ... and transmit it, god willing. */
 
-    retval = rtl_tx ((uint8 *) frame_out, sizeof (ether_ii_header_t) + ip_length);
+    retval = ether_tx ((uint8 *) frame_out, sizeof (ether_ii_header_t) + ip_length);
 
     /* STAGE: Free the output buffer. */
 
