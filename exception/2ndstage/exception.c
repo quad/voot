@@ -4,6 +4,11 @@ DESCRIPTION
 
     Handle incoming exceptions in readable C-code.
 
+TODO
+
+    Install handlers for the other exception types OR remove the alternative exception type handlers.
+    Find out why we can't have clear_ubc_b_exception code.
+
 */
 
 #include "vars.h"
@@ -16,7 +21,6 @@ DESCRIPTION
 #include "util.h"
 #include "rtl8139c.h"
 #include "heartbeat.h"
-#include "scif_emu.h"
 #include "customize.h"
 #include "controller.h"
 #include "vmu.h"
@@ -41,7 +45,7 @@ void init_ubc_a_exception(void)
 
 void clear_ubc_a_exception(void)
 {
-    /* STAGE: Clear UBC Channel A because we (supposedly) now have interrupt control. */
+    /* STAGE: Clear UBC Channel A. */
     *UBC_R_BBRA = 0;
 
     /* STAGE: Clear the break bit, if we need too. */
@@ -53,9 +57,6 @@ void clear_ubc_a_exception(void)
 
 static void init_vbr_table(void)
 {
-    /* STAGE: !!! Install handlers for the other exception types OR remove
-        the alternative exception type handlers. */
-
     /* STAGE: INTERRUPT magic sprinkles of evil to the VOOT VBR. */
     memcpy(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
             interrupt_sub_handler,
@@ -178,9 +179,6 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Pre-cache the biosfont address. */
         bfont_init(); 
-
-        /* STAGE: Initialize the SCIF Emulation layer. */
-        scif_emu_init();
 
         /* STAGE: Initialize the customization break logic. */
         customize_init();

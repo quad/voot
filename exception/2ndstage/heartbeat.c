@@ -15,7 +15,6 @@ DESCRIPTION
 #include "gamedata.h"
 #include "customize.h"
 #include "controller.h"
-#include "vmu.h"
 
 #include "heartbeat.h"
 
@@ -33,8 +32,15 @@ void init_heartbeat(void)
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
+    uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
+    uint16 *anim_mode_b = (uint16 *) 0x8ccf022a;
+
     /* STAGE: Enable the various codes. */
     gamedata_enable_debug();
+
+    /* STAGE: See if we need to load customization information. */
+    if (*anim_mode_a == 0x0 && *anim_mode_b == 0x2)
+        maybe_load_customize();
 
     return current_vector;
 }

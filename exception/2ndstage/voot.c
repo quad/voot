@@ -25,10 +25,8 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
     switch(command)
     {
         case VOOT_COMMAND_TYPE_HEALTH:
-        {
-            voot_debug("Deprecated with new health OSD.");
+            voot_debug("Deprecated from health OSD.");
             break;
-        }
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_debug("%u", time());
@@ -40,16 +38,14 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
             malloc_stat(&freesize, &max_freesize);
 
-            voot_debug("Netplay VOOT Extensions, BETA [%d/%d]", freesize, max_freesize);
+            voot_debug("Netplay VOOT Extensions, BETA [%u/%u]", freesize, max_freesize);
 
             break;
         }
 
         case VOOT_COMMAND_TYPE_PASVON:
-        {
             voot_debug("Deprecated with new serial interface.");
             break;
-        }
 
         case VOOT_COMMAND_TYPE_DUMPON:
         {
@@ -209,9 +205,8 @@ void voot_dump_buffer(const uint8 *in_data, uint32 in_data_length)
     voot_send_command(VOOT_COMMAND_TYPE_DUMPOFF);
 }
 
-int32 voot_printf(uint8 type, const char *fmt, ...)
+int32 voot_aprintf(uint8 type, const char *fmt, va_list args)
 {
-	va_list args;
 	int32 i;
 	voot_packet *packet_size_check;
 	char *printf_buffer;
@@ -220,15 +215,25 @@ int32 voot_printf(uint8 type, const char *fmt, ...)
     if(!printf_buffer)
         return 0;
 
-	va_start(args, fmt);
 	i = vsnprintf(printf_buffer, sizeof(packet_size_check->buffer), fmt, args);
-	va_end(args);
 
     /* STAGE: Send the packet, if we need to,  and maintain correctness. */
     if (i && !voot_send_packet(type, printf_buffer, i))
         i = 0;
 
     free(printf_buffer);
+
+	return i;  
+}
+
+int32 voot_printf(uint8 type, const char *fmt, ...)
+{
+	va_list args;
+	int32 i;
+
+	va_start(args, fmt);
+	i = voot_aprintf(type, fmt, args);
+	va_end(args);
 
 	return i;
 }
@@ -239,7 +244,7 @@ int32 voot_debug(const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
-    i = voot_printf(VOOT_PACKET_TYPE_DEBUG, fmt, args);
+    i = voot_aprintf(VOOT_PACKET_TYPE_DEBUG, fmt, args);
     va_end(args);
 
     return i;

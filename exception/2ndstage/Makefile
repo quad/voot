@@ -13,7 +13,11 @@ OBJS += main.o warez_load.o
 
 # All the others...
 OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
+
+# Network Layer
 OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
+
+# TA Heartbeat
 OBJS += heartbeat.o
 
 # Ill-fated game-smart SCIF emulation logic
@@ -24,9 +28,9 @@ OBJS += heartbeat.o
 #OBJS += adx_tlk2.obj adx_tlk2_patch.o sj_mem.obj
 
 # SCIF Emulation layer v2
-OBJS += scif_emu.o
+#OBJS += scif_emu.o
 
-# Customization Reverse Helper
+# Customization Handler
 OBJS += customize.o
 
 # Controller Access
