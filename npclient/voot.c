@@ -28,6 +28,9 @@ CHANGELOG
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+
+#include <stdio.h>
+
 #include "voot.h"
 
 static bool voot_check_packet(voot_packet *packet, uint32 size)
@@ -64,23 +67,21 @@ uint32 voot_socket_verify_packet(int32 socket)
     voot_packet packet;
     int32 packet_header_size;
     int32 full_packet_size;
+    int32 predict_packet_size;
 
     /* First check if there is an actual full packet header. */
-    fcntl(socket, F_SETFL, O_NONBLOCK);
     packet_header_size = recv(socket, &packet, sizeof(voot_packet_header), MSG_PEEK);
-    fcntl(socket, F_SETFL, NULL);
 
-    /* Make sure we received a full packet. */
-    if (packet_header_size != sizeof(voot_packet_header))
+    /* Make sure we received a full packet - cygwin tells us full size */
+    if (packet_header_size < sizeof(voot_packet_header))
         return 0;
 
     /* Now confirm the full packet is waiting for us. */
-    fcntl(socket, F_SETFL, O_NONBLOCK);
-    full_packet_size = recv(socket, &packet, sizeof(voot_packet_header) + ntohs(packet.header.size), MSG_PEEK);
-    fcntl(socket, F_SETFL, NULL);    
+    predict_packet_size = sizeof(voot_packet_header) + ntohs(packet.header.size);
+    full_packet_size = recv(socket, &packet, predict_packet_size, MSG_PEEK);
 
-    if (full_packet_size == (sizeof(voot_packet_header) + ntohs(packet.header.size)))
-        return full_packet_size;
+    if (full_packet_size >= predict_packet_size)
+        return predict_packet_size;
     else
         return 0;
 }
