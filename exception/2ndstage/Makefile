@@ -26,6 +26,9 @@ OBJS += heartbeat.o
 # SCIF Emulation layer v2
 OBJS += scif_emu.o
 
+# Customization Reverse Helper
+OBJS += customize.o
+
 all: $(BIN).srec $(BIN).bin
 
 $(BIN).srec: $(BIN).elf

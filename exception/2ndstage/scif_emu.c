@@ -17,7 +17,7 @@ TODO
 
 #include "scif_emu.h"
 
-void init_ubc_b_serial(void)
+void scif_emu_init(void)
 {
     exception_table_entry new;
 

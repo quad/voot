@@ -4,6 +4,7 @@
 #include "vars.h"
 #include "asic.h"
 #include "net.h"
+#include "system.h"
 
 /* PCI/G2 Register Definitions */
 #define PCI_IDENT_STR   (REGISTER(char)     0xa1001400)

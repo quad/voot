@@ -10,11 +10,13 @@ TODO
 
 */
 
+
 #include "vars.h"
 #include "util.h"
 #include "printf.h"
 #include "dumpio.h"
 #include "gamedata.h"
+#include "customize.h"
 
 #include "voot.h"
 
@@ -33,11 +35,9 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
         }
 
         case VOOT_COMMAND_TYPE_TIME:
-        {
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
-
+            customize_reinit();
             break;
-        }
 
         case VOOT_COMMAND_TYPE_VERSION:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
@@ -89,7 +89,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             break;
 
         case VOOT_COMMAND_TYPE_DUMPGAME:
-            voot_dump_buffer((uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
+            voot_dump_buffer((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
             break;
 
         default:
@@ -169,7 +169,8 @@ bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
 
 bool voot_send_command(uint8 type)
 {
-    return voot_printf(VOOT_PACKET_TYPE_COMMAND, "%c", type);
+    /* STAGE: Return with a true boolean. */
+    return !!voot_printf(VOOT_PACKET_TYPE_COMMAND, "%c", type);
 }
 
 void voot_dump_buffer(const uint8 *in_data, uint32 in_data_length)
@@ -219,7 +220,9 @@ int32 voot_printf(uint8 type, const char *fmt, ...)
 	i = vsnprintf(printf_buffer, sizeof(packet_size_check->buffer), fmt, args);
 	va_end(args);
 
-    voot_send_packet(type, printf_buffer, i);
+    /* STAGE: Send the packet, if we need to,  and maintain correctness. */
+    if (i && !voot_send_packet(type, printf_buffer, i))
+        i = 0;
 
     free(printf_buffer);
 

@@ -13,7 +13,6 @@ DESCRIPTION
 #include "util.h"
 #include "assert.h"
 #include "warez_load.h"
-#include "scif_emu.h"
 
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
@@ -23,13 +22,12 @@ int32 dc_main(int32 do_warez)
     unsigned long bin_size;
 
     /* STAGE: Initialize the UBC. */
-    *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBB;
+    *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
     dbr_set(exception_handler_lowlevel);
     vbr_set(vbr_buffer);
 
     /* STAGE: Initialize both UBC channels. */
     init_ubc_a_exception();
-    init_ubc_b_serial();
 
     /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();

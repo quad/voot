@@ -16,6 +16,8 @@ DESCRIPTION
 #include "util.h"
 #include "rtl8139c.h"
 #include "heartbeat.h"
+#include "scif_emu.h"
+#include "customize.h"
 
 #include "exception.h"
 
@@ -41,8 +43,8 @@ void clear_ubc_a_exception(void)
     *UBC_R_BBRA = 0;
 
     /* STAGE: Clear the break bit, if we need too. */
-    if (*UBC_R_BRCR & UBC_BRCR_CMFB)
-        *UBC_R_BRCR &= ~(UBC_BRCR_CMFB);
+    if (*UBC_R_BRCR & UBC_BRCR_CMFA)
+        *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
 
     ubc_wait();
 }
@@ -174,6 +176,12 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Pre-cache the biosfont address. */
         bfont_init(); 
+
+        /* STAGE: Initialize the SCIF Emulation layer. */
+        scif_emu_init();
+
+        /* STAGE: Initialize the customization break logic. */
+        customize_init();
     }
 #ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */

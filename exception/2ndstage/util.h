@@ -4,6 +4,7 @@
 #include "vars.h"
 
 #define SYS_MEM_START       ((uint8 *) 0x8C010000)
+#define GAME_MEM_START      ((uint8 *) 0x8C270000)
 #define SYS_MEM_END         ((uint8 *) 0x8CFFFFFF)
 
 #define MALLOC_FREE_INDEX   0xCE

@@ -382,20 +382,6 @@ bool udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
             return FALSE;
     }
 
-    /* STAGE: This really shouldn't be here, but I can't think of a better location. */
-    {
-        biudp_control_t control;
-        ip_header_t *ip;
-
-        ip = (ip_header_t *) frame->data;
-        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
-        SAFE_UINT32_COPY(control.source_ip, ip->dest);
-        SAFE_UINT32_COPY(control.dest_ip, ip->source);
-        control.port = udp->src;
-
-        biudp_init(&control);
-    }
-
     /* STAGE: Handle UDP packets based on port. */
     switch(ntohs(udp->dest))
     {
@@ -404,7 +390,23 @@ bool udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
             break;
 
         case 5007:  /* now the official VOOT network protocol port. */
+        {
+            /* STAGE: This really shouldn't be here, but I can't think of a better location. */
+            {
+                biudp_control_t control;
+                ip_header_t *ip;
+
+                ip = (ip_header_t *) frame->data;
+                memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
+                SAFE_UINT32_COPY(control.source_ip, ip->dest);
+                SAFE_UINT32_COPY(control.dest_ip, ip->source);
+                control.port = udp->src;
+
+                biudp_init(&control);
+            }
+
             return voot_handle_packet(frame, udp, udp_data_length);
+        }
 
         default:    /* Drop on the floor any network data we couldn't possibly understand. */
             break;

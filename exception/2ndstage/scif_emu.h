@@ -1,7 +1,9 @@
-#ifndef __SCIF_EMU__
-#define __SCIF_EMU__
+#ifndef __SCIF_EMU_H__
+#define __SCIF_EMU_H__
 
-void init_ubc_b_serial(void);
+#include "system.h"
+
+void scif_emu_init(void);
 void* serial_handler(register_stack *stack, void *current_vector);
 
 #endif

@@ -30,16 +30,8 @@ void init_heartbeat(void)
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
-    static bool done_once = FALSE;
-
-    /* STAGE: Run this section of code only once. */
-    if (!done_once)
-    {
-        /* STAGE: Enable the various codes. */
-        gamedata_enable_debug();
-
-        done_once = TRUE;
-    }
+    /* STAGE: Enable the various codes. */
+    gamedata_enable_debug();
 
     return current_vector;
 }

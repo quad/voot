@@ -21,6 +21,7 @@ TODO
 */
 
 #include "vars.h"
+#include "assert.h"
 #include "system.h"
 #include "asic.h"
 #include "exception-lowlevel.h"
@@ -356,10 +357,12 @@ static void rtl_rx_all(void)
         /* Reset both buffers to within our scope. */
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
-        /* STAGE: Stop processing if network layer instructs us too...
-            (assume it will take care of the handle) */
+        /* STAGE: Stop processing if network layer instructs us too... */
         if (frame_in && net_handle_frame(frame_in, packet_size))
+        {
+            assert(0);
             break;
+        }
 
         /* STAGE: free() it, no matter what. */
         free(frame_in);
