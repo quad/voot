@@ -21,13 +21,19 @@ CHANGELOG
         Improved the stability of socket relations. More specificially, we
         can handle disconnected sockets.
 
-    Fri Jan 11 00:39:32 PST 2002    Scott Robinson <scott_np@quadhome.com>
+    Fri Jan 11 00:39:32 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added a full event queue and started attaching events into the
         queue. Now we can pass cleanly between sockets?
 
     Mon Jan 21 16:24:12 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         We rely completely on the event queue now. Now directly passing
         packets between server and slave sockets via VOOT protocol library.
+
+    Mon Jan 21 18:50:59 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Threadify the socket polling.
+
+    Mon Jan 21 20:03:46 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added proper pthread mutexing to the event queue.
 
 TODO
 
@@ -78,7 +84,19 @@ int32 handle_npc_command(npc_command_t *command)
             retval = npc_connect(npc_system.slave_name, npc_system.slave_port, SOCK_DGRAM);
 
             if (retval >= 0)
+            {
+                npc_command_t *event;
+
                 npc_system.slave_socket = retval;
+
+                event = (npc_command_t *) malloc(sizeof(npc_command_t));
+                event->type = C_LISTEN_SOCKET;
+                event->listen_type = C_PACKET_FROM_SLAVE;
+                event->listen_socket = &(npc_system.slave_socket);
+                event->listen_socket_thread = &(npc_system.slave_poll_thread);
+
+                npc_add_event_queue(event);
+            }
             else
                 fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
             break;
@@ -89,9 +107,38 @@ int32 handle_npc_command(npc_command_t *command)
             retval = npc_connect(npc_system.server_name, npc_system.server_port, SOCK_STREAM);
 
             if (retval >= 0)
+            {
+                npc_command_t *event;
                 npc_system.server_socket = retval;
+
+                event = (npc_command_t *) malloc(sizeof(npc_command_t));
+                event->type = C_LISTEN_SOCKET;
+                event->listen_type = C_PACKET_FROM_SERVER;
+                event->listen_socket = &(npc_system.server_socket);
+                event->listen_socket_thread = &(npc_system.server_poll_thread);
+
+                npc_add_event_queue(event);
+            }
             else
                 fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
+            break;
+
+        case C_LISTEN_SOCKET:
+            {
+                npc_io_check_t  *arg;
+
+                /* Start a listening thread for the server socket. */
+                arg = (npc_io_check_t *) malloc(sizeof(npc_io_check_t));
+                arg->socket = command->listen_socket;
+                arg->type = command->listen_type;
+
+                if (pthread_create(command->listen_socket_thread, NULL, npc_io_check, (void *) arg))
+                {
+                    close(*(command->listen_socket));
+                    fprintf(stderr, "[npc] unable to start polling thread for type %d.\n", command->type);
+                    *(command->listen_socket) = -1;
+                }
+            }
             break;
 
         case C_LISTEN_SERVER:
@@ -129,6 +176,11 @@ int32 handle_npc_command(npc_command_t *command)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
                     fprintf(stderr, "[npc] DEBUG(server): %s", command->packet->buffer);
+                    break;
+
+                case VOOT_PACKET_TYPE_COMMAND:
+                    fprintf(stderr, "[npc] COMMAND(server): '%c'... [passing]\n", command->packet->buffer[0]);
+                    voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
 
                 case VOOT_PACKET_TYPE_DATA:
@@ -173,9 +225,12 @@ bool npc_add_event_queue(npc_command_t *command)
         fprintf(stderr, "[npc] Event queue overflow!\n");
         return TRUE;
     }
+    else if(pthread_mutex_lock(&(npc_system.event_queue_busy)));
 
     npc_system.event_queue[(npc_system.event_queue_tail + npc_system.event_queue_size) % NPC_EVENT_QUEUE_SIZE] = command;
     npc_system.event_queue_size++;
+
+    pthread_mutex_unlock(&(npc_system.event_queue_busy));
 
     return FALSE;
 }
@@ -186,11 +241,14 @@ npc_command_t* npc_get_event_queue(void)
 
     if (!npc_system.event_queue_size)
         return NULL;
+    else if(pthread_mutex_lock(&(npc_system.event_queue_busy)));
 
     command = npc_system.event_queue[npc_system.event_queue_tail];
 
     npc_system.event_queue_tail = ++npc_system.event_queue_tail % NPC_EVENT_QUEUE_SIZE;
     npc_system.event_queue_size--;
+
+    pthread_mutex_unlock(&(npc_system.event_queue_busy));
 
     return command;
 }
@@ -199,9 +257,6 @@ npc_command_t* npc_get_event(void)
 {
     npc_command_t *event;
 
-    npc_io_check(npc_system.slave_socket, C_PACKET_FROM_SLAVE);
-    npc_io_check(npc_system.server_socket, C_PACKET_FROM_SERVER);
-    
     if ((event = npc_get_event_queue()));
     else if (!event)
     {
@@ -212,44 +267,57 @@ npc_command_t* npc_get_event(void)
     return event;
 }
 
-bool npc_io_check(int32 socket, npc_command type)
+void* npc_io_check(void *in_arg)
 {
+    npc_io_check_t *arg;
+    volatile int32 *socket;
+    npc_command type;
     fd_set read_fds;
     voot_packet *packet;
     npc_command_t *event;
-    struct timeval tv;
+    bool poll_done;
 
-    if (socket < 0)
-        return FALSE;
+    /* Obtain the full parameters from the passed arg. */
+    arg = (npc_io_check_t *) in_arg;
+    socket = arg->socket;
+    type = arg->type;
+    free(arg);
 
-    /* Check if we have received data on the socket. */
-    FD_ZERO(&read_fds);
-    FD_SET(socket, &read_fds);
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    if (select(socket + 1, &read_fds, NULL, NULL, &tv) <= 0)
-        return FALSE;
+    poll_done = FALSE;
 
-    packet = voot_parse_socket(socket);
-
-    if (!packet)
+    while(*socket >= 0 && !poll_done)
     {
-        if (!recv(socket, NULL, 0, MSG_DONTWAIT | MSG_PEEK | MSG_TRUNC))
+        /* Check if we have received data on the socket. */
+        FD_ZERO(&read_fds);
+        FD_SET(*socket, &read_fds);
+        if (select(*socket + 1, &read_fds, NULL, NULL, NULL) > 0)
         {
-            type++;         /* this is a bad hack, but I'm essentially "closing" the socket for cleanup issues. */
-        }
-        else
-        {
-            return FALSE;
+            uint32 out_type;
+
+            packet = voot_parse_socket(*socket);
+
+            if (!packet)
+            {
+                if (!recv(*socket, NULL, 0, MSG_DONTWAIT | MSG_PEEK | MSG_TRUNC))
+                {
+                    out_type = type + 1;         /* this is a bad hack, but I'm essentially "closing" the socket for cleanup issues. */
+                    poll_done = TRUE;
+                }
+                else
+                    continue;          /* skip on the whole event sending. */
+            }
+            else
+                out_type = type;
+
+            event = (npc_command_t *) malloc(sizeof(npc_command_t));
+            event->type = out_type;
+            event->packet = packet;
+
+            npc_add_event_queue(event);
         }
     }
 
-    event = (npc_command_t *) malloc(sizeof(npc_command_t));
-    event->type = type;
-    event->packet = packet;
-
-    npc_add_event_queue(event);
-    return TRUE;
+    return NULL;
 }
 
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
@@ -286,7 +354,6 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     }
 
     fprintf(stderr, "[npc] connected to %s:%u and sending VERSION command.\n", dest_name, dest_port);
-
     voot_send_command(new_socket, VOOT_COMMAND_TYPE_VERSION);
 
     return new_socket;
@@ -305,7 +372,18 @@ static void* npc_server_accept_task(void *arg)
     {
         if (new_socket >= 0 && (npc_system.server_socket < 0))
         {
+            npc_command_t *event;
+            
             npc_system.server_socket = new_socket;
+
+            event = (npc_command_t *) malloc(sizeof(npc_command_t));
+            event->type = C_LISTEN_SOCKET;
+            event->listen_type = C_PACKET_FROM_SERVER;
+            event->listen_socket = &(npc_system.server_socket);
+            event->listen_socket_thread = &(npc_system.server_poll_thread);
+
+            npc_add_event_queue(event);
+            
             fprintf(stderr, "[npc] accepted connection for server! [%d]\n", new_socket);
         }
         else
@@ -352,7 +430,7 @@ int32 npc_server_listen(void)
         return -3;
     }
 
-    if (pthread_create(&(npc_system.server_thread), NULL, npc_server_accept_task, (void *) server_socket))
+    if (pthread_create(&(npc_system.server_listen_thread), NULL, npc_server_accept_task, (void *) server_socket))
     {
         close(server_socket);
         fprintf(stderr, "[npc] unable to start acceptance thread for serving.\n");
@@ -375,6 +453,14 @@ void npc_exit(int code)
         else
             fprintf(stderr, "[npc] closed slave socket.\n");
     }
+
+    if (npc_system.server_socket >= 0)
+    {
+        if (close(npc_system.server_socket))
+            fprintf(stderr, "[npc] unable to close server socket.\n");
+        else
+            fprintf(stderr, "[npc] closed server socket.\n");
+    }
 }
 
 void npc_init(void)
@@ -383,6 +469,8 @@ void npc_init(void)
 
     memset(&npc_system, 0x0, sizeof(npc_system));
     npc_system.slave_socket = npc_system.server_socket = npc_system.server_socket_wait = -1;
+
+    pthread_mutex_init(&npc_system.event_queue_busy, NULL);
 
     command.type = C_SET_SLAVE_PORT;
     command.port = VOOT_SLAVE_PORT;

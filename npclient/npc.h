@@ -26,6 +26,8 @@ typedef enum
     C_PACKET_FROM_SERVER,   /* On reception of a packet from the server. */
     C_CLOSE_SERVER,         /* Need to close the server socket. */
 
+    C_LISTEN_SOCKET,        /* Starts a polling thread. */
+
     C_EXIT                  /* Exit from the client. */
 } npc_command;
 
@@ -49,6 +51,13 @@ typedef struct
     voot_packet     *packet;
 
     /*
+        C_LISTEN_THREAD
+    */
+    npc_command     listen_type;
+    volatile int32  *listen_socket;
+    pthread_t       *listen_socket_thread;
+
+    /*
         C_EXIT
     */
     int32           code;
@@ -59,24 +68,33 @@ typedef struct
 {
     char                *slave_name;
     uint16              slave_port;
-    int32               slave_socket;
+    volatile int32      slave_socket;
+    pthread_t           slave_poll_thread;
 
     char                *server_name;
     uint16              server_port;
     volatile int32      server_socket;
     volatile int32      server_socket_wait;
-    pthread_t           server_thread;
+    pthread_t           server_listen_thread;
+    pthread_t           server_poll_thread;
 
     npc_command_t*      event_queue[NPC_EVENT_QUEUE_SIZE];
     uint32              event_queue_size;
     uint32              event_queue_tail;
+    pthread_mutex_t     event_queue_busy;
 } npc_data_t;
+
+typedef struct
+{
+    volatile int32  *socket;
+    npc_command     type;
+} npc_io_check_t;
 
 int32 handle_npc_command(npc_command_t *command);
 bool npc_add_event_queue(npc_command_t *command);
 npc_command_t* npc_get_event_queue(void);
 npc_command_t* npc_get_event(void);
-bool npc_io_check(int32 socket, npc_command type);
+void* npc_io_check(void *in_arg);
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);
 int npc_server_listen(void);
 void npc_exit(int code);
