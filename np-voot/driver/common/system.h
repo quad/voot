@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.9 2002/11/14 20:56:03 quad Exp $
+    $Id: system.h,v 1.10 2002/12/17 11:31:57 quad Exp $
 
 */
 
@@ -77,8 +77,6 @@
 
 typedef struct
 {
-    uint32  fpscr;
-    uint32  fpul;
     uint32  pr;
     uint32  mach;
     uint32  macl;
@@ -99,6 +97,43 @@ typedef struct
     uint32  r2_bank;
     uint32  r1_bank;
     uint32  r0_bank;
+
+    float   fr0_b;
+    float   fr1_b;
+    float   fr2_b;
+    float   fr3_b;
+    float   fr4_b;
+    float   fr5_b;
+    float   fr6_b;
+    float   fr7_b;
+    float   fr8_b;
+    float   fr9_b;
+    float   fr10_b;
+    float   fr11_b;
+    float   fr12_b;
+    float   fr13_b;
+    float   fr14_b;
+    float   fr15_b;
+
+    float   fr0_a;
+    float   fr1_a;
+    float   fr2_a;
+    float   fr3_a;
+    float   fr4_a;
+    float   fr5_a;
+    float   fr6_a;
+    float   fr7_a;
+    float   fr8_a;
+    float   fr9_a;
+    float   fr10_a;
+    float   fr11_a;
+    float   fr12_a;
+    float   fr13_a;
+    float   fr14_a;
+    float   fr15_a;
+
+    uint32  fpscr;
+    uint32  fpul;
 
     uint32  r14;
     uint32  r13;

@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.3 2002/12/16 07:51:00 quad Exp $
+    $Id: voot.c,v 1.4 2002/12/17 11:31:58 quad Exp $
 
 DESCRIPTION
 
@@ -94,15 +94,10 @@ static bool voot_packet_handle_default (voot_packet *packet, void *ref)
             {
                 uint32  freesize;
                 uint32  max_freesize;
-                uint32  timer;
 
                 malloc_stat (&freesize, &max_freesize); 
 
-                timer = timer_free_count ();
                 voot_printf (VOOT_PACKET_TYPE_DEBUG, "VOX common, PRE-RELEASE [mem: %u block: %u]", freesize, max_freesize);
-                timer = timer_free_micro ((timer_free_count () > timer) ? (timer_free_count() - timer): (timer - timer_free_count()));
-
-                voot_printf (VOOT_PACKET_TYPE_DEBUG, "timer: %u", timer);
             }
 
             break;
@@ -140,9 +135,9 @@ void* voot_add_packet_chain (voot_packet_handler_f function)
 
 bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
 {
-	voot_packet_header *netout;
-	struct pbuf        *p;
-	bool                retval;
+    voot_packet_header *netout;
+    struct pbuf        *p;
+    bool                retval;
 
     if (!voot_pcb)
         return FALSE;
@@ -186,9 +181,9 @@ bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
 
 int32 voot_aprintf (uint8 type, const char *fmt, va_list args)
 {
-	int32           i;
-	voot_packet    *packet_size_check;
-	char           *printf_buffer;
+    int32           i;
+    voot_packet    *packet_size_check;
+    char           *printf_buffer;
 
     /* STAGE: Allocate the largest possible buffer for the printf. */
 
@@ -199,7 +194,7 @@ int32 voot_aprintf (uint8 type, const char *fmt, va_list args)
 
     /* STAGE: Actually perform the printf. */
 
-	i = vsnprintf (printf_buffer, sizeof (packet_size_check->buffer), fmt, args);
+    i = vsnprintf (printf_buffer, sizeof (packet_size_check->buffer), fmt, args);
 
     /* STAGE: Send the packet, if we need to, and maintain correctness. */
 
@@ -210,19 +205,19 @@ int32 voot_aprintf (uint8 type, const char *fmt, va_list args)
 
     free (printf_buffer);
 
-	return i;  
+    return i;  
 }
 
 int32 voot_printf (uint8 type, const char *fmt, ...)
 {
-	va_list args;
-	int32   i;
+    va_list args;
+    int32   i;
 
-	va_start (args, fmt);
-	i = voot_aprintf (type, fmt, args);
-	va_end (args);
+    va_start (args, fmt);
+    i = voot_aprintf (type, fmt, args);
+    va_end (args);
 
-	return i;
+    return i;
 }
 
 bool voot_send_command (uint8 type)

@@ -1,11 +1,10 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.14 2002/11/14 20:56:02 quad Exp $
+# $Id: Makefile,v 1.15 2002/12/17 11:31:57 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 DRIVER_CLEAN = lwip.a-clean
 DRIVER_INCS = -I./lwip/
-LIBS = -llwip
 
 # FIRST - Base interrupt and exception logic.
 DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o ubc.o
