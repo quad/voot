@@ -1,0 +1,25 @@
+Customization + 5.60 Test Disc (np-voot-cust+)
+(C) 2002, the Netplay VOOT Extensions Project.
+All Rights Reserved.
+
+Go to http://voot.sf.net/ for more information.
+
+This program is distributed in the hope that it
+will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU General Public License for
+more details.
+<hr>
+HOWTO Load Customized VR Colors:
+
+Press 'Y' during VR Select to load customized
+colors for selected VR.
+<hr>
+HOWTO Load VR Test in 5.66:
+
+Press 'Y' after *full VR load* for VR Test.
+
+The VR load is finished if the sub-menus are
+working.
+<hr>
