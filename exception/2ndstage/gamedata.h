@@ -79,6 +79,7 @@ Initial Focus:
 #define VOOT_MEM_START      0x8CCF9ECC
 #define VOOT_MEM_END        0x8CCFA2CC
 
+bool replace_game_text(const char *key, const char *repl);
 void gamedata_enable_debug(void);
 
 #endif

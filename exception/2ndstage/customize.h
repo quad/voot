@@ -9,6 +9,8 @@ typedef enum
     RUN
 } customize_check_mode;
 
+extern uint32 do_osd;
+
 void customize_init(void);
 bool customize_reinit(void);
 void* customize_handler(register_stack *stack, void *current_vector);

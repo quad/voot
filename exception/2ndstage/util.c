@@ -11,6 +11,12 @@ DESCRIPTION
 
 #include "util.h"
 
+static uint8 *malloc_root;
+static uint32 malloc_fail_count;
+/* DEPRECATED: This was is malloc()'s key.
+static const uint8 malloc_key[] = { 0xE6, 0x2F, 0xFC, 0x7F, 0x02, 0x00 }; */
+static const uint8 malloc_key[] = { 0xe6, 0x2f, 0xc6, 0x2f, 0xfc, 0x7f, 0x02, 0x00 };
+
 /* CREDIT: Borrowed from Dan Potter's libc */
 void* memmove(void *dest, const void *src, uint32 count)
 {
@@ -80,14 +86,16 @@ void grep_memory(const uint8 *key, uint32 key_size)
 }
 
 /* CREDIT: Accessor to Katana syMalloc() */
-uint8 *malloc_root;
-uint32 malloc_fail_count;
-const uint8 malloc_key[] = { 0xE6, 0x2F, 0xFC, 0x7F, 0x02, 0x00 };
-
 void malloc_init(void)
 {
     if (!malloc_root)
         malloc_root = search_sysmem(malloc_key, sizeof(malloc_key));
+}
+
+void malloc_stat(uint32 *freesize, uint32 *max_freesize)
+{
+    if (malloc_root)
+        return (*(void (*)()) malloc_root)(freesize, max_freesize);
 }
 
 void* malloc(uint32 size)
@@ -96,7 +104,7 @@ void* malloc(uint32 size)
 
     if (malloc_root)
     {
-        mem = (*(void* (*)()) malloc_root)(size);
+        mem = (*(void* (*)()) (malloc_root + MALLOC_MALLOC_INDEX))(size);
         if (!mem)
             malloc_fail_count++;
         return mem;

@@ -48,10 +48,12 @@ $(BIN).elf: $(OBJS)
 	$(CC) $(INCS) -c $< -o $@
 
 clean:
-	-rm -f *.o *.elf *.bin *.bck $(EXTRA_CLEAN)
+	-rm -f *.o *.elf $(EXTRA_CLEAN)
 
 mrproper: clean
-	-rm -f *.srec
+	-rm -f *.bin *.srec
+	-rm -f *~
+	-rm -f DEADJOE
 
 force:
 	-rm -f $(BIN).elf

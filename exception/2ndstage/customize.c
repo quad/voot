@@ -11,7 +11,6 @@ TODO
 */
 
 #include "vars.h"
-#include "assert.h"
 #include "exception.h"
 #include "exception-lowlevel.h"
 #include "util.h"
@@ -25,8 +24,16 @@ static uint32 custom_func;
 static char gamebin_c[20];
 static customize_check_mode custom_status;
 
+uint32 do_osd = 0;
+
+#define HARD_BREAK
+
 static void customize_locate_func(void)
 {
+#ifdef HARD_BREAK
+    return;
+#endif
+
     /* STAGE: Locate the customization function beginning. */
     custom_func = (uint32) search_sysmem_at(custom_func_key, sizeof(custom_func_key), GAME_MEM_START, SYS_MEM_END);
 
@@ -51,6 +58,16 @@ static void customize_locate_func(void)
 
 bool customize_reinit(void)
 {
+#ifdef HARD_BREAK
+    *UBC_R_BARA = 0x8c397f62;
+    *UBC_R_BAMRA = UBC_BAMR_NOASID;
+    *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
+
+    ubc_wait();
+
+    return TRUE;
+#endif
+
     /* STAGE: Is the current vector still valid? */
     if (custom_status == RUN && !memcmp((uint8 *) custom_func, custom_func_key, sizeof(custom_func_key)))
         return TRUE;
@@ -67,7 +84,18 @@ bool customize_reinit(void)
     /* STAGE: If the function was located, set our status to run but DO NOT
         allow the handler to process this iteration. */
     if (custom_func)
+    {
+        replace_game_text("GATE FIELD INTERVENTION",
+                          "A shark on whiskey");
+        replace_game_text("STATUS CRITICAL    ",
+                          "is mighty risky.");
+        replace_game_text("VR EYE CAMERA 1P",
+                          "PUNK BITCH CAM");
+        replace_game_text("(pause)",
+                          "(stop)");
+
         custom_status = RUN;
+    }
     /* STAGE: No customization function was located. Continue in LOAD mode. */
     else
     {
@@ -104,8 +132,16 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
     if (!customize_reinit())
         return current_vector;
 
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "customize break hit @ %x", spc());
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "(%x, %x, %x, %x)", stack->r4, stack->r5, stack->r6, stack->r7);
+    // 8c389468
+    //customize (VR %u, PLR %u, CUST %x, CMAP %x)
+    // 8c39bc04
+    //osd_midboss (COL %u, ROW %u, TEXT '%s', FONT %x)
+    // 8c3970e2
+    //osd_game (COL %u, ROW %u, TEXT '%s', COLOR b%u, ARROWS b%u)
+
+    //voot_printf(VOOT_PACKET_TYPE_DEBUG, "(%x, %x, %x, %x) from %x", stack->r4, stack->r5, stack->r6, stack->r7, stack->pr);
+
+    //(*(void (*)()) 0x8c3970e2)(0x100, 0x100, "test123", 0, 0, do_osd);
 
     return current_vector;
 }

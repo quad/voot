@@ -17,6 +17,8 @@ TODO
 #include "dumpio.h"
 #include "gamedata.h"
 
+#include "customize.h"
+
 #include "voot.h"
 
 static bool maybe_handle_command(uint8 command, voot_packet *packet)
@@ -35,11 +37,19 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+            do_osd++;
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
+        {
+            uint32 freesize, max_freesize;
+
+            malloc_stat(&freesize, &max_freesize);
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA [%d/%d]", freesize, max_freesize);
+
             break;
+        }
 
         case VOOT_COMMAND_TYPE_PASVON:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive mode functionality disabled.");
