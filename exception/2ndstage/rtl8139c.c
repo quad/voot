@@ -21,6 +21,7 @@ TODO
 */
 
 #include "vars.h"
+#include "assert.h"
 #include "system.h"
 #include "asic.h"
 #include "exception-lowlevel.h"
@@ -296,15 +297,22 @@ static int16 rtl_find_free_descriptor(void)
 {
     int16 index;
 
-    for (index = 0; index < 4; index++)
+    index = 0;
+
+    for (;;)
     {
         /* STAGE: We can conveniently handle re-transmission of packets
             here. Of course, if there is something fundamentally wrong we'll
             run out of slots really fast. */
-        if (RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) & RTL_TX_ABORTED)
-            RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) &= ~RTL_TX_HOST_OWNS;
-        else if (RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) & RTL_TX_HOST_OWNS)
+        if (RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) & RTL_TX_ABORTED)
+        {
+            //RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) ~&= ~RTL_TX_HOST_OWNS;
+            RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) |= 1;
+        }
+        else if (RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) & RTL_TX_HOST_OWNS)
             return index;
+
+        index = (index + 1) % 4;
     }
 
     return -1;
@@ -329,7 +337,7 @@ bool rtl_tx(const uint8* frame, uint32 length)
 
     /* STAGE: Copy the length into the status register - it also resets the
         register, but that's cool. */
-    RTL_IO_INT((descriptor * sizeof(int)) + RTL_TXSTATUS0) = length;
+    RTL_IO_INT((descriptor * sizeof(uint32)) + RTL_TXSTATUS0) = length;
 
     return TRUE;
 }
