@@ -33,6 +33,14 @@ void init_ubc_a_exception(void)
     ubc_wait();
 }
 
+void clear_ubc_a_exception(void)
+{
+    /* STAGE: Clear UBC Channel A because we (supposedly) now have interrupt control. */
+    *UBC_R_BBRA = 0;
+
+    ubc_wait();
+}
+
 static void init_vbr_table(void)
 {
     /* STAGE: !!! Install handlers for the other exception types OR remove
@@ -128,17 +136,22 @@ void* exception_handler(register_stack *stack)
 
     do_vbr_switch = is_vbr_switch_time();
 
-    /* STAGE: Handle the first initialization */
+    /* STAGE: Handle the first initializatio.n */
     if (do_vbr_switch && !exp_table.vbr_switched)
     {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
-        /* STAGE: Initialize the new VBR */
+#ifndef REINIT_VBR_ON_RESET
+        /* STAGE: Deinitialize the UBC for future use. */
+        clear_ubc_a_exception();
+#endif
+
+        /* STAGE: Initialize the VBR hooks. */
         init_vbr_table();
 
-        /* STAGE: Handle ASIC exceptions */
+        /* STAGE: Handle ASIC exceptions. */
         init_asic_handler();
 
         /* STAGE: Initialize the BBA. */
@@ -150,14 +163,11 @@ void* exception_handler(register_stack *stack)
             }
         }
 
-        /* STAGE: Grab a UBC timer. */
+        /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();
 
         /* STAGE: Pre-cache the biosfont address. */
         bfont_init(); 
-
-        /* DEBUG: Notification. */
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR");
     }
 #ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
@@ -182,6 +192,6 @@ void* exception_handler(register_stack *stack)
         }
     }
 
-    /* STAGE: RETURN */
+    /* STAGE: We're all done. Return however we were instructed. */
     return back_vector;
 }

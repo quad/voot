@@ -18,15 +18,7 @@ DESCRIPTION
 
 void init_heartbeat(void)
 {
-    exception_table_entry new_exception;
     asic_lookup_table_entry new_irq;
-
-    /* STAGE: Catch the pageflip exceptions. */
-    new_exception.type = EXP_TYPE_GEN;
-    new_exception.code = EXP_CODE_UBC;
-    new_exception.handler = pageflip_handler;
-
-    //add_exception_handler(&new_exception);
 
     /* STAGE: Catch on TA_DONE ASIC interrupts. */
     new_irq.irq = EXP_CODE_INT9;
@@ -50,21 +42,6 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
     }
 
     return current_vector;
-}
-
-void* pageflip_handler(register_stack *stack, void *current_vector)
-{
-    /* STAGE: We only break on the pageflip (channel A) exception. */
-    if (*UBC_R_BRCR & UBC_BRCR_CMFA)
-    {
-        /* STAGE: Be sure to clear the proper bit. */
-        *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
-
-        /* STAGE: Pass control to the actual code base. */
-        return my_heartbeat(stack, current_vector);
-    }
-    else
-        return current_vector;
 }
 
 void* ta_handler(void *passer, register_stack *stack, void *current_vector)
