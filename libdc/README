@@ -1,0 +1,79 @@
+README for libdc (Dreamcast Lowlevel Utility Library)
+Copyright (C) 2001, the libdc authors.
+
+TRADEMARKS
+----------
+"Sega", "Dreamcast", and "Virtual-On" are registered trademarks of Sega
+Enterprises, Ltd. This library has no association with Sega or any of its
+affiliates, besides working on their hardware. All other trademarks are
+owned by their respective trademark holders.
+
+WHAT IS LIBDC
+---------------- 
+Libdc is the function library for the Netplay VOOT project. Based off a
+variety of sources as well as containing plenty of original code, it serves
+as a central repository for the majority of the Netplay VOOT source.
+
+Libdc, as opposed to the much more featureful KOS or libdream, is designed
+with low memory and low hardware impact as well as good documentation all in
+mind. Especially good documentation. We believe the majority of Dreamcast
+software libraries are not well documented, or their code is relatively
+"obscure". Libdc hopes this never happens to it, even if it means trading
+off speed and code-size.
+
+LICENSE
+-------
+This is a work in progress. The library itself is distributed under the
+LGPL. We, the authors, suggest you read this software license and understand
+it before using libdc in your project.
+
+Each source file in libdc also contains a copyright and modification notice.
+
+COMPILING IT
+------------
+For the moment, you're on your own there. Setup a SH4 gcc target, type
+"make", and hope for the best. We hope our make setup is clean and clear
+enough that it should work out of the box for anyone. If it doesn't, the
+layout should be in such a fashion that anyone could get it to work for
+them.
+
+USING IT
+--------
+Include "libdc.h". Call the functions you need. End of story.
+
+DOCUMENTATION
+-------------
+This is an important segment of this project. However, we suggest you read
+the source files before looking for/at the documentation.
+
+Why?
+
+Because we haven't written any (documentation) yet.
+
+COPYING
+-------
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by the
+Free Software Foundation; either version 2.1 of the License, or (at your
+option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
+for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation,
+Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+CREDITS
+-------
+See the AUTHORS file for a list of the authors/copyrights.
+
+If you want to do anything with this project, which isn't authorized by the
+LGPL, then you're going to have to get in contact with all the listed people
+and obtain their permission.
+
+the libdc authors
+Mon Aug  6 14:37:53 PDT 2001
+http://sourceforge.net/projects/voot/
