@@ -51,8 +51,19 @@ $(BIN).elf: $(OBJS)
 	$(OBJCOPY) -O binary $(BIN).elf $(BIN).bin
 	./scramble $(BIN).bin 1ST_READ.BIN
 
+IP.BIN: makeip
+	./makeip ip.txt IP.BIN
+
+np-voot-slave.iso: 1ST_READ.BIN IP.BIN
+	cp 1ST_READ.BIN IP.BIN temp-iso/
+	mkisofs -l -V NPVOOTSLAVE -C 0,11702 -o temp.iso 1ST_READ.BIN IP.BIN
+	( cat IP.BIN ; dd if=tmp.iso bs=2048 skip=16 ) > $@
+
 scramble:
 	gcc -o scramble tools/scramble/scramble.c
+
+makeip:
+	gcc -o makeip tools/makeip/makeip.c
 
 bin2c:
 	gcc -o bin2c bin2c.c
@@ -60,11 +71,13 @@ bin2c:
 clean:
 	make -C 2ndstage clean
 	-rm -f 2ndstage.c
-	-rm -f *.o *.elf 1ST_READ.BIN *.bck $(EXTRA_CLEAN)
+	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
+	-rm -f 1ST_READ.BIN IP.BIN np-voot-slave.iso
 
 reallyclean: clean
-	make -C 2ndstage clean
-	-rm -f *.bin *.srec bin2c
+	-rm -f *.bin *.srec
+	-rm -f *~
+	-rm -f scramble makeip bin2c
 
 run: $(BIN).bin
 	dc-tool -p -x $(BIN).elf
