@@ -55,7 +55,6 @@ IP.BIN: makeip
 	./makeip ip.txt IP.BIN
 
 np-voot-slave.iso: 1ST_READ.BIN IP.BIN
-	cp 1ST_READ.BIN IP.BIN temp-iso/
 	mkisofs -l -V NPVOOTSLAVE -C 0,11702 -o temp.iso 1ST_READ.BIN IP.BIN
 	( cat IP.BIN ; dd if=tmp.iso bs=2048 skip=16 ) > $@
 
