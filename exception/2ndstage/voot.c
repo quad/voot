@@ -17,6 +17,29 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 {
     switch(command)
     {
+        case VOOT_COMMAND_TYPE_HEALTH:
+        {
+            volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
+            volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
+
+            break;
+        }
+
+        case VOOT_COMMAND_TYPE_TIME:
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+            break;
+
+        case VOOT_COMMAND_TYPE_VERSION:
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
+            break;
+
+        case VOOT_COMMAND_TYPE_PASVON:
+            trap_set_passive(TRUE);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive monitoring ON!");
+            break;
+
         case VOOT_COMMAND_TYPE_DUMPON:
             dump_start(((uint32 *) packet->buffer)[1]);
             break;
@@ -25,54 +48,22 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             dump_stop();
             break;
 
-        case VOOT_COMMAND_TYPE_DUMPGAME:
-            voot_dump_buffer((uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
+        /* TODO: After taking a certain number of screenshots, it appears to
+            crash the system. Maybe the dump_framebuffer() call should be
+            moved into the heartbeat logic and some simple IPC be
+            implemented? */
+
+        case VOOT_COMMAND_TYPE_SCREEN:
+            dump_framebuffer();
             break;
 
         case VOOT_COMMAND_TYPE_DUMPMEM:
             voot_dump_buffer((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
             break;
 
-        case VOOT_COMMAND_TYPE_SCREEN:
-        {
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Starting screenshot...");
-
-            dump_framebuffer();
-
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Finished screenshot!");
+        case VOOT_COMMAND_TYPE_DUMPGAME:
+            voot_dump_buffer((uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
             break;
-        }
-
-        case VOOT_COMMAND_TYPE_INJECTTST:
-        {
-            char test_string[] = "SuperJoe";
-            trap_inject_data(test_string, sizeof(test_string));
-        }
-            break;
-
-        case VOOT_COMMAND_TYPE_HEALTH:
-        {
-            volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
-            volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
-
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
-        }
-            break;
-
-        case VOOT_COMMAND_TYPE_TIME:
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
-            break;
-
-        case VOOT_COMMAND_TYPE_PASVON:
-            trap_set_passive(TRUE);
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive monitoring ON!");
-            break;
-
-        case VOOT_COMMAND_TYPE_VERSION:
-        {
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
-            break;
-        }
 
         default:
             break;
