@@ -1,6 +1,6 @@
 /*  debug.c
 
-    $Id: debug.c,v 1.3 2002/10/25 20:58:11 quad Exp $
+    $Id: debug.c,v 1.4 2002/11/04 18:38:26 quad Exp $
 
 DESCRIPTION
 
@@ -47,11 +47,16 @@ void wait_for_user (void)
 
     /* STAGE: Clear out the buttons so our first evalution is true... */
 
-    cond.buttons = 0;
+    cond.buttons = CONT_A;
 
     /* STAGE: Wait until any button is pressed... */
 
-    while (!cond.buttons)
+    while (cond.buttons & CONT_A)
+        cont_get_cond (maple_first_controller (), &cond);
+
+    /* STAGE: Wait until it's released... */
+
+    while (!(cond.buttons & CONT_A))
         cont_get_cond (maple_first_controller (), &cond);
 }
 
@@ -75,6 +80,7 @@ int main (void)
 
     wait_for_user ();
     conio_clear ();
+    conio_gotoxy (0, 0);
 
     /* STAGE: Open the description file. Parse and display it. */
 
@@ -86,10 +92,11 @@ int main (void)
 
         while (fgets (line, sizeof (line), in_desc))
         {
-            if (!stricmp ("<hr>", line))
+            if (!stricmp ("<hr>\n", line))
             {
                 wait_for_user ();
                 conio_clear ();
+                conio_gotoxy (0, 0);
             }
             else
                 conio_putstr (line);
@@ -103,6 +110,7 @@ int main (void)
 
         wait_for_user ();
         conio_clear ();
+        conio_gotoxy (0, 0);
     }
         
 

@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.7 2002/10/18 19:52:19 quad Exp $
+    $Id: voot.c,v 1.8 2002/11/04 18:38:21 quad Exp $
 
 DESCRIPTION
 
@@ -47,7 +47,7 @@ bool voot_packet_handle_default (voot_packet *packet)
 
                 malloc_stat (&freesize, &max_freesize);
 
-                voot_debug ("VOX common, PRE-RELEASE [mem: %u block: %u]", freesize, max_freesize);
+                voot_printf (VOOT_PACKET_TYPE_DEBUG, "VOX common, PRE-RELEASE [mem: %u block: %u]", freesize, max_freesize);
             }
 
             break;

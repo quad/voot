@@ -1,6 +1,6 @@
 # Generic Makefile for a netplay driver.
 #
-# $Id: Makefile.driver,v 1.5 2002/10/18 19:52:19 quad Exp $
+# $Id: Makefile.driver,v 1.6 2002/11/04 18:38:20 quad Exp $
 #
 # NOTE: Path is within a driver source directory.
 
@@ -8,7 +8,7 @@ include ../../Makefile.config
 
 DEFS += $(DRIVER_DEFS)
 INCS += $(DRIVER_INCS)
-LIBS += $(DRIVER_LIBS) -L$(DRIVER_COMMON_DIR) -ldriver-common
+LIBS += $(DRIVER_LIBS) -L$(DRIVER_COMMON_DIR) -ldriver-common -llwip
 
 $(DRIVER_TARGET).a: $(DRIVER_OBJS)
 	$(DC_AR) rcs $(DRIVER_TARGET).a $(DRIVER_OBJS)

@@ -1,6 +1,6 @@
 /*  gamedata.h
 
-    $Id: gamedata.h,v 1.6 2002/10/18 19:52:19 quad Exp $
+    $Id: gamedata.h,v 1.7 2002/11/04 18:38:21 quad Exp $
 
 TODO
 
@@ -12,27 +12,6 @@ TODO
 
 #ifndef __COMMON_GAMEDATA_H__
 #define __COMMON_GAMEDATA_H__
-
-/*
-
-    voot_gamedata_t structure starts at: 0x8CCF9ECC (8ccf0000 is the index in the VOOT code)
-
-    Gameshark code format:
-
-    01-XXXXXX   8-bit constant write
-    000000YY
-
-    01-CF9F58   Debug Mode
-    00000001
-
-    01-CF9EFD
-    00000001    Dumb AI Mode (only in single player)
-
-    uint16 *arcade = (uint16 *) (0x8CCF9ECC + 0x1A);
-    uint8 *enemy_shoot = (uint8 *) (0x8CCF9ECC + 0x31);
-    uint16 *proto_on = (uint16 *) (0x8CCF9ECC + 0x6A);
-
-*/
 
 #define _GAMEDATA_BASE          (0x8ccf0000)
 
@@ -108,7 +87,7 @@ typedef struct
     {
         uint8   index[2]    __attribute__ ((packed));
 
-        union
+        struct
         {
             uint8   p1      __attribute__ ((packed));   /* 0x49: 0 is off. 1 is on. */
             uint8   p2      __attribute__ ((packed));   /* 0x4A: 0 is off. 1 is on. */
@@ -119,7 +98,7 @@ typedef struct
     {
         uint8   index[2]    __attribute__ ((packed));
 
-        union
+        struct
         {
             uint8   p1      __attribute__ ((packed));   /* 0x4B: 0 is off. 1 is Gold. 2 is Silver. */
             uint8   p2      __attribute__ ((packed));   /* 0x4C: 0 is off. 1 is Gold. 2 is Silver. */
@@ -179,9 +158,5 @@ typedef struct
 
 #define VOOT_MEM_START      0x8ccf0000
 #define VOOT_MEM_END        0x8ccfffff
-
-/* NOTE: Module definitions. */
-
-void    gamedata_enable_debug   (void);
 
 #endif

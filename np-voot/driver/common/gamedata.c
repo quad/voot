@@ -1,6 +1,6 @@
 /*  gamedata.c
 
-    $Id: gamedata.c,v 1.4 2002/06/30 09:15:06 quad Exp $
+    $Id: gamedata.c,v 1.5 2002/11/04 18:38:20 quad Exp $
 
 DESCRIPTION
 
@@ -17,11 +17,3 @@ TODO
 #include "vars.h"
 
 #include "gamedata.h"
-
-void gamedata_enable_debug(void)
-{
-    GAMEDATA_OPT->proto_temjin      = 1;
-    GAMEDATA_OPT->proto_raiden      = 1;
-    GAMEDATA_OPT->debug_mode        = 1;
-    GAMEDATA_OPT->versus_cable_us   = 1;
-}
