@@ -12,6 +12,9 @@
     .global _interrupt_sub_handler_base
     .global _interrupt_sub_handler_end
     .global _ubc_wait
+    .global _bios_patch_base
+    .global _bios_patch_handler
+    .global _bios_patch_end
 
 !
 ! HANDLE GENERAL EXCEPTIONS
@@ -126,7 +129,7 @@ general_exception_handler:
     jmp     @r0
     nop
 
-    .align 4
+    .align  4
 general_handler:
     .long   general_exception_xt
 
@@ -166,7 +169,7 @@ cache_exception_handler:
     jmp     @r0
     nop
 
-    .align 4
+    .align  4
 cache_handler:
     .long   general_exception_xt
 
@@ -195,7 +198,7 @@ interrupt_exception_handler:
     jmp     @r0
     nop
 
-    .align 4
+    .align  4
 interrupt_handler:
     .long   general_exception_xt
 
@@ -232,3 +235,27 @@ _ubc_wait:
     nop
     rts
     nop
+
+!
+! Test BIOS bypass functionality.
+!
+
+bios_patch_null:
+    nop
+    rts
+    nop
+
+_bios_patch_base:
+    nop
+    mov.l   r0, @-r15
+    mov.l   _bios_patch_handler, r0
+    jmp     @r0
+    mov.l   @r15+, r0
+    nop
+
+    .align  4
+_bios_patch_handler:
+    .long   bios_patch_null
+
+_bios_patch_end:
+

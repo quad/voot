@@ -59,4 +59,8 @@ extern void exception_handler_lowlevel(void);
 extern void my_exception_finish(void);
 extern void ubc_wait(void);
 
+extern uint8 bios_patch_base[];
+extern void *bios_patch_handler;
+extern uint8 bios_patch_end[];
+
 #endif

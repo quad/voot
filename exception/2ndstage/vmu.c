@@ -9,8 +9,6 @@ DESCRIPTION
 #include "vars.h"
 #include "util.h"
 
-#include "assert.h" 
-
 #include "vmu.h"
 
 static uint8 *vmu_load_root;

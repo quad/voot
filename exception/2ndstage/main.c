@@ -17,6 +17,11 @@ DESCRIPTION
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
+void handle_bios_vector(void)
+{
+    assert(0);
+}
+
 int32 dc_main(int32 do_warez)
 {
     unsigned long bin_size;
@@ -34,6 +39,7 @@ int32 dc_main(int32 do_warez)
     ubc_wait();
 
     /* STAGE: Handle the 1ST_READ.BIN */
+#if 1
     if (do_warez)
     {
         warez_load(*((unsigned long *) REAL_LOAD_POINT));
@@ -44,9 +50,23 @@ int32 dc_main(int32 do_warez)
         bin_size = *((unsigned long *) REAL_LOAD_POINT);
         memmove((uint8 *) REAL_LOAD_POINT, (uint8 *) LOADED_POINT, bin_size);
 
+        /* STAGE: Flush the cache so we're actually going to where we want. */
+        flush_cache();
+
         /* STAGE: Execute the 1ST_READ.BIN */
         (*(void (*)()) REAL_LOAD_POINT) ();
     }
+#else
+
+    //bios_patch_handler = handle_bios_vector;    /* This must occur before the copy. */
+    //memcpy((uint32 *) 0x8c00c000, bios_patch_base, bios_patch_end - bios_patch_base);
+
+    flush_cache();
+
+    /* Half-assed reboot. */
+    (*(void (*)()) 0x8c0000e0) (1);
+
+#endif
 
     /* STAGE: Freeze it in an interesting fashion. */
     assert(0);
