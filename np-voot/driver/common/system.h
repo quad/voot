@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.6 2002/06/29 12:57:04 quad Exp $
+    $Id: system.h,v 1.7 2002/08/04 05:48:04 quad Exp $
 
 */
 
@@ -42,9 +42,9 @@
 
 /* NOTE: Exception/Interrupt registers. */
 
-#define REG_EXPEVT          (REGISTER(uint32) (0xFF000024))
-#define REG_INTEVT          (REGISTER(uint32) (0xFF000028))
-#define REG_TRA             (REGISTER(uint32) (0xFF000020))
+#define REG_EXPEVT          (REGISTER(uint32) (0xff000024))
+#define REG_INTEVT          (REGISTER(uint32) (0xff000028))
+#define REG_TRA             (REGISTER(uint32) (0xff000020))
 
 /* NOTE: Exception types from the lowlevel handler. */
 
@@ -127,10 +127,12 @@ extern void     vbr_set     (const void *set);
 extern void *   spc         (void); 
 extern void     spc_set     (const void *set);
 
+extern void *   gbr         (void);
+extern void     gbr_set     (const void *set);
+
 extern uint32   r15         (void);
 extern uint32   sr          (void);
 extern uint32   fpscr       (void);
-extern uint32   gbr         (void);
 extern void *   sgr         (void);
 
 extern void     flush_cache (void);

@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.8 2002/07/07 04:41:09 quad Exp $
+    $Id: exception.c,v 1.9 2002/08/04 05:48:04 quad Exp $
 
 DESCRIPTION
 
@@ -56,7 +56,7 @@ exception_init_e exception_init (void)
         exceptions before screwing with the VBR. This is paranoia.
     */
 
-    if (!vbr_buffer || exception_vbr_ok () || (exp_table.ubc_exception_count < 5))
+    if (!vbr_buffer || exception_vbr_ok () || (exp_table.ubc_exception_count < 7))
         return FAIL;
 
     /* STAGE: INTERRUPT magic sprinkles of evil to the VOOT VBR. */

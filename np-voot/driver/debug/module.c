@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.7 2002/07/06 14:18:16 quad Exp $
+    $Id: module.c,v 1.8 2002/08/04 05:48:05 quad Exp $
 
 DESCRIPTION
 
@@ -12,7 +12,9 @@ DESCRIPTION
 */
 
 #include <vars.h>
+#include <ether.h>
 #include <anim.h>
+#include <dumpio.h>
 
 #include <assert.h>
 
@@ -24,6 +26,9 @@ static anim_render_chain_f  old_anim_chain;
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
     anim_printf_debug (0.0, 0.0, "Test module active.");
+
+    if (old_anim_chain)
+        return old_anim_chain (anim_code_a, anim_code_b);
 }
 
 /*
@@ -48,12 +53,20 @@ void module_configure (void)
 
         main emblem (possibly replay) loader function.
         ubc_configure_channel (UBC_CHANNEL_A, 0x8c018f4c, UBC_BBR_READ | UBC_BBR_INSTRUCT);
-
     */
+
+    if (ether_init ())
+        dump_init ();
+
+    /* STAGE: Initialize our debugging OSD. */
 
     anim_init ();
 
     anim_add_render_chain (my_anim_chain, &old_anim_chain);
+
+    /* STAGE: Initialize the serial buffer. */
+
+    scixb_init ();
 }
 
 void module_bios_vector (void)

@@ -1,6 +1,6 @@
 !   exception-lowlevel.s
 !
-!   $Id: exception-lowlevel.s,v 1.3 2002/06/23 03:22:52 quad Exp $
+!   $Id: exception-lowlevel.s,v 1.4 2002/08/04 05:48:04 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -22,9 +22,6 @@
     .global _interrupt_sub_handler
     .global _interrupt_sub_handler_base
     .global _interrupt_sub_handler_end
-    .global _bios_patch_base
-    .global _bios_patch_handler
-    .global _bios_patch_end
 
 !
 ! HANDLE GENERAL EXCEPTIONS
@@ -217,27 +214,3 @@ _interrupt_sub_handler_base:
     bra     interrupt_exception_handler
     nop
 _interrupt_sub_handler_end:
-
-!
-! Test BIOS bypass functionality.
-!
-
-bios_patch_null:
-    nop
-    rts
-    nop
-
-_bios_patch_base:
-    nop
-    mov.l   r0, @-r15
-    mov.l   _bios_patch_handler, r0
-    jmp     @r0
-    mov.l   @r15+, r0
-    nop
-
-    .align  4
-_bios_patch_handler:
-    .long   bios_patch_null
-
-_bios_patch_end:
-

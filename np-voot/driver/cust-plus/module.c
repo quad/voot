@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.3 2002/06/29 13:10:46 quad Exp $
+    $Id: module.c,v 1.4 2002/08/04 05:48:05 quad Exp $
 
 DESCRIPTION
 
@@ -25,14 +25,6 @@ void module_initialize (void)
 
 void module_configure (void)
 {
-    /* STAGE: Initialize the VMU sub-system. */
-
-    vmu_init ();
-
-    /* STAGE: Get ourselves controller access too. */
-
-    controller_init ();
-
     /* STAGE: And now start-up the customization core. */
 
     customize_init ();

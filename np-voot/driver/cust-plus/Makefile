@@ -1,6 +1,6 @@
-# VR Customization and 5.60 VR Test driver Makefile
+# VR Customization and 5.60 VR teaser driver Makefile
 #
-# $Id: Makefile,v 1.3 2002/06/23 03:22:52 quad Exp $
+# $Id: Makefile,v 1.4 2002/08/04 05:48:05 quad Exp $
 
 DRIVER_COMMON_DIR = ../common
 DRIVER_TARGET = cust-plus

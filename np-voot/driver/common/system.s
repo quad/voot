@@ -1,6 +1,6 @@
 !   system.s
 !
-!   $Id: system.s,v 1.4 2002/06/29 12:57:04 quad Exp $
+!   $Id: system.s,v 1.5 2002/08/04 05:48:04 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -14,10 +14,11 @@
     .global _dbr_set
     .global _spc
     .global _spc_set
+    .global _gbr
+    .global _gbr_set
     .global _r15
     .global _sr
     .global _fpscr
-    .global _gbr
     .global _sgr
     .global _flush_cache
     .global _ubc_wait
@@ -52,6 +53,16 @@ _spc_set:
     rts
     nop
 
+_gbr:
+    stc     GBR, r0
+    rts
+    nop
+
+_gbr_set:
+    ldc     r4, GBR
+    rts
+    nop
+
 _r15:
     mov     r15, r0
     rts
@@ -67,10 +78,6 @@ _fpscr:
     rts
     nop
 
-_gbr:
-    stc     GBR, r0
-    rts
-    nop
 
 _sgr:
     stc     SGR, r0
