@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.7 2002/06/24 00:58:04 quad Exp $
+    $Id: net.c,v 1.8 2002/06/24 06:11:15 quad Exp $
 
 DESCRIPTION
 
@@ -351,7 +351,7 @@ bool udp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, uin
 
         case UDP_PORT_VOOT :
         {
-            /* STAGE: This really shouldn't be here, but I can't think of a better location. */
+            /* STAGE / TODO: This really shouldn't be here, but I can't think of a better location. */
             {
                 biudp_control_t control;
                 ip_header_t    *ip;

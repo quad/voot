@@ -1,6 +1,6 @@
 /*  net.h
 
-    $Id: net.h,v 1.5 2002/06/24 00:58:04 quad Exp $
+    $Id: net.h,v 1.6 2002/06/24 06:11:15 quad Exp $
 
 */
 
@@ -89,8 +89,5 @@ uint16  udp_checksum        (ip_header_t *ip, uint16 ip_header_length);
 bool    ip_handle_packet    (ether_info_packet_t *frame);
 bool    icmp_handle_packet  (ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length);
 bool    udp_handle_packet   (ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length);
-
-bool    net_transmit        (ether_info_packet_t *frame_in);
-bool    net_handle_frame    (uint8 *frame_data, uint32 frame_size);
 
 #endif
