@@ -176,7 +176,7 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
     {
         if (!recv(socket, NULL, 0, MSG_DONTWAIT | MSG_PEEK | MSG_TRUNC))
         {
-            type++;         /* this is a bad hack, I'll talk more about it in the enum. */
+            type++;         /* this is a bad hack, but I'm essentially "closing" the socket for cleanup issues. */
         }
         else
         {

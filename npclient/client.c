@@ -1,5 +1,7 @@
 /*  client.c
 
+DESCRIPTION
+
     Console netplay client.
 
 CHANGELOG:
@@ -16,6 +18,7 @@ CHANGELOG:
 TODO:
 
     Make my code more ugly.
+
 */
 
 #include <stdlib.h>
@@ -49,7 +52,6 @@ void frontend_cleanup(void)
 {
     free(prog_name);
 }
-
 
 void parse_options(int argc, char *argv[])
 {

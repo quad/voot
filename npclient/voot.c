@@ -1,6 +1,19 @@
 /*  voot.c
 
+DESCRIPTION
+
     VOOT Netplay protocol parser and constructor. It uses file handles and memory structures.
+
+CHANGELOG
+
+    Sun Jan  6 19:14:48 PST 2002    Scott Robinson <scott_np@quadhome.com>
+        Added a changelog. I figure I should do some cleaning up so when I
+        write a final version some day.
+
+TODO
+
+    Add protocol OUT functionality.
+
 */
 
 #include <stdlib.h>

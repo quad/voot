@@ -23,6 +23,7 @@ typedef enum
 
     C_PACKET_FROM_SLAVE,    /* On reception of a packet from the slave. */
     C_CLOSE_SLAVE,          /* Need to close the slave socket. */
+
     C_PACKET_FROM_SERVER,   /* On reception of a packet from the server. */
     C_CLOSE_SERVER,         /* Need to close the server socket. */
 
