@@ -21,6 +21,7 @@
 */
 
 #define PHY_FIFO_SIZE   16
+#define NET_FIFO_SIZE   64
 
 struct
 {
@@ -36,10 +37,10 @@ struct
 
 struct
 {
-    char        data[64];
+    char        data[NET_FIFO_SIZE];
 
     uint32      start;
-    uint32      end;    
+    uint32      size; 
 } net_fifo;
 
 /*
@@ -76,6 +77,41 @@ void init_ubc_b_serial(void)
  *  Network FIFO Interface Wrapper
  */
 
+static uint32 net_size(void)
+{
+    return net_fifo.size;
+}
+
+static int32 net_fifo_del(void)
+{
+    uint32 out_data;
+
+    if (!net_fifo.size)
+        return -1;
+
+    /* STAGE: Retrieve the current byte in the net fifo. */
+    out_data = net_fifo.data[net_fifo.start];
+
+    /* STAGE: Flush the current byte in the net fifo. */
+    net_fifo.start = ++net_fifo.start % NET_FIFO_SIZE;
+    net_fifo.size--;
+
+    return out_data;
+}
+
+static bool net_fifo_add(uint8 in_data)
+{
+    if (net_fifo.size >= NET_FIFO_SIZE)
+        return FALSE;
+
+    /* STAGE: Add the byte to the end of the network fifo. */
+    fifo_index = (net_fifo.start + net_fifo.size) % NET_FIFO_SIZE:
+    net_fifo.data[fifo_index] = in_data;
+    net_fifo.size++;
+
+    return TRUE;
+}
+
 /*
  *  Physical FIFO Interface Wrapper
  */
@@ -86,10 +122,7 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
 
     /* STAGE: Do we have space in the physical fifo? */
     if (phy_fifo.size >= PHY_FIFO_SIZE)
-    {
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo desynchronized!\n");
         return FALSE;
-    }
 
     /* STAGE: Add the byte to the SCIF, if requested. */
     if (touch_serial)
@@ -208,8 +241,6 @@ static void phy_sync(void)
     if (phy_size())
         temp_index = phy_flush_fifo(temp_buffer);
 
-    /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
-
     /* STAGE: Inject the temporary buffer data in both the SCIF and physical fifos. */
     for (work_index = 0; work_index < temp_index; work_index++)
     {
@@ -220,8 +251,22 @@ static void phy_sync(void)
         }
     }
 
+    /* STAGE: Transfer data from the net fifo to the physical fifo - marker IN */
+    while (phy_size() < PHY_FIFO_SIZE && net_size())
+    {
+        int8 net_in_data;
+
+        net_in_data = net_fifo_del();
+
+        if (net_in_data >= 0x0 && !phy_fifo_add(net_in_data, IN, TRUE))
+        {
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in net injection!\n");
+            break;
+        }
+    }
+
     /* DEBUG: Notification of resynchronization completion. */
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Fifos resynchronized. %u bytes retained.\n", work_index);
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Fifos resynchronized. %u bytes retained.\n", phy_size());
 }
 
 /*
@@ -234,7 +279,7 @@ uint32 trap_inject_data(const uint8 *data, uint32 size)
 
 #ifdef ACTUALLY_DO_INJECT_DATA
     /* STAGE: Add incoming data to net fifo. */
-    data_processed = net_fifo_add(data, size);
+    while(net_fifo_add(data, size)
 #else
     /* DEBUG: Fake the data injection. */
     data_processed = 0;
@@ -256,6 +301,11 @@ void* rxi_handler(register_stack *stack, void *current_vector)
 
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
+
+    /* TODO: In the future, instead of resynchronizing the whole physical
+        system on every RXI we can just wait until a non IN bytes comes
+        through. Only when that occurs do we actually resyncronize. I
+        imagine that would reduce a bit of lag. */
 
     /* STAGE: Synchronize the physical fifo. */
     phy_sync();
