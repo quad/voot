@@ -33,6 +33,7 @@
 #define __ARCH_CC_H__
 
 #include <vars.h>
+#include <util.h>
 
 typedef uint8   u8_t;
 typedef int8    s8_t;
@@ -45,7 +46,7 @@ typedef u32_t   mem_ptr_t;
 
 #define PACK_STRUCT_FIELD(x)    x __attribute__ ((packed))
 #define PACK_STRUCT_STRUCT      __attribute__ ((packed))
-#define PACK_STRUCT_BEGIN
-#define PACK_STRUCT_END
+
+#define BYTE_ORDER  LITTLE_ENDIAN
 
 #endif /* __ARCH_CC_H__ */

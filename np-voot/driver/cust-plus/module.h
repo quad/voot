@@ -1,6 +1,6 @@
 /*  module.h
 
-    $Id: module.h,v 1.1 2002/06/12 00:40:30 quad Exp $
+    $Id: module.h,v 1.2 2003/03/06 07:37:56 quad Exp $
 
 */
 
@@ -9,6 +9,5 @@
 
 void    module_initialize   (void);
 void    module_configure    (void);
-void    module_bios_vector  (void);
 
 #endif

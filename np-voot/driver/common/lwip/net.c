@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.8 2002/12/16 07:51:00 quad Exp $
+    $Id: net.c,v 1.9 2003/03/06 07:37:56 quad Exp $
 
 DESCRIPTION
 
@@ -33,7 +33,6 @@ TODO
 
 static anim_render_chain_f  old_anim_chain;
 static np_reconf_handler_f  my_reconfigure_handler;
-static struct dhcp_state   *client;
 
 static void net_etharp_timer (void)
 {
@@ -79,7 +78,7 @@ static void net_dhcp_fine_timer (void)
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    if (client)
+    if (netif_default)
     {
         net_etharp_timer ();
 
@@ -91,7 +90,7 @@ static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
         {
             struct ip_addr  ip;
 
-            ip = client->netif->ip_addr;
+            ip = netif_default->ip_addr;
 
             anim_printf_debug (0.0, 15.0, "IP: %d.%d.%d.%d", ip4_addr1(&ip), ip4_addr2(&ip), ip4_addr3(&ip), ip4_addr4(&ip));
         }
@@ -103,10 +102,6 @@ static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 
 static void net_handle_reconfigure ()
 {
-    /* STAGE: Clear out client data ... */
-
-    client = NULL;
-
     /* STAGE: Release ownership of all interfaces. */
 
     bbaif_set_netif (NULL);
@@ -162,7 +157,7 @@ void net_init (void)
 
     /* STAGE: Ensure lwIP is initialized. */
 
-    if (!client)
+    if (!netif_default)
     {
         mem_init ();
         memp_init ();
@@ -171,7 +166,6 @@ void net_init (void)
         ip_init ();
         udp_init ();
         //tcp_init();
-        dhcp_init ();
 
         /* STAGE: Initial IP configuration. */
 
@@ -181,13 +175,13 @@ void net_init (void)
 
         /* STAGE: Enable the BBA network interface. */
 
-        netif = netif_add (&ipaddr, &netmask, &gw, bbaif_init, ip_input);
+        netif = netif_add (&ipaddr, &netmask, &gw, NULL, bbaif_init, ip_input);
 
         netif_set_default (netif);
 
         /* STAGE: Enable address resolution via DHCP. */
 
-        client = dhcp_start (netif);
+        dhcp_start (netif);
     }
 
     /* STAGE: Make sure we're soft-reset clean. */

@@ -1,6 +1,6 @@
 /*  module.h
 
-    $Id: module.h,v 1.5 2002/07/06 14:18:16 quad Exp $
+    $Id: module.h,v 1.6 2003/03/06 07:37:56 quad Exp $
 
 */
 
@@ -32,6 +32,5 @@ typedef enum
 
 void    module_initialize   (void);
 void    module_configure    (void);
-void    module_bios_vector  (void);
 
 #endif

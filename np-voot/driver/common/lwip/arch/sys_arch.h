@@ -40,4 +40,3 @@ typedef int sys_mbox_t;
 typedef int sys_thread_t;
 
 #endif /* __ARCH_SYS_ARCH_H__ */
-

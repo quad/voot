@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.20 2003/01/20 21:11:54 quad Exp $
+    $Id: module.c,v 1.21 2003/03/06 07:37:56 quad Exp $
 
 DESCRIPTION
 
@@ -109,12 +109,4 @@ void module_reconfigure (void)
 {
     net_init ();
     voot_init ();
-}
-
-void module_bios_vector (void)
-{
-    /*
-        NOTE: We don't really need to be anymore paranoid than the main
-        driver core.
-    */
 }

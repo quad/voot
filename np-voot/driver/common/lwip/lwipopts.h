@@ -43,7 +43,7 @@
 
 /* MEM_SIZE: the size of the heap memory. If the application will send
 a lot of data that needs to be copied, this should be set high. */
-#define MEM_SIZE                64000
+#define MEM_SIZE                64001
 
 /* MEMP_NUM_PBUF: the number of memp struct pbufs. If the application
    sends a lot of data out of ROM (or other static memory), this
@@ -61,6 +61,9 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
 #define MEMP_NUM_TCP_SEG        0
+/* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
+   timeouts. */
+#define MEMP_NUM_SYS_TIMEOUT    0
 
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
@@ -76,52 +79,26 @@ a lot of data that needs to be copied, this should be set high. */
    for sequential API communication and incoming packets. Used in
    src/api/tcpip.c. */
 #define MEMP_NUM_TCPIP_MSG      0
-/* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
-   timeouts. */
-#define MEMP_NUM_SYS_TIMEOUT    0
-
 
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
 #define PBUF_POOL_SIZE          10
 
-/* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
-#define PBUF_POOL_BUFSIZE       128
-
 /* PBUF_LINK_HLEN: the number of bytes that should be allocated for a
    link level header. */
 #define PBUF_LINK_HLEN          16
 
-/* ---------- TCP options ---------- */
-#define LWIP_TCP                0
-#define TCP_TTL                 255
-
-/* Controls if TCP should queue segments that arrive out of
-   order. Define to 0 if your device is low on memory. */
-#define TCP_QUEUE_OOSEQ         0
-
-/* TCP Maximum segment size. */
-#define TCP_MSS                 128
-
-/* TCP sender buffer space (bytes). */
-#define TCP_SND_BUF             256
-
-/* TCP sender buffer space (pbufs). This must be at least = 2 *
-   TCP_SND_BUF/TCP_MSS for things to work. */
-#define TCP_SND_QUEUELEN        4 * TCP_SND_BUF/TCP_MSS
-
-/* TCP receive window. */
-#define TCP_WND                 512
-
-/* Maximum number of retransmissions of data segments. */
-#define TCP_MAXRTX              12
-
-/* Maximum number of retransmissions of SYN segments. */
-#define TCP_SYNMAXRTX           4
-
 /* ---------- ARP options ---------- */
-#define ARP_TABLE_SIZE          10
 #define ARP_QUEUEING            0
+/**
+ * - If enabled, cache entries are generated for every kind of ARP traffic or
+ * broadcast IP traffic. This enhances behaviour for sending to a dynamic set
+ * of hosts, for example if acting as a gateway.
+ * - If disabled, cache entries are generated only for IP destination addresses
+ * in use by lwIP or applications. This enhances performance if sending to a small,
+ * reasonably static number of hosts. Typically for embedded devices.
+ */
+#define ETHARP_ALWAYS_INSERT    0
 
 /* ---------- IP options ---------- */
 /* Define IP_FORWARD to 1 if you wish to have the ability to forward
@@ -129,44 +106,17 @@ a lot of data that needs to be copied, this should be set high. */
    on a device with only one network interface, define this to 0. */
 #define IP_FORWARD              0
 
-/* If defined to 1, IP options are allowed (but not parsed). If
-   defined to 0, all packets with IP options are dropped. */
-#define IP_OPTIONS              1
-
 /* IP reassembly and segmentation. These are orthogonal even
  * if they both deal with IP fragments */
 #define IP_REASSEMBLY           0
 #define IP_FRAG                 0
-
-/* ---------- ICMP options ---------- */
-#define ICMP_TTL                255
 
 /* ---------- DHCP options ---------- */
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of
    interfaces. */
 #define LWIP_DHCP               1
 
-/* 1 if you want to do an ARP check on the offered address
-   (recommended). */
-#define DHCP_DOES_ARP_CHECK     1
-
-/* ---------- UDP options ---------- */
-#define LWIP_UDP                1
-#define UDP_TTL                 255
-
-
-/* ---------- Statistics options ---------- */
-
-#ifdef STATS
-#define LINK_STATS
-#define IP_STATS
-#define ICMP_STATS
-#define UDP_STATS
-#define TCP_STATS
-#define MEM_STATS
-#define MEMP_STATS
-#define PBUF_STATS
-#define SYS_STATS
-#endif /* STATS */
+/* ---------- TCP options ---------- */
+#define LWIP_TCP                0
 
 #endif /* __LWIPOPTS_H__ */

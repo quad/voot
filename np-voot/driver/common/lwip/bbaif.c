@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.8 2003/01/20 21:11:53 quad Exp $
+    $Id: bbaif.c,v 1.9 2003/03/06 07:37:55 quad Exp $
 
 DESCRIPTION
 
@@ -192,7 +192,7 @@ bool bbaif_input (struct netif *netif)
             }
 
             case ETHTYPE_ARP :
-                q = etharp_arp_input (netif, (struct eth_addr *) &(netif->hwaddr), p);
+                q = etharp_arp_input (netif, (struct eth_addr *) &(netif->hwaddr[0]), p);
                 break;
 
             default :
@@ -235,13 +235,15 @@ void bbaif_set_netif (struct netif *netif)
         rtl_mac (netif->hwaddr);
 }
 
-void bbaif_init (struct netif *netif)
+err_t bbaif_init (struct netif *netif)
 {
     netif->name[0]      = IFNAME0;
     netif->name[1]      = IFNAME1;
     netif->output       = bbaif_output;
     netif->linkoutput   = low_level_output;
     netif->mtu          = 1500;
+    netif->flags        = NETIF_FLAG_BROADCAST;
+    netif->hwaddr_len   = 6;
 
     /* STAGE: Initialize the actual network harware. */
   
@@ -254,5 +256,9 @@ void bbaif_init (struct netif *netif)
         /* STAGE: Initialize the Ethernet/ARP layer. */
 
         etharp_init ();
+
+        return ERR_OK;
     }
+    
+    return ERR_IF;
 }

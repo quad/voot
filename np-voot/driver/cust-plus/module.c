@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.8 2002/12/18 00:28:29 quad Exp $
+    $Id: module.c,v 1.9 2003/03/06 07:37:56 quad Exp $
 
 DESCRIPTION
 
@@ -33,12 +33,4 @@ void module_reconfigure (void)
     /* STAGE: Make sure it's always aware of the situation! */
 
     customize_init ();
-}
-
-void module_bios_vector (void)
-{
-    /*
-        NOTE: We don't really need to be anymore paranoid than the main
-        driver core.
-    */
 }
