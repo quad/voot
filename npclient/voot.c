@@ -22,6 +22,10 @@ CHANGELOG
         Added full parsing of incoming packets for ensuring of packet
         availability and making sure we only get a certain # of pcakets.
 
+    Fri Mar  1 17:45:48 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added dump buffer functionality and command w/ option wrapper
+        functions.
+
 */
 
 #include <stdlib.h>
@@ -122,7 +126,7 @@ int32 voot_send_command(int32 socket, uint8 command)
     packet = malloc(sizeof(voot_packet));
 
     packet->header.type = VOOT_PACKET_TYPE_COMMAND;
-    packet->header.size = htons(2);
+    packet->header.size = htons(1);
     packet->buffer[0] = command;
 
     retval = voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
@@ -132,8 +136,28 @@ int32 voot_send_command(int32 socket, uint8 command)
     return retval;
 }
 
-void voot_send_data(int32 socket, uint8 packet_type, uint8 *data, uint32 data_size)
+int32 voot_send_command_opt(int32 socket, uint8 command, uint32 option)
 {
+    int32 retval;
+    voot_packet *packet;
+
+    packet = malloc(sizeof(voot_packet));
+
+    packet->header.type = VOOT_PACKET_TYPE_COMMAND;
+    packet->header.size = htons(8);
+    packet->buffer[0] = command;
+    ((uint32 *) packet->buffer)[1] = option;
+
+    retval = voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
+
+    free(packet);
+    
+    return retval;
+}
+
+int32 voot_send_data(int32 socket, uint8 packet_type, const uint8 *data, uint32 data_size)
+{
+    int32 retval;
     voot_packet *packet;
 
     packet = malloc(sizeof(voot_packet));
@@ -142,7 +166,38 @@ void voot_send_data(int32 socket, uint8 packet_type, uint8 *data, uint32 data_si
     packet->header.size = htons(data_size);
     memcpy(packet->buffer, data, data_size);
 
-    voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
+    retval = voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
 
     free(packet);
+
+    return retval;
+}
+
+void voot_dump_buffer(int32 socket, uint32 address, const uint8 *in_data, uint32 in_data_length)
+{
+    uint32 index, remain, segment_size;
+    voot_packet *sizer;
+
+    segment_size = sizeof(sizer->buffer) - 1;
+
+    voot_send_command_opt(socket, VOOT_COMMAND_TYPE_DUMPON, address);
+
+    for (index = 0; index < (in_data_length / segment_size); index++)
+    {
+        const uint8 *in_data_segment;
+
+        in_data_segment = in_data + (segment_size * index);
+
+        if (!voot_send_data(socket, VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
+        {
+            fprintf(stderr, "Error sending packet in main dump loop! Abort!\n");
+            break;
+        }
+    }
+
+    remain = in_data_length % segment_size;
+    if (remain)
+        voot_send_data(socket, VOOT_PACKET_TYPE_DUMP, (in_data + in_data_length) - remain, remain);
+
+    voot_send_command(socket, VOOT_COMMAND_TYPE_DUMPOFF);
 }

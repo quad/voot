@@ -306,6 +306,21 @@ static void parse_options(int argc, char *argv[])
     }
 }
 
+static size_t dump_file_to_buffer (FILE *infile, uint8 **ibuffer)
+{
+    int infile_size;
+
+    /* Scan to end of infile */
+    fseek(infile, 0, SEEK_END);
+    infile_size = ftell(infile);
+    rewind(infile);
+
+    /* Dump entire file to malloced ibuffer */
+    *ibuffer = malloc(infile_size);
+    return fread(*ibuffer, 1, infile_size, infile);
+}
+
+
 void* input_poll(void *arg)
 {
     while(input_handler_poll)
@@ -372,8 +387,24 @@ void input_handler(char *line)
 
                 if (file)
                 {
-                    //dump_send_file(0x8CCF9ECC, file);
+                    uint8 *buffer;
+                    uint32 buffer_size;
+
+                    buffer_size = dump_file_to_buffer(file, &buffer);
                     fclose(file);
+
+                    if (!buffer_size)
+                    {
+                        printf("%s: [dump-send] '%s' is an empty file?\n", prog_name, filename);
+                    }
+                    else
+                    {
+                        printf("%s: [dump-send] Dumping %u bytes of data...\n", prog_name, buffer_size);
+
+                        voot_dump_buffer(system->slave_socket, 0x8CCF9ECC, buffer, buffer_size);
+
+                        printf("%s: [dump-send] Sent file '%s'.\n", prog_name, filename);
+                    }
                 }
                 else
                     printf("%s: [dump-send] Unable to open file '%s' for dumping.\n", prog_name, filename);
@@ -433,7 +464,10 @@ bool packet_callback(uint8 type, const voot_packet *packet)
                 case VOOT_COMMAND_TYPE_DUMPON:
                     if (!dump_file)
                     {
-                        char template[] = "npc-dump.XXXXXX";
+                        static unsigned int file_count = 0;
+                        char template[20];
+
+                        snprintf(template, sizeof(template), "npc-dump.%u.XXXXXX", file_count++);
 
                         dump_file = mkstemp(template);
                         if (dump_file > 0)
