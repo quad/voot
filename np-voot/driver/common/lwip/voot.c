@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.7 2003/03/08 08:10:53 quad Exp $
+    $Id: voot.c,v 1.8 2003/03/09 13:01:12 quad Exp $
 
 DESCRIPTION
 
@@ -11,10 +11,13 @@ TODO
     Write a better packet handler chain function. Something more general and
     portable to other handlers.
 
+    Figure out why first version packet off refreshing PCB is either ignored or simply not responded to. 
+
 */
 
 #include <vars.h>
 #include <util.h>
+#include <anim.h>
 #include <malloc.h>
 #include <printf.h>
 #include <init.h>
@@ -25,6 +28,7 @@ TODO
 
 #include "voot.h"
 
+static anim_render_chain_f      old_anim_chain;
 static voot_packet_handler_f    voot_packet_handler_chain;
 static np_reconf_handler_f      my_reconfigure_handler;
 static struct udp_pcb          *voot_pcb;
@@ -90,16 +94,13 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     /* STAGE: Pass on to the first packet handler. */
 
-    if (voot_packet_handler_chain)
-    {
-        /*
-            STAGE: If someone in the chain wants to retain the packet, they
-            simply return TRUE.
-        */
+    /*
+        STAGE: If someone in the chain wants to retain the packet, they
+        simply return TRUE.
+    */
 
-        if (!voot_packet_handler_chain (packet, p))
-            pbuf_free (p);
-    }
+    if (!voot_packet_handler_chain (packet, p))
+        pbuf_free (p);
 }
 
 /* NOTE: This is guaranteed to be last in its chain. */
@@ -144,6 +145,20 @@ static void voot_handle_reconfigure ()
     voot_pcb = NULL;
 
     return my_reconfigure_handler ();
+}
+
+static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
+{
+    /* STAGE: Timeout if we haven't received packets after a certain amount of time. */
+
+    if (time () > (last_packet_time + VOOT_CONNECT_TIMEOUT))
+    {
+        udp_connect (voot_pcb, IP_ADDR_BROADCAST, VOOT_UDP_PORT);
+        udp_disconnect (voot_pcb);
+    }
+
+    if (old_anim_chain)
+        return old_anim_chain (anim_code_a, anim_code_b);
 }
 
 void* voot_add_packet_chain (voot_packet_handler_f function)
@@ -262,10 +277,25 @@ void voot_init (void)
         udp_bind (voot_pcb, IP_ADDR_ANY, VOOT_UDP_PORT);
         udp_recv (voot_pcb, voot_handle_packet, NULL);
         udp_connect (voot_pcb, IP_ADDR_BROADCAST, VOOT_UDP_PORT);
+        udp_disconnect (voot_pcb);
     }
+
+    /* STAGE: Setup animation callback for LAN Mode timeout. */
+
+    if (!old_anim_chain)
+    {
+        anim_init ();
+
+        anim_add_render_chain (my_anim_chain, &old_anim_chain);
+    }
+
+    /* STAGE: Default packet handler chain... */
 
     if (!voot_packet_handler_chain)
         voot_packet_handler_chain = voot_packet_handle_default;
+
+    /* STAGE: Because we malloc, we need to handle situations in which it
+        disappears from under us. */
 
     if (!my_reconfigure_handler)
         my_reconfigure_handler = np_add_reconfigure_chain (voot_handle_reconfigure);

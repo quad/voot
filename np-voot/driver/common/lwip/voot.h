@@ -1,6 +1,6 @@
 /*  voot.h
 
-    $Id: voot.h,v 1.2 2002/12/16 07:51:00 quad Exp $
+    $Id: voot.h,v 1.3 2003/03/09 13:01:13 quad Exp $
 
 */ 
 
@@ -13,6 +13,7 @@
 
 #define VOOT_PACKET_BUFFER_SIZE         1024
 #define VOOT_UDP_PORT                   5007
+#define VOOT_CONNECT_TIMEOUT            30
 
 #define VOOT_PACKET_TYPE_DEBUG          'd'
 #define VOOT_PACKET_TYPE_DATA           '>'
