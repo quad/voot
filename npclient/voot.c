@@ -29,9 +29,14 @@ CHANGELOG
     Sun Apr  7 23:28:39 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Bug-fix for the command sending functionality.
 
+    Mon Dec  2 02:47:36 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added inclusion of <sys/types.h> on the advice of Solitus for
+        FreeBSD support.
+
 */
 
 #include <stdlib.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <fcntl.h>

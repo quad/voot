@@ -79,6 +79,10 @@ CHANGELOG
         Fix a bug in the new C_CONNECT_SLAVE logic with a comparison on
         sockets.
 
+    Mon Dec  2 02:44:51 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Changed SOL_TCP to an actual protocol resolution. Patch thanks to
+        Solitus!
+
 */
 
 #include <stdlib.h>
@@ -502,7 +506,7 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
 
         opt_length = 1;
 
-        if(setsockopt(new_socket, SOL_TCP, TCP_NODELAY, (char *) &opt_length, sizeof(opt_length)))
+        if(setsockopt(new_socket, getprotobyname("TCP")->p_proto, TCP_NODELAY, (char *) &opt_length, sizeof(opt_length)))
             NPC_LOG(npc_system, LOG_CRIT, "Could not set TCP_NODELAY on socket %d.", new_socket);
     }
 
