@@ -124,9 +124,9 @@ npc_command_t* npc_get_event(void)
 {
     npc_command_t *event;
 
-    event = npc_slave_io_check();
-
-    if (!event)
+    if ((event = npc_io_check(npc_system.slave_socket, C_PACKET_FROM_SLAVE)));
+    else if ((event = npc_io_check(npc_system.server_socket, C_PACKET_FROM_SERVER)));
+    else if (!event)
     {
         event = (npc_command_t *) malloc(sizeof(npc_command_t));
         event->type = C_NONE;
@@ -135,28 +135,28 @@ npc_command_t* npc_get_event(void)
     return event;
 }
 
-npc_command_t* npc_slave_io_check(void)
+npc_command_t* npc_io_check(int32 socket, npc_command type)
 {
     fd_set read_fds;
     voot_packet *packet;
     npc_command_t *event;
 
-    if (npc_system.slave_socket < 0)
+    if (socket < 0)
         return NULL;
 
-    /* Check if we have received data on the slave socket. */
+    /* Check if we have received data on the socket. */
     FD_ZERO(&read_fds);
-    FD_SET(npc_system.slave_socket, &read_fds);
-    if (select(npc_system.slave_socket + 1, &read_fds, NULL, NULL, 0) < 0)
+    FD_SET(socket, &read_fds);
+    if (select(socket + 1, &read_fds, NULL, NULL, 0) < 0)
         return NULL;
 
-    packet = voot_parse_socket(npc_system.slave_socket);
+    packet = voot_parse_socket(socket);
 
     if (!packet)
         return NULL;
 
     event = (npc_command_t *) malloc(sizeof(npc_command_t));
-    event->type = C_PACKET_FROM_SLAVE;
+    event->type = type;
     event->packet = packet;
 
     return event;
@@ -254,7 +254,7 @@ int npc_server_listen(void)
     }
 
     /* Update npc_system with socket and addressing information. */
-    npc_system.server_socket = server_socket;
+    npc_system.server_socket_wait = server_socket;
 
     return 0;
 }
@@ -276,7 +276,7 @@ void npc_init(void)
     npc_command_t command;
 
     memset(&npc_system, 0x0, sizeof(npc_system));
-    npc_system.slave_socket = npc_system.server_socket = -1;
+    npc_system.slave_socket = npc_system.server_socket = npc_system.server_socket_wait = -1;
 
     command.type = C_SET_SLAVE_PORT;
     command.port = VOOT_SLAVE_PORT;
