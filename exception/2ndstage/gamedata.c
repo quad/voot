@@ -4,6 +4,7 @@
 */
 
 #include "vars.h"
+
 #include "gamedata.h"
 
 /*

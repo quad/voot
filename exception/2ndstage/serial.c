@@ -6,6 +6,7 @@
 */
 
 #include "vars.h"
+
 #include "serial.h"
 
 void serial_set_baudrate(uint16 baud_rate)

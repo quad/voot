@@ -5,13 +5,12 @@
 */
 
 #include "vars.h"
-#include "exception.h"
 #include "trap.h"
-#include "biudp.h"
-#include "util.h"
-#include "voot.h"
-
 #include "rtl8139c.h"
+#include "util.h"
+#include "printf.h"
+
+#include "voot.h"
 
 #ifdef DEPRECATED_VOOT_NET
 
@@ -87,13 +86,13 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         {
             uint8 *ba, *bb, *bc;
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc_fail_count == %u", malloc_fail_count);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "malloc_fail_count == %u", malloc_fail_count);
 
             ba = malloc(NET_MAX_PACKET);
             bb = malloc(NET_MAX_PACKET);
             bc = malloc(NET_MAX_PACKET);
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc sequence %x, %x, and %x", ba, bb, bc);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "malloc sequence %x, %x, and %x", ba, bb, bc);
 
             free(bc);
             free(bb);
@@ -101,14 +100,14 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
             ba = malloc(NET_MAX_PACKET);
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x", ba);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x", ba);
 
             free(ba);
         }
             break;
 
         case VOOT_COMMAND_TYPE_NETSTAT:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u", rtl_max_wait_count);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u", rtl_max_wait_count);
             break;
 
         case VOOT_COMMAND_TYPE_HEALTH:
@@ -116,16 +115,16 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
             volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
         }
             break;
 
         case VOOT_COMMAND_TYPE_TIME:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
             break;
 
         default:
@@ -176,4 +175,57 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 
     packet = (voot_packet *) ((uint8 *) udp + sizeof(udp_header_t));
     maybe_handle_voot(packet, udp, udp_data_length);
+}
+
+bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
+{
+	voot_packet *netout;
+
+    /* STAGE: Make sure the dimensions are legit and we have enough space
+        for data_size + NULL */
+    if ((data_size >= sizeof(netout->buffer)) || !data_size)
+        return FALSE;
+
+    /* STAGE: Malloc the full-sized voot_packet. */
+    netout = malloc(sizeof(voot_packet));
+    if (!netout)
+        return FALSE;   /* We didn't send any data. */
+
+    /* STAGE: Set the packet header information, including the NULL */
+    netout->header.type = type;
+    netout->header.size = htons(data_size + 1);
+
+    /* STAGE: Copy over the input buffer data and append NULL. */
+    memcpy(netout->buffer, data, data_size);
+    netout->buffer[data_size] = 0x0;
+
+    /* STAGE: Transmit the packet. */
+    biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + data_size + 1);
+
+    /* STAGE: Free the buffer and return. */
+    free(netout);
+
+    return TRUE;
+}
+
+int32 voot_printf(uint8 type, const char *fmt, ...)
+{
+	va_list args;
+	int32 i;
+	voot_packet *packet_size_check;
+	char *printf_buffer;
+
+    printf_buffer = malloc(sizeof(packet_size_check->buffer));
+    if(!printf_buffer)
+        return 0;
+
+	va_start(args, fmt);
+	i = vsnprintf(printf_buffer, sizeof(packet_size_check->buffer), fmt, args);
+	va_end(args);
+
+    voot_send_packet(type, printf_buffer, i);
+
+    free(printf_buffer);
+
+	return i;
 }

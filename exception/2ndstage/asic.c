@@ -6,6 +6,7 @@
 #include "vars.h"
 #include "system.h"
 #include "exception.h"
+
 #include "asic.h"
 
 asic_lookup_table asic_table;

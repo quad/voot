@@ -46,5 +46,7 @@ Initial Focus:
 #define VOOT_MEM_END        0x8CCFA2CC
 
 void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length);
+bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size);
+int32 voot_printf(uint8 type, const char *fmt, ...);
 
 #endif

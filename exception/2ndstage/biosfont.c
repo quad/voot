@@ -5,6 +5,7 @@
  */
 
 #include "vars.h"
+
 #include "biosfont.h"
 
 /*

@@ -6,7 +6,6 @@
 
 #include "exception-lowlevel.h"
 #include "exception.h"
-#include "heartbeat.h"
 #include "trap.h"
 #include "util.h"
 #include "warez_load.h"

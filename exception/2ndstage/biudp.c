@@ -4,11 +4,9 @@
 */
 
 #include "vars.h"
-#include "voot.h"
-#include "net.h"
 #include "rtl8139c.h"
 #include "util.h"
-#include "printf.h"
+
 #include "biudp.h"
 
 biudp_control_t control;
@@ -122,36 +120,4 @@ void biudp_write(uint8 in)
 void biudp_write_str(const uint8 *in_string)
 {
     biudp_write_buffer(in_string, strlen(in_string));
-}
-
-int32 biudp_printf(uint8 type, const char *fmt, ...)
-{
-	va_list args;
-	int32 i;
-	voot_packet *netout;
-
-    if (!control.initialized)
-        return 0;
-
-    netout = malloc(sizeof(voot_packet));
-    if (!netout)
-        return 0;   /* We didn't print any data. */
-
-    netout->header.type = type;
-
-	va_start(args, fmt);
-	i = vsnprintf(netout->buffer, sizeof(netout->buffer), fmt, args);
-	va_end(args);
-
-    i++;    /* for the NULL on strings! */
-
-    if (i)
-    {
-        netout->header.size = htons(i);
-        biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + i);
-    }
-
-    free(netout);
-
-	return i;
 }

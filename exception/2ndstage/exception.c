@@ -11,6 +11,7 @@
 #include "voot.h"
 #include "heartbeat.h"
 #include "biosfont.h"
+
 #include "exception.h"
 
 exception_table exp_table;
@@ -51,7 +52,7 @@ static void init_vbr_table(void)
 
 static bool is_vbr_switch_time(void)
 {
-#ifdef DO_VBR_RESET
+#ifdef REINIT_VBR_ON_RESET
     uint32 int_changed;
 
     /* STAGE: Check to see if our interrupt hooks are still installed. */
@@ -153,9 +154,9 @@ void* exception_handler(register_stack *stack)
         bfont_init(); 
 
         /* DEBUG: Notification. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR");
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR");
     }
-#ifdef DO_VBR_RESET
+#ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)
     {
@@ -163,7 +164,7 @@ void* exception_handler(register_stack *stack)
         init_vbr_table();
 
         /* DEBUG: Notification. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR");
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR");
     }
 #endif
 

@@ -10,6 +10,8 @@
 #include "asic.h"
 #include "voot.h"
 #include "gamedata.h"
+#include "trap.h"
+
 #include "heartbeat.h"
 
 my_pageflip pageflip_info;
@@ -41,12 +43,12 @@ static void count_pageflip(void)
     /* STAGE: Display statistic information only in the case of a new pageflip handler. */
     if (pageflip_info.spc != spc())
     {
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip %x lasted %u", pageflip_info.spc, pageflip_info.count);
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip %x lasted %u", pageflip_info.spc, pageflip_info.count);
 
         pageflip_info.spc = spc();
         pageflip_info.count = 0;
 
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip @ %x", pageflip_info.spc);
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip @ %x", pageflip_info.spc);
     }
 
     pageflip_info.count++;
@@ -73,6 +75,8 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
     /* STAGE: Pageflip statistics. */
     count_pageflip();
 #endif
+
+    trap_ping_perframe();
 
     return current_vector;
 }

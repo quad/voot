@@ -21,6 +21,7 @@
 #include "exception-lowlevel.h"
 #include "voot.h"
 #include "util.h"
+
 #include "rtl8139c.h"
 
 /* *
@@ -462,7 +463,7 @@ void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
 
         rtl_start();
 
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!");
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!");
     }
 
     /* STAGE: Return from the handler */
