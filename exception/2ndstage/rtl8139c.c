@@ -312,7 +312,6 @@ bool rtl_tx(const uint8* frame, uint32 length)
 {
     int16  descriptor;
 
-
     /* STAGE: Basic paranoia checking. */
     if (length >= NET_MAX_PACKET)
         return FALSE;

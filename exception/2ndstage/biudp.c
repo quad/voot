@@ -91,11 +91,21 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     uint32 index, remain;
 
     for (index = 0; index < (in_data_length / BIUDP_SEGMENT_SIZE); index++)
+    {
         biudp_write_segment(in_data + (BIUDP_SEGMENT_SIZE * index), BIUDP_SEGMENT_SIZE);
+    }
 
     remain = in_data_length % BIUDP_SEGMENT_SIZE;
     if (remain)
         biudp_write_segment((in_data + in_data_length) - remain, remain);
+
+    ubc_serial_write_str("[UBC] in_data_length = 0x");
+    ubc_serial_write_hex(in_data_length);
+    ubc_serial_write_str(" index = 0x");
+    ubc_serial_write_hex(index);
+    ubc_serial_write_str(" remain = 0x");
+    ubc_serial_write_hex(remain);
+    ubc_serial_write_str("\r\n");
 }
 
 void biudp_write(const uint8 in)
