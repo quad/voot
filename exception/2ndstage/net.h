@@ -4,6 +4,8 @@
 #include "vars.h"
 #include "bswap.h"
 
+#define VOOT_UDP_PORT       5007
+
 /* This cannot be greater than 0x800 (2048d) - the Tx descriptor size. */
 #define NET_MAX_PACKET      1518
 

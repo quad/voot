@@ -7,6 +7,7 @@
 #include "vars.h"
 #include "net.h"
 #include "serial.h"
+#include "biudp.h"
 #include "voot.h"
 
 static void maybe_respond_command(uint8 maybe_command)
@@ -14,17 +15,21 @@ static void maybe_respond_command(uint8 maybe_command)
     volatile uint16 *player_a_health = (uint16 *) 0x8CCF6284;
     volatile uint16 *player_b_health = (uint16 *) 0x8CCF7402;
 
+    ubc_serial_write_str("[UBC] maybe_respond_command()\r\n");
+
     switch (maybe_command)
     {
         case '1':
-            ubc_serial_write_str("[UBC] Resetting player A health.\r\n");
+            biudp_write_str("[UBC] Resetting player A health.\r\n");
             *player_a_health = 1200;
             break;
 
         case '2':
-            ubc_serial_write_str("[UBC] Resetting player B health.\r\n");
+            biudp_write_str("[UBC] Resetting player B health.\r\n");
             *player_b_health = 1200;
             break;
+
+        case '3':
 
         default:
             ubc_serial_write_str("[UBC] command = '");

@@ -11,7 +11,7 @@ OBJS += main.o warez_load.o
 
 # All the others...
 OBJS += util.o serial.o
-OBJS += rtl8139c.o net.o bswap.o
+OBJS += rtl8139c.o net.o bswap.o biudp.o
 OBJS += heartbeat.o voot.o
 
 # Old modules
@@ -19,7 +19,7 @@ OBJS += heartbeat.o voot.o
 
 TARGET=sh-elf
 DCBASE=/home/scott/dcdev
-CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -m4-single-only -Os -Wall
+CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -m4-single-only -g -Wall
 LD=$(DCBASE)/bin/$(TARGET)-ld
 AS=$(DCBASE)/bin/$(TARGET)-as
 AR=$(DCBASE)/bin/$(TARGET)-ar

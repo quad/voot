@@ -145,7 +145,7 @@
 typedef struct {
     uint16      cur_rx;         /* Current Rx DMA buffer tail index */
     uint16      cur_tx;
-    uint8       mac[6];         /* Mac address */
+    uint8       mac[ETHER_MAC_SIZE];    /* Mac address */
 
     uint8       frame_in_buffer[NET_MAX_PACKET];
     uint8       frame_out_buffer[NET_MAX_PACKET];

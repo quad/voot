@@ -16,6 +16,7 @@
 #include "net.h"
 #include "bswap.h"
 #include "voot.h"
+#include "biudp.h"
 
 /*
  *
@@ -217,6 +218,21 @@ static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_lengt
     }
     else
         ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
+
+    /* STAGE: Use the information from the ICMP echo to fill out our
+        biudp information. */
+    {
+        biudp_control_t control;
+        ip_header_t *ip;
+
+        ip = (ip_header_t *) frame->data;
+        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
+        control.source_ip = ip->dest;
+        control.dest_ip = ip->source;
+        control.port = ntohs(udp->dest);
+
+        biudp_init(&control);
+    }
 
     /* STAGE: Handle UDP packets based on port. */
     switch(ntohs(udp->dest))
