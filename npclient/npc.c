@@ -50,17 +50,22 @@ CHANGELOG
         Removed all direct IO references and centralized the socket closing
         code for debugability.
 
+    Thu Jan 24 13:28:18 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added detail to socket debugging messages and created a socket
+        information utility function.
+
 */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <unistd.h>
-#include <string.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <pthread.h>
 
@@ -69,6 +74,22 @@ CHANGELOG
 
 npc_data_t  npc_system;
 
+static uint16 get_socket_info(int32 socket, char *ip_string, uint32 ip_string_size)
+{
+    struct sockaddr_in address;
+    int32 sizeof_address;
+
+    sizeof_address = sizeof(address);
+
+    if (getsockname(socket, (struct sockaddr *) &address, (socklen_t *) &sizeof_address) < 0)
+        return 0;
+
+    if (ip_string && ip_string_size >= sizeof("111.222.333.444"))
+        strncpy(ip_string, inet_ntoa((struct in_addr) address.sin_addr), ip_string_size);
+
+    return address.sin_port;
+}
+
 static void npc_close_socket(volatile int32 *in_socket, const char *socket_desc)
 {
     int32 socket;
@@ -76,11 +97,18 @@ static void npc_close_socket(volatile int32 *in_socket, const char *socket_desc)
     socket = *in_socket;
     if (socket >= 0)
     {
+        uint16 socket_port;
+        char socket_name[16];
+
+        socket_port = get_socket_info(socket, socket_name, sizeof(socket_name));
         *in_socket = -1;
+
         if (close(socket))
             NPC_LOG(npc_system, LOG_ALERT, "Unable to close %s socket.", socket_desc);
         else
-            NPC_LOG(npc_system, LOG_DEBUG, "Closed %s socket.", socket_desc);
+        {
+            NPC_LOG(npc_system, LOG_NOTICE, "Closed %s connection on %s:%u.", socket_desc, socket_name, socket_port);
+        }
     }
 }
 
@@ -265,7 +293,7 @@ int32 npc_handle_command(npc_command_t *command)
 
         default:
         {
-            NPC_LOG(npc_system, LOG_ERR, "Dropping unimplemented npc_command of type %u.", command->type);
+            NPC_LOG(npc_system, LOG_WARNING, "Dropping unimplemented npc_command of type %u.", command->type);
             break;
         }
     }
@@ -449,6 +477,8 @@ static void* npc_server_accept_task(void *arg)
         if (new_socket >= 0 && (npc_system.server_socket < 0))
         {
             npc_command_t *event;
+            char socket_name[16];
+            uint16 socket_port;
             
             npc_system.server_socket = new_socket;
 
@@ -459,8 +489,9 @@ static void* npc_server_accept_task(void *arg)
             event->listen_socket_thread = &(npc_system.server_poll_thread);
 
             npc_add_event_queue(event);
-            
-            NPC_LOG(npc_system, LOG_NOTICE, "Accepted connection as server!");
+
+            socket_port = get_socket_info(new_socket, socket_name, sizeof(socket_name));
+            NPC_LOG(npc_system, LOG_NOTICE, "Accepted connection from %s:%u.", socket_name, socket_port);
         }
         else
         {

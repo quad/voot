@@ -343,7 +343,10 @@ void logger_callback(npc_log_level severity, const char *format, ...)
 {
     va_list args;
 
-    printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity - 1]); 
+    if (severity > LOG_NOTICE)
+        return;
+
+    printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity]); 
 
     va_start(args, format);
     vprintf(format, args);
