@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
     while((event = npc_get_event()))
     {
-        handle_npc_command(event);
+        npc_handle_command(event);
 
         /* NPC will have already done its cleanup. */
         if (event->type == C_EXIT)

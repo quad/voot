@@ -43,6 +43,9 @@ CHANGELOG
         Dropped the port configuration events and wrapped them into the
         connection and listening events.
 
+    Tue Jan 22 18:04:17 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Cleaning up syntax and overall code manageability.
+
 */
 
 #include <stdlib.h>
@@ -58,11 +61,9 @@ CHANGELOG
 #include "voot.h"
 #include "npc.h"
 
-#define NPC_DEBUG    1
-
 npc_data_t  npc_system;
 
-int32 handle_npc_command(npc_command_t *command)
+int32 npc_handle_command(npc_command_t *command)
 {
     int32 retval;
 
@@ -71,6 +72,7 @@ int32 handle_npc_command(npc_command_t *command)
     switch (command->type)
     {
         case C_CONNECT_SLAVE:
+        {
             npc_system.slave_name = command->text;
             npc_system.slave_port = command->port;
 
@@ -94,9 +96,12 @@ int32 handle_npc_command(npc_command_t *command)
             {
                 fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
             }
+
             break;
+        }
 
         case C_CONNECT_SERVER:
+        {
             npc_system.server_name = command->text;
             npc_system.server_port = command->port;
 
@@ -119,40 +124,50 @@ int32 handle_npc_command(npc_command_t *command)
             {
                 fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
             }
+
             break;
+        }
 
         case C_LISTEN_SOCKET:
+        {
+            npc_io_check_t  *arg;
+
+            /* Start a listening thread for the server socket. */
+            arg = (npc_io_check_t *) malloc(sizeof(npc_io_check_t));
+            arg->socket = command->listen_socket;
+            arg->type = command->listen_type;
+
+            if (pthread_create(command->listen_socket_thread, NULL, npc_io_check, (void *) arg))
             {
-                npc_io_check_t  *arg;
-
-                /* Start a listening thread for the server socket. */
-                arg = (npc_io_check_t *) malloc(sizeof(npc_io_check_t));
-                arg->socket = command->listen_socket;
-                arg->type = command->listen_type;
-
-                if (pthread_create(command->listen_socket_thread, NULL, npc_io_check, (void *) arg))
-                {
-                    close(*(command->listen_socket));
-                    fprintf(stderr, "[npc] unable to start polling thread for type %d.\n", command->type);
-                    *(command->listen_socket) = -1;
-                }
+                close(*(command->listen_socket));
+                fprintf(stderr, "[npc] unable to start polling thread for type %d.\n", command->type);
+                *(command->listen_socket) = -1;
             }
+
             break;
+        }
 
         case C_LISTEN_SERVER:
+        {
             npc_system.server_port = command->port;
+
             retval = npc_server_listen();
 
             if (retval)
                 fprintf(stderr, "[npc] unable to start server on port %u.\n", npc_system.server_port);
+
             break;
+        }
 
         case C_PACKET_FROM_SLAVE:
+        {
             switch (command->packet->header.type)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
+                {
                     fprintf(stderr, "[npc] DEBUG(slave): %s", command->packet->buffer);
                     break;
+                }
 
                 case VOOT_PACKET_TYPE_DATA:
                     voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
@@ -164,25 +179,39 @@ int32 handle_npc_command(npc_command_t *command)
             
             free(command->packet);
             break;
+        }
 
         case C_CLOSE_SLAVE:
+        {
             fprintf(stderr, "[npc] received request to disconnect slave socket! Is this even possible?!\n");
+
+            close(npc_system.slave_socket);
+            npc_system.slave_socket = -1;
+
             break;
+        }
 
         case C_PACKET_FROM_SERVER:
+        {
             switch (command->packet->header.type)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
+                {
                     fprintf(stderr, "[npc] DEBUG(server): %s", command->packet->buffer);
                     break;
+                }
 
                 case VOOT_PACKET_TYPE_COMMAND:
+                {
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
+                }
 
                 case VOOT_PACKET_TYPE_DATA:
+                {
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
+                }
             
                 default:
                     break;
@@ -190,25 +219,32 @@ int32 handle_npc_command(npc_command_t *command)
 
             free(command->packet);
             break;
+        }
 
         case C_CLOSE_SERVER:
+        {
             fprintf(stderr, "[npc] closing server socket.\n");
 
             close(npc_system.server_socket);
             npc_system.server_socket = -1;
 
             break;
+        }
 
         case C_EXIT:
+        {
             npc_exit(command->code);
             break;
+        }
 
         case C_NONE:    /* Don't even notify of gutter commands. */
             break;
 
         default:
+        {
             fprintf(stderr, "[npc] dropping unimplemented npc_command %u.\n", command->type);
             break;
+        }
     }
 
     return retval;
@@ -311,7 +347,9 @@ void* npc_io_check(void *in_arg)
                 }
             }
             else
+            {
                 out_type = type;
+            }
 
             event = (npc_command_t *) malloc(sizeof(npc_command_t));
             event->type = out_type;
@@ -449,21 +487,26 @@ int32 npc_server_listen(void)
 
 void npc_exit(int code)
 {
-    free(npc_system.slave_name);
+    int32 socket;
+    /* Clean up both the slave and server sockets. */
 
-    /* Clean up the sockets, if necessary. */
-    if (npc_system.slave_socket >= 0)
+    free(npc_system.slave_name);
+    socket = npc_system.slave_socket;
+    if (socket >= 0)
     {
-        if (close(npc_system.slave_socket))
+        npc_system.slave_socket = -1;
+        if (close(socket))
             fprintf(stderr, "[npc] unable to close slave socket.\n");
         else
             fprintf(stderr, "[npc] closed slave socket.\n");
     }
 
     free(npc_system.server_name);
-    if (npc_system.server_socket >= 0)
+    socket = npc_system.server_socket;
+    if (socket >= 0)
     {
-        if (close(npc_system.server_socket))
+        npc_system.server_socket = -1;
+        if (close(socket))
             fprintf(stderr, "[npc] unable to close server socket.\n");
         else
             fprintf(stderr, "[npc] closed server socket.\n");

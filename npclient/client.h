@@ -34,7 +34,7 @@ char gpl_text[] = {
     "\n"
 };
 
-uint8 help_text[] = {
+char help_text[] = {
     "-c <hostname/IP[:port]>    Connect to the specified slave.\n"
     "-s <hostname/IP[:port]>    Connect to the specified server.\n"
     "-l[port]                   Change into server mode.\n"

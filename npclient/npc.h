@@ -114,7 +114,7 @@ typedef enum    /* This is all a rather blatant ripoff from syslog - but they've
     LOG_DEBUG       /* debug-level message */
 } npc_log_level;
 
-int32 handle_npc_command(npc_command_t *command);
+int32 npc_handle_command(npc_command_t *command);
 bool npc_add_event_queue(npc_command_t *command);
 npc_command_t* npc_get_event_queue(void);
 npc_command_t* npc_get_event(void);
