@@ -9,7 +9,7 @@
 #include "system.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
-#include "heartbeat.h"
+#include "trap.h"
 #include "warez_load.h"
 
 /*

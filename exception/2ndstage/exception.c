@@ -9,7 +9,6 @@
 #include "util.h"
 #include "rtl8139c.h"
 #include "heartbeat.h"
-#include "serial.h"
 #include "exception.h"
 
 exception_table exp_table;
@@ -86,7 +85,7 @@ void* exception_handler(register_stack *stack)
         case EXP_TYPE_GEN:
             exp_table.general_exception_count++;
             exception_code = *REG_EXPEVT;
-            if (exception_code == 0x1e0)    /* Never pass on UBC interrupts to the game */
+            if (exception_code == EXP_CODE_UBC)    /* Never pass on UBC interrupts to the game */
             {
                 exp_table.ubc_exception_count++;
                 back_vector = my_exception_finish;
@@ -138,18 +137,12 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
-
-        /* STAGE: Serial port for testing. */
-        ubc_serial_set_baudrate(57600);
     }
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)
     {
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
-
-        /* STAGE: Serial port for testing. */
-        ubc_serial_init(57600);
     }
 
     /* STAGE: Handle exception table */
