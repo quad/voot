@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.7 2002/12/16 07:51:00 quad Exp $
+    $Id: module.c,v 1.8 2002/12/18 00:28:29 quad Exp $
 
 DESCRIPTION
 
@@ -30,7 +30,9 @@ void module_configure (void)
 
 void module_reconfigure (void)
 {
-    /* NOTE: We don't need to reinitialize anything. */
+    /* STAGE: Make sure it's always aware of the situation! */
+
+    customize_init ();
 }
 
 void module_bios_vector (void)
