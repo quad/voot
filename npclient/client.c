@@ -58,6 +58,9 @@ CHANGELOG
     Tue May  7 08:58:44 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Removed and added a few command types.
 
+    Thu Jun 13 02:16:07 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added a VBR dumping command.
+
 TODO
 
     Add support for the DUMPSELECT command.
@@ -80,6 +83,8 @@ TODO
 char *prog_name;
 bool input_handler_poll;
 pthread_t input_poll_thread;
+
+#define VOOT_DATA_EDIT      0x8c274ee0
 
 /*
  *  Various frontend texts.
@@ -382,9 +387,11 @@ void input_handler(char *line)
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPMEM);
         else if (!strcasecmp(command, "c-dump-gamedata"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPGAME);
-        else if (!strcasecmp(command, "dump-566"))
-            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, 0x8c274cc7);
-        else if (!strcasecmp(command, "c-dump-send"))
+        else if (!strcasecmp(command, "dump-voot"))
+            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, VOOT_DATA_EDIT);
+        else if (!strcasecmp(command, "dump-vbr"))
+            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, 0x8c00f400);
+        else if (!strcasecmp(command, "send-voot"))
         {
             char *filename, *maybe_address;
 
@@ -412,7 +419,8 @@ void input_handler(char *line)
                     {
                         printf("%s: [dump-send] Dumping %u bytes of data...\n", prog_name, buffer_size);
 
-                        voot_dump_buffer(system->slave_socket, 0x8CCF9ECC, buffer, buffer_size);
+                        /* Gamedata structure. */
+                        voot_dump_buffer(system->slave_socket, VOOT_DATA_EDIT, buffer, buffer_size);
 
                         printf("%s: [dump-send] Sent file '%s'.\n", prog_name, filename);
                     }
