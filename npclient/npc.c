@@ -601,7 +601,7 @@ npc_data_t* npc_expose(void)
         the functionality in just-in-case. */
 
     /* DEBUG: Notify the programmer when npc_system is exposed. */
-    //NPC_LOG(npc_system, LOG_DEBUG, "npc_system exposed!");
+    NPC_LOG(npc_system, LOG_DEBUG, "npc_system exposed!");
 
     return &npc_system;
 }

@@ -42,6 +42,9 @@ CHANGELOG
     Sun Feb 24 17:13:33 PST 2002    Scott Robinson <scott_vo@quadhome.com>
         Added the ability to send the "gamedata dump" command.
 
+    Tue Feb 26 14:24:44 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Cleaned up some of the dump user messages and the code in general.
+
 */
 
 #include <stdlib.h>
@@ -67,7 +70,7 @@ pthread_t input_poll_thread;
 
 static const char banner_text[] = {
     "Console Netplay VOOT Client (npclient), built " __DATE__ " at " __TIME__ "\n"
-    "Copyright (C) 2001, 2002, Scott Robinson. All Rights Reserved.\n"
+    "Copyright (C) 2001-2002, Scott Robinson. All Rights Reserved.\n"
 };
 
 static const char gpl_text[] = {
@@ -463,8 +466,8 @@ int main(int argc, char *argv[])
             free(event);
             break;
         }
-
-        free(event);
+        else
+            free(event);
     }
 
     frontend_cleanup();
