@@ -18,13 +18,8 @@
 #include "vars.h"
 #include "system.h"
 #include "asic.h"
-#include "exception-lowlevel.h"
 #include "net.h"
 #include "rtl8139c.h"
-
-#ifdef DEBUG_RTL
-    #include "serial.h"
-#endif
 
 /* *
    * GAPS PCI Controller and BBA PCI Configuration
@@ -295,15 +290,7 @@ static int16 rtl_find_free_descriptor(void)
             here. Of course, if there is something fundamentally wrong we'll
             run out of slots really fast. */
         if (RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) & RTL_TX_ABORTED)
-        {
-#ifdef DEBUG_RTL
-            ubc_serial_write_str("[UBC] Retry on Tx 0x");
-            ubc_serial_write_hex(index);
-            ubc_serial_write_str("\r\n");
-#endif
-
             RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) &= ~RTL_TX_HOST_OWNS;
-        }
         else if (RTL_IO_INT((index * sizeof(int)) + RTL_TXSTATUS0) & RTL_TX_HOST_OWNS)
             return index;
     }
@@ -349,13 +336,7 @@ bool rtl_tx(const uint8* frame, uint32 length)
     while (!(RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_HOST_OWNS))
     {
         if (RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_ABORTED)
-        {
-#ifdef DEBUG_RTL
-            ubc_serial_write_str("[UBC] Tx magic!\r\n");
-#endif
-
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) |= 1;
-        }
     }
 
     memcpy(rtl_tx_descs[rtl_info.cur_tx], frame, length);
@@ -418,9 +399,7 @@ void rtl_rx_all(void)
     }
 }
 
-/* For the moment, this will be a debugging stub. Later, we'll implement
-    whatever interface lwIP requires */
-void* rtl_handler(void *passed, register_stack *stack, void *current_vector)
+void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
 {
     uint32 intr;
 
@@ -433,34 +412,23 @@ void* rtl_handler(void *passed, register_stack *stack, void *current_vector)
     if (intr & RTL_INT_RX_OK)
         rtl_rx_all();
 
-#ifdef DEBUG_RTL
     /* STAGE: These are handled by the chip because I told it too. I'll warn
         myself anyway, though. */
-    if (intr & RTL_INT_RXFIFO_OVERFLOW)
-        ubc_serial_write_str("[UBC] RTL8193c FIFO overflow!\r\n");
-#endif
+    if (intr & RTL_INT_RXFIFO_OVERFLOW);
 
     /* STAGE: Handle overflows relatively harshly. I'm taking this solution
         from the BSD guys, though. I'm willing to bet they have a little
         experience in this. */
     if (intr & RTL_INT_RXBUF_OVERFLOW)
     {
-#ifdef DEBUG_RTL
-        ubc_serial_write_str("[UBC] RTL8139c DMA overflow ...");
-#endif
-
-#ifdef RTL_OVERFLOW_BSD
-        rtl_init();     /* I'm taking a page out of the BSD book... */
-#else   /* handle it Linux style. */
         rtl_stop();
         
         rtl_info.cur_rx = RTL_IO_SHORT(RTL_RXBUFHEAD) % RX_BUFFER_LEN;
         RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_info.cur_rx - RX_BUFFER_THRESHOLD;
 
         rtl_start();
-#endif
     }
 
     /* STAGE: Return from the handler */
-    return my_exception_finish;
+    return current_vector;
 }

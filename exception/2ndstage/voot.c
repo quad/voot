@@ -42,8 +42,10 @@ static void dump_framebuffer_udp(void)
 
 static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16 udp_data_length)
 {
+/*
     volatile uint16 *player_a_health = (uint16 *) 0x8CCF6284;
     volatile uint16 *player_b_health = (uint16 *) 0x8CCF7402;
+*/
 
     switch (maybe_command)
     {
@@ -63,21 +65,13 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
             dump_framebuffer_udp();
             break;
 
-        /* STAGE: Reset health commands. */
-        case 'a':
-            biudp_write_str("[UBC] Resetting player A health.\r\n");
-            *player_a_health = 1200;
-            break;
-
-        case 'b':
-            biudp_write_str("[UBC] Resetting player B health.\r\n");
-            *player_b_health = 1200;
-            break;
-
         /* STAGE: Dump 16mb of system memory. */
         case 'S':
             biudp_write_buffer((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
             break;
+
+        case 'v':
+            biudp_write_str("[UBC] Netplay VOOT Extensions, BETA - compiled at " __TIME__ " on " __DATE__ "\r\n");
 
         default:
             break;
@@ -88,7 +82,21 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 {
     uint8 *command;
 
-    command = (uint8 *) udp + sizeof(udp_header_t);
+    /* STAGE: Use the information from the ICMP echo to fill out our
+        biudp information. */
+    {
+        biudp_control_t control;
+        ip_header_t *ip;
 
+        ip = (ip_header_t *) frame->data;
+        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
+        IP_ADDR_COPY(control.source_ip, ip->dest);
+        IP_ADDR_COPY(control.dest_ip, ip->source);
+        control.port = udp->src;
+
+        biudp_init(&control);
+    }
+
+    command = (uint8 *) udp + sizeof(udp_header_t);
     maybe_respond_command(*command, udp, udp_data_length);
 }

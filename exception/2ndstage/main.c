@@ -7,8 +7,9 @@
 #include <string.h>         // For memmove() - How much memory wasted?
 #include "util.h"
 #include "system.h"
-#include "exception.h"
 #include "exception-lowlevel.h"
+#include "exception.h"
+#include "heartbeat.h"
 #include "warez_load.h"
 
 /*
@@ -19,7 +20,6 @@ VR ? Armor Location   - 0x8CCF7402
 FB Page Flip          - 0xa05f8050
 */
 
-#define BREAKPOINT          ((unsigned int *) (0xa05f8050))
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
@@ -27,19 +27,17 @@ int dc_main(int do_descramble)
 {
     unsigned long bin_size;
 
-    /* STAGE: Configure the exception drivers */
+    /* STAGE: Initialize the UBC. */
+    *UBC_R_BRCR = UBC_BRCR_UBDE;
     dbr_set(exception_handler_lowlevel);
     vbr_set(vbr_buffer);
 
-    *UBC_R_BARA = (unsigned int) BREAKPOINT;
-    *UBC_R_BAMRA = (1<<2);
-    *UBC_R_BBRA = (1<<5) | (1<<4) | (1<<3) | (1<<2);
-    *UBC_R_BRCR = (0<<10) | (1<<15) | 1;
+    /* STAGE: Initialize both UBC channels. */
+    init_ubc_a_exception();
+    init_ubc_b_serial();
 
+    /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();
-    ubc_wait();
-    ubc_wait();
-    ubc_wait();   
 
     /* STAGE: Handle the 1ST_READ.BIN */
     if (do_descramble)

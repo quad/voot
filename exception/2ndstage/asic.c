@@ -5,92 +5,10 @@
 
 #include "vars.h"
 #include "system.h"
-#include "serial.h"
 #include "exception.h"
 #include "asic.h"
 
 asic_lookup_table asic_table;
-
-#ifdef DEBUG_EXTRA_FUNCTIONS
-
-static void dump_asic_segment(volatile uint32 *mask_base)
-{
-    if (!mask_base[0] && !mask_base[1])
-    {
-        ubc_serial_write_str(" !MASK\r\n");
-        return;
-    }
-
-    /* Segment 0-1 */
-    if (mask_base[0] & ASIC_MASK0_TADONE)
-        ubc_serial_write_str(" +TADONE");
-    if (mask_base[0] & ASIC_MASK0_RASTER_BOTTOM)
-        ubc_serial_write_str(" +RASTER_BOTTOM");
-    if (mask_base[0] & ASIC_MASK0_RASTER_TOP)
-        ubc_serial_write_str(" +RASTER_TOP");
-    if (mask_base[0] & ASIC_MASK0_VSYNC)
-        ubc_serial_write_str(" +VSYNC");
-
-    /* Segment 0-2 */
-    if (mask_base[0] & ASIC_MASK0_OPAQUE_POLY)
-        ubc_serial_write_str(" +OPAQUE_POLY");
-    if (mask_base[0] & ASIC_MASK0_OPAQUE_MOD)
-        ubc_serial_write_str(" +OPAQUE_MOD");
-    if (mask_base[0] & ASIC_MASK0_TRANS_POLY)
-        ubc_serial_write_str(" +TRANS_POLY");
-    if (mask_base[0] & ASIC_MASK0_TRANS_MOD)
-        ubc_serial_write_str(" +TRANS_MOD");
-
-    /* Segment 0-3 */
-    if (mask_base[0] & ASIC_MASK0_MAPLE_DMA)
-        ubc_serial_write_str(" +MAPLE_DMA");
-    if (mask_base[0] & ASIC_MASK0_MAPLE_ERROR)
-        ubc_serial_write_str(" +MAPLE_ERROR");
-    if (mask_base[0] & ASIC_MASK0_GDROM_DMA)
-        ubc_serial_write_str(" +GDROM_DMA");
-    if (mask_base[0] & ASIC_MASK0_AICA_DMA)
-        ubc_serial_write_str(" +AICA_DMA");
-    if (mask_base[0] & ASIC_MASK0_EXT1_DMA)
-        ubc_serial_write_str(" +EXT1_DMA");
-    if (mask_base[0] & ASIC_MASK0_EXT2_DMA)
-        ubc_serial_write_str(" +EXT2_DMA");
-    if (mask_base[0] & ASIC_MASK0_MYSTERY_DMA)
-        ubc_serial_write_str(" +MYSTERY_DMA");
-
-    /* Segment 0-4 */
-    if (mask_base[0] & ASIC_MASK0_PUNCHPOLY)
-        ubc_serial_write_str(" +PUNCHPOLY");
-
-    /* Segemtn 1-1 */
-    if (mask_base[1] & ASIC_MASK1_GDROM)
-        ubc_serial_write_str(" +GDROM");
-    if (mask_base[1] & ASIC_MASK1_AICA)
-        ubc_serial_write_str(" +AICA");
-    if (mask_base[1] & ASIC_MASK1_MODEM)
-        ubc_serial_write_str(" +MODEM");
-    if (mask_base[1] & ASIC_MASK1_PCI)
-        ubc_serial_write_str(" +PCI");
-
-    ubc_serial_write_str("\r\n");
-}
-
-void dump_asic(void)
-{
-    ubc_serial_write_str("[UBC] ASIC Interrupt Mask Status:\r\n");
-
-    ubc_serial_write_str("[UBC] IRQ 13 -");
-    dump_asic_segment(ASIC_IRQ13_MASK);
-
-    ubc_serial_write_str("[UBC] IRQ 11 -");
-    dump_asic_segment(ASIC_IRQ11_MASK);
-
-    ubc_serial_write_str("[UBC] IRQ 9 -");
-    dump_asic_segment(ASIC_IRQ9_MASK);
-
-    ubc_serial_write_str("[UBC] Done!\r\n");
-}
-
-#endif
 
 uint32 add_asic_handler(asic_lookup_table_entry new_entry)
 {
@@ -171,31 +89,15 @@ void init_asic_handler(void)
 {
     exception_table_entry new_entry;
 
-#ifdef DEBUG
-    ubc_serial_write_str("[UBC] ASIC handler intialization ... ");
-#endif
-
     new_entry.type = EXP_TYPE_INT;
     new_entry.handler = handle_asic_exception;
 
     new_entry.code = EXP_CODE_INT9;
-    add_exception_handler(new_entry);
-#ifdef DEBUG
-    ubc_serial_write_str("9");
-#endif
+    add_exception_handler(&new_entry);
 
     new_entry.code = EXP_CODE_INT11;
-    add_exception_handler(new_entry);
-#ifdef DEBUG
-    ubc_serial_write_str(" 11");
-#endif
+    add_exception_handler(&new_entry);
 
     new_entry.code = EXP_CODE_INT13;
-    add_exception_handler(new_entry);
-
-#ifdef DEBUG
-    ubc_serial_write_str(" 13");
-
-    ubc_serial_write_str(" done!\r\n");
-#endif
+    add_exception_handler(&new_entry);
 }

@@ -5,18 +5,28 @@
 
 #include "vars.h"
 #include "system.h"
-#include "serial.h"
-#include "util.h"
-#include "exception.h"
 #include "exception-lowlevel.h"
+#include "util.h"
 #include "rtl8139c.h"
 #include "heartbeat.h"
+#include "serial.h"
+#include "exception.h"
 
 exception_table exp_table;
 
 /* The VBR Buffer - we better find out how large VO's actually is */
 uint8 vbr_buffer[VO_VBR_SIZE];
 uint8 *vbr_buffer_katana;
+
+void init_ubc_a_exception(void)
+{
+    /* STAGE: Configure UBC Channel A for breakpoint on page flip */
+    *UBC_R_BARA = 0xa05f8050;
+    *UBC_R_BAMRA = UBC_BAMR_NOASID;
+    *UBC_R_BBRA = UBC_BBR_WRITE | UBC_BBR_OPERAND;
+
+    ubc_wait();
+}
 
 static void init_vbr_table(void)
 {
@@ -48,7 +58,7 @@ static bool is_vbr_switch_time(void)
     return exp_table.ubc_exception_count >= 5 && int_installed;
 }
 
-uint32 add_exception_handler(exception_table_entry new_entry)
+uint32 add_exception_handler(const exception_table_entry *new_entry)
 {
     uint32  index;
 
@@ -56,7 +66,7 @@ uint32 add_exception_handler(exception_table_entry new_entry)
     {
         if(!(exp_table.table[index].type))
         {
-            exp_table.table[index] = new_entry;
+            memcpy(&exp_table.table[index], new_entry, sizeof(exception_table_entry));
             return index + 1;
         }
     }
@@ -68,6 +78,7 @@ void* exception_handler(register_stack *stack)
 {
     uint32 exception_code, index;
     void *back_vector;
+    bool do_vbr_switch;
 
     /* STAGE: Increase our counters and set the proper back_vectors */
     switch (stack->exception_type)
@@ -103,34 +114,19 @@ void* exception_handler(register_stack *stack)
             break;
     }
 
-    /* STAGE: Handle the first initialization */
-    if (is_vbr_switch_time())
-    {
-#ifdef DEBUG
-        /* STAGE: Initialize the serial port */
-        ubc_serial_init(57600);
-#endif
+    do_vbr_switch = is_vbr_switch_time();
 
+    /* STAGE: Handle the first initialization */
+    if (do_vbr_switch && !exp_table.vbr_switched)
+    {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
         /* STAGE: Initialize the BBA. */
-#ifdef DEBUG
-        ubc_serial_write_str("[UBC] BBA Init:");
-#endif
         if (pci_detect())
         {
-#ifdef DEBUG
-            ubc_serial_write_str(" found");
-#endif
             if (pci_bb_init())
             {
-#ifdef DEBUG
-                ubc_serial_write_str(" pci_bb");
-#endif
                 if(rtl_init())
                 {
-#ifdef DEBUG
-                    ubc_serial_write_str(" rtl");
-#endif
                     /* STAGE: Handle ASIC exceptions */
                     init_asic_handler();
                 }
@@ -142,6 +138,18 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
+
+        /* STAGE: Serial port for testing. */
+        ubc_serial_init(57600);
+    }
+    /* STAGE: Handle reinitializations differently. */
+    else if(do_vbr_switch && exp_table.vbr_switched)
+    {
+        /* STAGE: Initialize the new VBR */
+        init_vbr_table();
+
+        /* STAGE: Serial port for testing. */
+        ubc_serial_init(57600);
     }
 
     /* STAGE: Handle exception table */

@@ -58,8 +58,4 @@ extern asic_lookup_table asic_table;
 uint32 add_asic_handler(asic_lookup_table_entry new_entry);
 void* handle_asic_exception(register_stack *stack, void *current_vector);
 
-#ifdef DEBUG_ASIC
-void dump_asic(void);
-#endif
-
 #endif

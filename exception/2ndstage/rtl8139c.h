@@ -164,7 +164,7 @@ void    rtl_start       (void);
 void    rtl_stop        (void);
 bool    rtl_tx          (const uint8* frame, uint32 length);
 void    rtl_rx_all      (void);
-void*   rtl_handler     (void *passed, register_stack *stack, void *current_vector);
+void*   rtl_handler     (void *passer, register_stack *stack, void *current_vector);
 bool    rtl_init        (void);
 
 #endif

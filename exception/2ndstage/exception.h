@@ -37,7 +37,8 @@ typedef struct
 extern exception_table exp_table;
 extern uint8 vbr_buffer[VO_VBR_SIZE];
 
-uint32 add_exception_handler(exception_table_entry new_entry);
+void init_ubc_a_exception(void);
+uint32 add_exception_handler(const exception_table_entry *new_entry);
 void init_asic_handler(void);
 
 #endif

@@ -12,10 +12,9 @@
 
 #include "vars.h"
 #include "rtl8139c.h"
-#include "net.h"
 #include "bswap.h"
 #include "voot.h"
-#include "biudp.h"
+#include "net.h"
 
 /*
  *
@@ -220,21 +219,6 @@ static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_lengt
 
         if (checksum != udp->checksum)
             return;
-    }
-
-    /* STAGE: Use the information from the ICMP echo to fill out our
-        biudp information. */
-    {
-        biudp_control_t control;
-        ip_header_t *ip;
-
-        ip = (ip_header_t *) frame->data;
-        memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
-        memcpy(&control.source_ip, &ip->dest, sizeof(uint32));
-        memcpy(&control.dest_ip, &ip->source, sizeof(uint32));
-        control.port = udp->src;
-
-        biudp_init(&control);
     }
 
     /* STAGE: Handle UDP packets based on port. */
