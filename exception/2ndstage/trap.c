@@ -42,6 +42,10 @@ struct
     uint32      end;    
 } net_fifo;
 
+/*
+ *  Module Initialization Functions
+ */
+
 void init_ubc_b_serial(void)
 {
     exception_table_entry new;
@@ -67,6 +71,14 @@ void init_ubc_b_serial(void)
 
     add_exception_handler(&new);
 } 
+
+/*
+ *  Network FIFO Interface Wrapper
+ */
+
+/*
+ *  Physical FIFO Interface Wrapper
+ */
 
 static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
 {
@@ -116,25 +128,27 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
     return TRUE;
 }
 
-static bool phy_fifo_del(uint8 check_data, bool touch_serial)
+static int32 phy_fifo_del(uint8 check_data, bool touch_serial)
 {
-    /* STAGE: Do we even have data in the physical fifo? Also, check if the
-        first byte in the ring equals the passed byte. (check_data) */
-    if (!phy_fifo.size || (phy_fifo.data[phy_fifo.start].data != check_data))
-    {
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo desynchronized!\n");
-        return FALSE;
-    }
+    /* STAGE: Do we even have data in the physical fifo? */
+    if (!phy_fifo.size)
+        return -1;
 
     /* STAGE: Flush the current byte in the SCIF, if requested. */
     if (touch_serial)
+    {
+        check_data = *SCIF_R_FRD;
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+    }
+
+    if (phy_fifo.data[phy_fifo.start].data != check_data)
+        return -1;
 
     /* STAGE: Flush the current byte in the physical fifo. */
     phy_fifo.start = ++phy_fifo.start % PHY_FIFO_SIZE;
     phy_fifo.size--;
 
-    return TRUE;
+    return check_data;
 }
 
 static uint32 phy_size(void)
@@ -201,7 +215,7 @@ static void phy_sync(void)
     {
         if(!phy_fifo_add(temp_buffer[work_index], IN, TRUE))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical FIFO overflow in resyncronization!\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in resynchronization!\n");
             break;
         }
     }
@@ -209,6 +223,10 @@ static void phy_sync(void)
     /* DEBUG: Notification of resynchronization completion. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Fifos resynchronized. %u bytes retained.\n", work_index);
 }
+
+/*
+ *  External Module Access Interface
+ */
  
 uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
@@ -227,6 +245,10 @@ uint32 trap_inject_data(const uint8 *data, uint32 size)
 
     return data_processed;
 }
+
+/*
+ *  Exception and Interrupt Handlers
+ */
 
 void* rxi_handler(register_stack *stack, void *current_vector)
 {
@@ -273,8 +295,8 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\n", stack->r3);
 
             /* STAGE: Remove incoming data from physical fifo. */
-            if (!phy_fifo_del(stack->r3, TRUE))
-                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in RX!\n");
+            if (phy_fifo_del(stack->r3, TRUE) < 0)
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!\n");
 
             break;
     }
