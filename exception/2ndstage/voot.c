@@ -6,6 +6,7 @@
 
 #include "vars.h"
 #include "biudp.h"
+#include "exception.h"
 #include "search.h"
 #include "voot.h"
 
@@ -39,7 +40,6 @@ static void dump_framebuffer_udp(void)
     }
 }
 
-
 static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16 udp_data_length)
 {
 /*
@@ -72,6 +72,7 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
 
         case 'v':
             biudp_write_str("[UBC] Netplay VOOT Extensions, BETA - compiled at " __TIME__ " on " __DATE__ "\r\n");
+            break;
 
         default:
             break;

@@ -140,7 +140,7 @@ void* exception_handler(register_stack *stack)
         init_vbr_table();
 
         /* STAGE: Serial port for testing. */
-        ubc_serial_init(57600);
+        ubc_serial_set_baudrate(57600);
     }
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)

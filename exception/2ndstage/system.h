@@ -13,6 +13,8 @@
 #define EXP_CODE_INT9       0x320
 #define EXP_CODE_INT11      0x360
 #define EXP_CODE_INT13      0x3A0
+#define EXP_CODE_UBC        0x1E0
+#define EXP_CODE_RXI        0x720
 #define EXP_CODE_BAD        0xFFF
 
 typedef struct

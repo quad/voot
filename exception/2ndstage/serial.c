@@ -14,16 +14,11 @@
 void ubc_serial_init(uint16 baud_rate)
 {
     volatile uint16 *scif16 = (uint16 *) 0xffe80000;
-    volatile uint8 *scif8 = (uint8 *) 0xffe80000;
 
     /* Disable interrupts, transmit/receive, and use internal clock */
     scif16[8 / 2] = 0;
 
-    /* 8N1, use P0 clock */
-    scif16[0] = 0;
-
-    /* Set baudrate, N = P0/(32*B)-1 */
-    scif8[4] = (50000000 / (32 * baud_rate)) - 1;
+    ubc_serial_set_baudrate(57600);
 
     /* Reset FIFOs, enable hardware flow control */
     scif16[24 / 2] = 12;
@@ -38,6 +33,18 @@ void ubc_serial_init(uint16 baud_rate)
 
     /* Enable transmit/receive */
     scif16[8 / 2] = 0x30;
+}
+
+void ubc_serial_set_baudrate(uint16 baud_rate)
+{
+    volatile uint16 *scif16 = (uint16 *) 0xffe80000;
+    volatile uint8 *scif8 = (uint8 *) 0xffe80000;
+
+    /* 8N1, use P0 clock */
+    scif16[0] = 0;
+
+    /* Set baudrate, N = P0/(32*B)-1 */
+    scif8[4] = (50000000 / (32 * baud_rate)) - 1;
 }
 
 /* Write one char to the serial port (call serial_flush()!)*/
