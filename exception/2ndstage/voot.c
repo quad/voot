@@ -44,7 +44,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             break;
 
         case VOOT_COMMAND_TYPE_PASVON:
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive mode disabled.");
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive mode functionality disabled.");
             break;
 
         case VOOT_COMMAND_TYPE_DUMPON:

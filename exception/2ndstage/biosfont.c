@@ -84,6 +84,7 @@ bool bfont_draw(uint16 *buffer, uint32 bufwidth, uint32 c)
     if (!bfont_address)
         return TRUE;
 
+    /* STAGE: Check the BIOS mutex. */
     if (!bfont_lock())
     {
         memcpy(ch, (uint8 *) bfont_find_char(c), sizeof(ch));
@@ -95,7 +96,7 @@ bool bfont_draw(uint16 *buffer, uint32 bufwidth, uint32 c)
 
     for (y=0; y < BFONT_CHAR_HEIGHT; )
     {
-        /* Do the first row */
+        /* STAGE: Do the first row */
         word = (((uint16) ch[ch_base + 0]) << 4) | ((ch[ch_base + 1] >> 4) & 0x0f);
         for (x=0; x < BFONT_CHAR_WIDTH; x++)
         {
@@ -109,7 +110,7 @@ bool bfont_draw(uint16 *buffer, uint32 bufwidth, uint32 c)
         buffer += bufwidth - BFONT_CHAR_WIDTH;
         y++;
         
-        /* Do the second row */
+        /* STAGE: Do the second row */
         word = ((((uint16) ch[ch_base + 1]) << 8) & 0xf00) | ch[ch_base + 2];
         for (x=0; x < BFONT_CHAR_WIDTH; x++)
         {

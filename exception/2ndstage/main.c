@@ -38,6 +38,7 @@ int32 dc_main(int32 do_warez)
     if (do_warez)
     {
         disable_cache();
+
         warez_load(*((unsigned long *) REAL_LOAD_POINT));
     }
     else

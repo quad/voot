@@ -6,6 +6,7 @@
 #include "net.h"
 
 #define VOOT_PACKET_HEADER_SIZE     3
+#define VOOT_PACKET_BUFFER_SIZE     (BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header))
 
 #define VOOT_PACKET_TYPE_DEBUG      'd'
 #define VOOT_PACKET_TYPE_DATA       '>'
@@ -32,7 +33,7 @@ typedef struct
 typedef struct
 {
     voot_packet_header  header __attribute__ ((packed));
-    uint8               buffer[BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header)] __attribute__ ((packed));
+    uint8               buffer[VOOT_PACKET_BUFFER_SIZE] __attribute__ ((packed));
 } voot_packet;
 
 bool voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length);

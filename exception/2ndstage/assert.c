@@ -45,12 +45,13 @@ static void assert_puts(const char *in_str)
     if (!in_str)
         in_str = null_string;
 
-    /* Assumes 640x - but then, so does bfont */
+    /* STAGE: Position our text correctly. Assumes 640x - but then, so does
+        bfont */
     vram_index = VRAM_START;
     vram_index += INDENT_BYTES;
     vram_index += (VCON_FIRST_PIXEL + (vc_line * LINE_SPACING)) * 640;
 
-    /* Make sure we handle '\n's. */
+    /* STAGE: Make sure we handle '\n's. */
     while (*in_str)
     {
         if (*in_str == '\n')
@@ -65,9 +66,9 @@ static void assert_puts(const char *in_str)
             continue;
         }
 
-        /* If we cannot draw text, blank the screen! */
+        /* STAGE: If the biosfont library is locked, just blank the screen. */
         if(bfont_draw(vram_index += 12, 640, *in_str++))
-            assert_clear(100, 0, 0);
+            return assert_clear(100, 0, 0);
     }
 
     vc_line++;

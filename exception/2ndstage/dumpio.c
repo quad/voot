@@ -21,6 +21,7 @@ void dump_framebuffer(void)
     uint32 index;
     uint16 *vram_start;
 
+    /* STAGE: Inform the client of the outgoing data dump. */
     voot_send_command(VOOT_COMMAND_TYPE_DUMPON);
 
     #define UPSCALE_5_STYLE(bits)   (((bits) << 3) | ((bits) >> 2))
@@ -32,8 +33,10 @@ void dump_framebuffer(void)
 
     vram_start = VRAM_START;
 
+    /* STAGE: Format into strips that fit under the 1k packet limit. */
     #define MAP_NUM_PIXELS  (640 * 480)
-    #define STRIP_SIZE      300
+    /* #define STRIP_SIZE      300 */
+    #define STRIP_SIZE      (VOOT_PACKET_BUFFER_SIZE / 3)
 
     /* STAGE: Release the data back in sectioned strips. */
     for (index = 0; index <= MAP_NUM_PIXELS; index++)
@@ -48,6 +51,7 @@ void dump_framebuffer(void)
             voot_send_packet(VOOT_PACKET_TYPE_DUMP, (uint8 *) strip, sizeof(strip));
     }
 
+    /* STAGE: Data dump is finished. */
     voot_send_command(VOOT_COMMAND_TYPE_DUMPOFF);
 }
 
