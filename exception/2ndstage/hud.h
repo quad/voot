@@ -5,6 +5,7 @@ extern bool do_hud;
 
 extern volatile uint16 *vid_mem;
 
+void hud_deinit(void);
 void hud_init(void);
 void hud_write_line(const char *in_line);
 int32 hud_printf(const char *fmt, ...);

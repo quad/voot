@@ -61,6 +61,14 @@ void hud_init(void)
     hud_initialized = TRUE;
 }
 
+void hud_deinit(void)
+{
+    free(hud_vid_buffer);
+    free(hud_vid_strip_buffer);
+
+    hud_initialized = FALSE;
+}
+
 void hud_write_line(const char *in_line)
 {
     int32 line;

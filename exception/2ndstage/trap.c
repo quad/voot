@@ -104,7 +104,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
     {
         /* STAGE: Trapped transmission. */
         case 0x8c0397f4:
-            biudp_printf(VOOT_PACKET_TYPE_DATA, "%c\n", stack->r2);
+            biudp_printf(VOOT_PACKET_TYPE_DATA, "%c", stack->r2);
 
             /* STAGE: Notify our RXI handler that we should drop the loopbacked data. */
             scif_fifo_status.data_in_fifo = TRUE;

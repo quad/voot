@@ -109,8 +109,13 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             break;
 
         case 'h':
-            hud_init();
-            do_hud = 1;
+            do_hud = !do_hud;
+
+            if (do_hud)
+                hud_init();
+            else
+                hud_deinit();
+                
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "do_hud is now %u", do_hud);
             break;
 
