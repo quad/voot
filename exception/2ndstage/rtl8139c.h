@@ -152,10 +152,7 @@ extern rtl_t rtl_info;
 
 bool    pci_detect      (void);
 bool    pci_bb_init     (void);
-void    rtl_start       (void);
-void    rtl_stop        (void);
 bool    rtl_tx          (const uint8* frame, uint32 length);
-void    rtl_rx_all      (void);
 void*   rtl_handler     (void *passer, register_stack *stack, void *current_vector);
 bool    rtl_init        (void);
 

@@ -54,7 +54,7 @@ void bfont_init(void)
 }
 
 /* Given a character, find it in the BIOS font if possible */
-volatile uint8* bfont_find_char(uint32 ch)
+static volatile uint8* bfont_find_char(uint32 ch)
 {
     int index = -1;
 

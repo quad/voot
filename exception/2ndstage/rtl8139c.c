@@ -137,13 +137,13 @@ static void rtl_send_command(uint8 command)
     while ((RTL_IO_BYTE(RTL_CHIPCMD) & ~0xe3) != command);
 }
 
-void rtl_stop(void)
+static void rtl_stop(void)
 {
     RTL_IO_INT(RTL_RXCONFIG) &= ~(RTL_RX_TOALL | RTL_RX_TOUS);
     rtl_send_command(0);
 }
 
-void rtl_start(void)
+static void rtl_start(void)
 {
     /* STAGE: Enable broadcast and physical match packets */
     rtl_send_command(RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
@@ -313,7 +313,7 @@ bool rtl_tx(const uint8* frame, uint32 length)
     return TRUE;
 }
 
-void rtl_rx_all(void)
+static void rtl_rx_all(void)
 {
     /* STAGE: Keep receiving packets until they're all gone, or we run into
        a packet still being read by the hardware, or of the network layer
