@@ -294,7 +294,6 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
 
     /* STAGE: Transmit it, god willing. */
     net_transmit(frame);
-
 }
 
 void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
