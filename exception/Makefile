@@ -88,7 +88,7 @@ mrproper: clean
 	-rm -f scramble makeip bin2c
 
 run: $(BIN).bin
-	dc-tool -p -x $(BIN).elf
+	dc-tool -n -x $(BIN).elf
 
 force:
 	-rm -f $(BIN).elf

@@ -28,7 +28,7 @@
     and that each in/out FIFO can only support 14 bytes. Bullshit? I agree.
     We'll figure this one out sometime in the future. */
 
-#define PHY_FIFO_SIZE   14
+#define PHY_FIFO_SIZE   13
 #define NET_FIFO_SIZE   64
 #define PF_FIFO_SIZE    (PHY_FIFO_SIZE + NET_FIFO_SIZE)
 
@@ -501,7 +501,6 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 
     if (serial_type == TX)
     {
-#define DO_BITBANG
 #ifdef DO_BITBANG
         /* STAGE: Immediate mode dumping of outgoing data. */
         voot_send_packet(VOOT_PACKET_TYPE_DATA, (uint8 *) &(serial_data), sizeof(serial_data));
