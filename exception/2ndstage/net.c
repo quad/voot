@@ -138,31 +138,16 @@ static uint16 ip_checksum_add(uint16 *buf, uint16 count_short, uint32 sum)
     return sum;
 }
 
-static void dump_udp(udp_header_t *udp)
-{
-    ubc_serial_write_str("[UBC] udp.(src = 0x");
-    ubc_serial_write_hex(udp->src);
-
-    ubc_serial_write_str(" dest = 0x");
-    ubc_serial_write_hex(udp->dest);
-
-    ubc_serial_write_str(" length = 0x");
-    ubc_serial_write_hex(udp->length);
-
-    ubc_serial_write_str(" checksum = 0x");
-    ubc_serial_write_hex(udp->checksum);
-
-    ubc_serial_write_str("\r\n");
-}
-
 uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
 {
     udp_header_t *udp;
+    uint16 udp_length;
     udp_pseudo_header_t udp_top;
     uint16 temp_checksum, calc_checksum;
 
     /* STAGE: Identify the UDP header. */
     udp = (udp_header_t *) ((uint8 *) ip + ip_header_length);
+    udp_length = ntohs(udp->length);
 
     /* STAGE: Back and clear the incoming checksum value. */
     temp_checksum = udp->checksum;
@@ -176,10 +161,15 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     udp_top.length = udp->length;
 
     /* STAGE: Calculate the first half of the checksum using the UDP pseudo-header. */
-    calc_checksum = ip_checksum_add((uint16 *) (&udp_top), sizeof(udp_top) / 2, 0);
+    calc_checksum = ip_checksum_add((uint16 *) (&udp_top), sizeof(udp_top) / sizeof(uint16), 0);
 
     /* STAGE: Calculate the second half of the checksum using the actual UDP packet. */
-    calc_checksum = ip_checksum_add((uint16 *) udp, ntohs(udp->length) / 2, calc_checksum);
+    if (udp_length % 2)     /* Pad if we're not 16-bit aligned. */
+    {
+        ((uint8 *) udp)[udp_length] = 0;
+        udp_length++;
+    }
+    calc_checksum = ip_checksum_add((uint16 *) udp, udp_length / sizeof(uint16), calc_checksum);
 
     /* STAGE: Restore the incoming checksum value. */
     udp->checksum = temp_checksum;
@@ -272,7 +262,39 @@ void ip_handle_packet(ether_info_packet_t *frame)
 
 static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
-    ubc_serial_write_str("[UBC] Received UDP ECHO request.\r\n");
+    char temp_mac[ETHER_MAC_SIZE];
+    uint32 temp_ipaddr;
+    uint16 temp_port;
+    uint16 ip_header_size;
+    ip_header_t *ip;
+
+    ip = (ip_header_t *) frame->data;
+    ip_header_size = IP_HEADER_SIZE(ip);
+
+    /* STAGE: Ether - point to our origiantor. */
+    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
+
+    /* STAGE: IP - point to our originator. */
+    temp_ipaddr = ip->source;
+    ip->source = ip->dest;
+    ip->dest = temp_ipaddr;
+
+    /* STAGE: Compute IP checksum. */
+    ip->checksum = ip_checksum(ip, ip_header_size);
+
+    /* STAGE: UDP - we want to reply from our echo port to their port. */
+    temp_port = udp->src;
+    udp->src = udp->dest;
+    udp->dest = temp_port;
+
+    /* STAGE: Compute UDP checksum. */
+    udp->checksum = udp_checksum(ip, ip_header_size);
+
+    /* STAGE: Transmit it, god willing. */
+    net_transmit(frame);
+
 }
 
 void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
@@ -309,7 +331,6 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
 
         case 5007:  /* now the official VOOT network protocol port. */
         default:    /* Drop on the floor any network data we couldn't possibly understand. */
-            ubc_serial_write_str("[UBC] UDP packet to unknown port!\r\n");
             break;
     }
 }
@@ -337,9 +358,9 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
-    memcpy(&temp_ipaddr, &ip->source, sizeof(temp_ipaddr));
-    memcpy(&ip->source, &ip->dest, sizeof(temp_ipaddr));
-    memcpy(&ip->dest, &temp_ipaddr, sizeof(temp_ipaddr));
+    temp_ipaddr = ip->source;
+    ip->source = ip->dest;
+    ip->dest = temp_ipaddr;
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
