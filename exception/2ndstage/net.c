@@ -138,6 +138,23 @@ static uint16 ip_checksum_add(uint16 *buf, uint16 count_short, uint32 sum)
     return sum;
 }
 
+static void dump_udp(udp_header_t *udp)
+{
+    ubc_serial_write_str("[UBC] udp.(src = 0x");
+    ubc_serial_write_hex(udp->src);
+
+    ubc_serial_write_str(" dest = 0x");
+    ubc_serial_write_hex(udp->dest);
+
+    ubc_serial_write_str(" length = 0x");
+    ubc_serial_write_hex(udp->length);
+
+    ubc_serial_write_str(" checksum = 0x");
+    ubc_serial_write_hex(udp->checksum);
+
+    ubc_serial_write_str("\r\n");
+}
+
 uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
 {
     udp_header_t *udp;
@@ -145,7 +162,7 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     uint16 temp_checksum, calc_checksum;
 
     /* STAGE: Identify the UDP header. */
-    udp = (udp_header_t *) (ip + ip_header_length);
+    udp = (udp_header_t *) ((uint8 *) ip + ip_header_length);
 
     /* STAGE: Back and clear the incoming checksum value. */
     temp_checksum = udp->checksum;
@@ -269,10 +286,10 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
     {
         uint16 checksum;
 
-        checksum = udp_checksum((ip_header_t *) (frame->data), ip_header_length);
+        checksum = udp_checksum((ip_header_t *) frame->data, ip_header_length);
 
-        if (!checksum)  /* If the honest checksum is 0, then change to all bits on. */
-            checksum--;
+        if (!checksum)  /* Fix the complementation "problem" */
+            checksum = 0xffff;
 
         if (checksum != udp->checksum)
         {
@@ -284,7 +301,7 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
         ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
 
     /* STAGE: Handle UDP packets based on port. */
-    switch(udp->dest)
+    switch(ntohs(udp->dest))
     {
         case 7:     /* UDP Echo */
             udp_echo_reply(frame, udp, udp_data_length);
@@ -381,8 +398,7 @@ void net_handle_frame(uint8 *frame_data, uint32 frame_size)
             ip_handle_packet(&frame);
             break;
 
-        default:
-            ubc_serial_write_str("[UBC] Unknown ethertype ignored.\r\n");
+        default:        /* Ignore unknown ethertypes. */
             break;
     }
 }
