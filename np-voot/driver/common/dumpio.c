@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.1 2002/06/11 23:53:36 quad Exp $
+    $Id: dumpio.c,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DESCRIPTION
 
@@ -9,14 +9,15 @@ DESCRIPTION
 */
 
 #include "vars.h"
-#include "assert.h"
 #include "voot.h"
+#include "gamedata.h"
 #include "util.h"
-#include "system.h"
+#include "video.h"
 
 #include "dumpio.h"
 
-static dump_control_t   control;
+static dump_control_t           control;
+static voot_packet_handler_f    old_voot_packet_handler;
 
 void dump_framebuffer (void)
 {
@@ -53,13 +54,63 @@ void dump_framebuffer (void)
     voot_send_command (VOOT_COMMAND_TYPE_DUMPOFF);
 }
 
+void dump_buffer (const uint8 *in_data, uint32 in_data_length)
+{
+    uint32          index;
+    uint32          remain;
+    uint32          segment_size;
+    voot_packet    *sizer;
+
+    segment_size = sizeof (sizer->buffer) - 1;
+
+    /* STAGE: Notify the client we're transmitting a dump buffer. */
+
+    voot_send_command (VOOT_COMMAND_TYPE_DUMPON);
+
+    /* STAGE: Dump the specified data. */
+
+    for (index = 0; index < (in_data_length / segment_size); index++)
+    {
+        const uint8    *in_data_segment;
+
+        in_data_segment = in_data + (segment_size * index);
+
+        if (!voot_send_packet (VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
+        {
+            voot_debug ("Error sending packet in main dump loop! Abort!");
+
+            break;
+        }
+
+        /* STAGE: Delay so we don't flood the receiving system. */
+
+        video_waitvbl ();
+    }
+
+    /* STAGE: Transmit any remaining trailing data... */
+
+    remain = in_data_length % segment_size;
+
+    if (remain)
+        voot_send_packet (VOOT_PACKET_TYPE_DUMP, (in_data + in_data_length) - remain, remain);
+
+    /* STAGE: Notify the client we're done transmitting a dump buffer. */
+
+    voot_send_command (VOOT_COMMAND_TYPE_DUMPOFF);
+}
+
 void dump_add (const uint8 *in_data, uint32 in_data_size)
 {
+    /* STAGE: Ensure we're dumping someplace... */
+
     if (!control.target)
         return;
 
+    /* STAGE: Copy as much of incoming data in as possible. */
+
     memcpy ((uint8 *) (control.target + control.index), in_data, in_data_size);
-    assert (!memcmp((uint8 *) (control.target + control.index), in_data, in_data_size));
+
+    /* STAGE: Update the control structure of our distance into the buffer. */
 
     control.index += in_data_size;
 }
@@ -74,9 +125,119 @@ uint32 dump_stop (void)
 {
     uint32  num_bytes_dumped;
 
+    /* STAGE: Save the number of bytes dumped. */
+
     num_bytes_dumped = control.index;
+
+    /* STAGE: Clear the dump control structure. */
 
     control.target = control.index = 0;
 
+    /* STAGE: Return the number of bytes dumped. */
+
     return num_bytes_dumped;
+}
+
+bool dump_packet_handler (voot_packet *packet)
+{
+    switch (packet->header.type)
+    {
+        case VOOT_PACKET_TYPE_COMMAND :
+        {
+            uint32  option;
+
+            /* STAGE: Ensure there is actually a command. */
+
+            if (!(packet->header.size))
+                break;
+
+            /* STAGE: Determine the command option, if specified. */
+
+            option = 0;
+
+            if (packet->header.size >= 8)
+            {
+                uint8  *buffer_index;
+
+                /* STAGE: The option isn't byte aligned, so we need to carefully copy it out. */
+
+                buffer_index = (uint8 *) (((uint32 *) packet->buffer) + 1);
+
+                ((uint8 *) (&option))[0] = buffer_index[0];
+                ((uint8 *) (&option))[1] = buffer_index[1];
+                ((uint8 *) (&option))[2] = buffer_index[2];
+                ((uint8 *) (&option))[3] = buffer_index[3];
+            }
+
+            /* STAGE: Handle the DUMPIO commands. */
+
+            switch (packet->buffer[0])
+            {
+                case VOOT_COMMAND_TYPE_DUMPON :
+                {
+                    dump_start (option);
+
+                    voot_debug ("Processed DUMPON command. (%x)", option);
+
+                    break;
+                }
+
+                case VOOT_COMMAND_TYPE_DUMPOFF :
+                {
+                    uint32  bytes;
+
+                    bytes = dump_stop ();
+
+                    voot_debug ("Processed DUMPOFF command. (%u)", bytes);
+
+                    break;
+                }
+
+                /*
+                    TODO: After taking a certain number of screenshots, it appears
+                    to crash the system.
+
+                    Maybe the dump_framebuffer() call should be moved into the
+                    heartbeat logic and some simple IPC be implemented?
+                */
+
+                case VOOT_COMMAND_TYPE_SCREEN :
+                    dump_framebuffer ();
+                    break;
+
+                case VOOT_COMMAND_TYPE_DUMPMEM :
+                    dump_buffer ((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
+                    break;
+
+                case VOOT_COMMAND_TYPE_DUMPGAME :
+                    dump_buffer ((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
+                    break;
+
+                case VOOT_COMMAND_TYPE_DUMPSELECT :
+                    dump_buffer ((const uint8 *) option, 1024);
+                    break;
+
+                default :
+                    break;
+            }
+            
+            break;
+        }
+            
+        case VOOT_PACKET_TYPE_DUMP :
+            dump_add (packet->buffer, packet->header.size);
+            break;
+
+        default :
+            break;
+    }
+
+    return old_voot_packet_handler (packet);
+}
+
+void dump_init (void)
+{
+    /* STAGE: Add ourselves to the VOOT packet handling chain. */
+
+    old_voot_packet_handler = voot_add_packet_chain (dump_packet_handler);
 }

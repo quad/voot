@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.1 2002/06/11 23:59:41 quad Exp $
+    $Id: biudp.c,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DESCRIPTION
 
@@ -11,6 +11,7 @@ DESCRIPTION
 #include "vars.h"
 #include "rtl8139c.h"
 #include "util.h"
+#include "video.h"
 
 #include "biudp.h"
 
@@ -134,7 +135,7 @@ bool biudp_write_buffer (const uint8 *in_data, uint32 in_data_length)
 
         /* STAGE: Delay so we don't flood the receiving system. */
 
-        vid_waitvbl ();
+        video_waitvbl ();
     }
 
     /* STAGE: Handle any remaining data... */

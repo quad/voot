@@ -2,19 +2,19 @@
 #
 # NOTE: Path is within a driver source directory.
 #
-# $Id: Makefile.driver,v 1.1 2002/06/12 00:31:53 quad Exp $
+# $Id: Makefile.driver,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 include ../../Makefile.config
 
 DEFS += $(DRIVER_DEFS)
-INCS += $(DRIVER_INCS) $(KOS_INCS)
-LIBS += $(DRIVER_LIBS) -L$(DRIVER_COMMON_DIR) -ldriver-common $(KOS_LIBS)
+INCS += $(DRIVER_INCS)
+LIBS += $(DRIVER_LIBS) -L$(DRIVER_COMMON_DIR) -ldriver-common
 
 $(DRIVER_TARGET).a: $(DRIVER_OBJS)
 	$(DC_AR) rcs $(DRIVER_TARGET).a $(DRIVER_OBJS)
 
 $(DRIVER_TARGET).elf: $(DRIVER_OBJS)
-	$(DC_CC) -static -Wl,-Ttext,0x8C004000 -nostdlib -nostartfiles -o $(DRIVER_TARGET).elf $(DRIVER_OBJS) $(LIBS)
+	$(DC_CC) -static -Wl,-Ttext,0x8C004000 -nostartfiles -o $(DRIVER_TARGET).elf $(DRIVER_OBJS) $(LIBS)
 	$(DC_SIZE) $(DRIVER_TARGET).elf
 
 $(DRIVER_TARGET).bin: $(DRIVER_TARGET).elf

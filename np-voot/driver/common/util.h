@@ -1,6 +1,6 @@
 /*  util.h
 
-    $Id: util.h,v 1.1 2002/06/11 20:16:23 quad Exp $
+    $Id: util.h,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 */
 
@@ -23,9 +23,11 @@
 #define islower(c)          ((c) >= 'a' && (c) <= 'z')
 #define strnlen(s, max)     ((strlen(s) > max) ? max : strlen(s))
 
-#define SAFE_UINT32_COPY(trgt, src) {                           \
-    *(((uint16 *) &(trgt))    ) = *(((uint16 *) &(src))    );   \
-    *(((uint16 *) &(trgt)) + 1) = *(((uint16 *) &(src)) + 1);   \
+#define SAFE_UINT32_COPY(trgt, src) {                       \
+    *(((uint8 *) &(trgt))    ) = *(((uint8 *) &(src))    ); \
+    *(((uint8 *) &(trgt)) + 1) = *(((uint8 *) &(src)) + 1); \
+    *(((uint8 *) &(trgt)) + 2) = *(((uint8 *) &(src)) + 2); \
+    *(((uint8 *) &(trgt)) + 3) = *(((uint8 *) &(src)) + 3); \
                                     }
 /*
     NOTE: Standard Library functions.
@@ -43,7 +45,6 @@ char *  strncpy (char *dest, const char *src, uint32 n);
 /* NOTE: Our prototypes. */
 
 void  * memmove             (void *dest, const void *src, uint32 count);
-void    vid_waitvbl         (void);
 uint8 * search_sysmem       (const uint8 *key, uint32 key_size);
 uint8 * search_sysmem_at    (const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
 void    grep_memory         (const uint8 *key, uint32 key_size);

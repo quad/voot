@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.2 2002/06/12 04:41:34 quad Exp $
+    $Id: module.c,v 1.3 2002/06/12 09:33:53 quad Exp $
 
 DESCRIPTION
 
@@ -15,7 +15,8 @@ DESCRIPTION
 #include <exception.h>
 #include <util.h>
 #include <printf.h>
-#include <assert.h>
+#include <rtl8139c.h>
+#include <dumpio.h>
 
 #include "module.h"
 
@@ -64,6 +65,18 @@ void module_configure (void)
     new.handler = debug_handler;
 
     add_exception_handler (&new);
+
+    /* STAGE: Configure the networking. */
+
+    if (pci_detect ())
+    {
+        if (pci_bb_init ())
+        {
+            if (rtl_init ())
+            {
+            }
+        }
+    }
 }
 
 void module_bios_vector (void)

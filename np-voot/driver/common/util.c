@@ -1,6 +1,6 @@
 /*  util.c
 
-    $Id: util.c,v 1.1 2002/06/11 23:45:04 quad Exp $
+    $Id: util.c,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DESCRIPTION
 
@@ -40,16 +40,6 @@ void* memmove (void *dest, const void *src, uint32 count)
     }
 
     return dest;
-}
-
-/* CREDIT: Borrowed from Dan Potter's libdream. */
-
-void vid_waitvbl (void)
-{
-    volatile uint32 *vbl = ((volatile uint32 *) 0xa05f8000) + 0x010c / sizeof (uint32);
-
-    while (!(*vbl & 0x01ff));
-    while (*vbl & 0x01ff);
 }
 
 /*

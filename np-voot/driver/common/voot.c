@@ -1,98 +1,41 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.1 2002/06/11 23:38:58 quad Exp $
+    $Id: voot.c,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DESCRIPTION
 
     VOOT netplay protocol debug implementation.
-
-TODO
-
-    Implement safer screenshot logic. See below for rationale.
 
 */
 
 #include "vars.h"
 #include "util.h"
 #include "printf.h"
-#include "dumpio.h"
-#include "gamedata.h"
 
 #include "voot.h"
 
-static bool maybe_handle_command (uint8 command, uint32 option, voot_packet *packet)
+static voot_packet_handler_f    voot_packet_handler_chain = voot_packet_handle_default;
+
+/* NOTE: This is guaranteed to be last in its chain. */
+
+bool voot_packet_handle_default (voot_packet *packet)
 {
-    switch (command)
+    switch (packet->header.type)
     {
-        case VOOT_COMMAND_TYPE_DEBUG :
+        case VOOT_PACKET_TYPE_COMMAND :
         {
-            static char key[] = "vrcust.bin";
+            if (packet->buffer[0] == VOOT_COMMAND_TYPE_VERSION)
+            {
+                uint32  freesize;
+                uint32  max_freesize;
 
-            voot_debug ("Module: '%s'", (const char *) VOOT_MODULE_NAME);
-            grep_memory (key, sizeof(key));
+                malloc_stat (&freesize, &max_freesize);
+
+                voot_debug ("Netplay VOOT Extensions, DEBUG [%u/%u]", freesize, max_freesize);
+            }
 
             break;
         }
-
-        case VOOT_COMMAND_TYPE_TIME :
-            voot_debug ("%u", time());
-            break;
-
-        case VOOT_COMMAND_TYPE_VERSION :
-        {
-            uint32  freesize;
-            uint32  max_freesize;
-
-            malloc_stat (&freesize, &max_freesize);
-
-            voot_debug ("Netplay VOOT Extensions, BETA [%u/%u]", freesize, max_freesize);
-
-            break;
-        }
-
-        case VOOT_COMMAND_TYPE_DUMPON :
-        {
-            dump_start (option);
-
-            voot_debug ("Processed DUMPON command. (%x)", option);
-
-            break;
-        }
-
-        case VOOT_COMMAND_TYPE_DUMPOFF :
-        {
-            uint32  bytes;
-
-            bytes = dump_stop ();
-
-            voot_debug ("Processed DUMPOFF command. (%u)", bytes);
-
-            break;
-        }
-
-        /*
-            TODO: After taking a certain number of screenshots, it appears
-            to crash the system.
-            
-            Maybe the dump_framebuffer() call should be moved into the
-            heartbeat logic and some simple IPC be implemented?
-        */
-
-        case VOOT_COMMAND_TYPE_SCREEN :
-            dump_framebuffer ();
-            break;
-
-        case VOOT_COMMAND_TYPE_DUMPMEM :
-            voot_dump_buffer ((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
-            break;
-
-        case VOOT_COMMAND_TYPE_DUMPGAME :
-            voot_dump_buffer ((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
-            break;
-
-        case VOOT_COMMAND_TYPE_DUMPSELECT :
-            voot_dump_buffer ((const uint8 *) option, 1024);
-            break;
 
         default :
             break;
@@ -101,68 +44,38 @@ static bool maybe_handle_command (uint8 command, uint32 option, voot_packet *pac
     return FALSE;
 }
 
-static bool maybe_handle_voot (voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
+void* voot_add_packet_chain (voot_packet_handler_f function)
 {
-    /* STAGE: Fix the size byte order. */
+    voot_packet_handler_f old_function;
 
-    packet->header.size = ntohs (packet->header.size);
+    /* STAGE: Switch out the functions. */
 
-    switch (packet->header.type)
-    {
-        case VOOT_PACKET_TYPE_COMMAND :
-        {
-            uint32  option;
+    old_function = voot_packet_handler_chain;
+    voot_packet_handler_chain = function;
 
-            option = 0;
+    /* STAGE: Give them the old one so they can properly handle it. */
 
-            /* STAGE: Check if an option was passed along. */
-
-            if (packet->header.size >= 8)
-            {
-                uint8  *buffer_index;
-
-                /* STAGE: The address isn't byte aligned, so we're forced to copy it this way. */
-
-                buffer_index = (uint8 *) (((uint32 *) packet->buffer) + 1);
-
-                ((uint8 *) (&option))[0] = buffer_index[0];
-                ((uint8 *) (&option))[1] = buffer_index[1];
-                ((uint8 *) (&option))[2] = buffer_index[2];
-                ((uint8 *) (&option))[3] = buffer_index[3];
-            }
-
-            return maybe_handle_command (packet->buffer[0], option, packet);
-        }
-
-        case VOOT_PACKET_TYPE_DATA :
-        {
-            #if 0
-                /* TODO: We await the return of the trap. */
-
-                trap_inject_data (packet->buffer, packet->header.size - 1);
-            #endif
-
-            break;
-        }
-
-        case VOOT_PACKET_TYPE_DUMP :
-            dump_add (packet->buffer, packet->header.size);
-            break;
-
-        default :
-            break;
-    }
-
-    return FALSE;
+    return old_function;
 }
 
 bool voot_handle_packet (ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
     voot_packet *packet;
 
-    packet = (voot_packet *) ((uint8 *) udp + sizeof(udp_header_t));
+    packet = (voot_packet *) ((uint8 *) udp + sizeof (udp_header_t));
 
-    return maybe_handle_voot (packet, udp, udp_data_length);
+    /* TODO: Add voot packet paranoia here. */
+
+    /* STAGE: Fix the size byte order. */
+
+    packet->header.size = ntohs (packet->header.size);
+
+    /* STAGE: Pass on to the first packet handler. */
+
+    if (voot_packet_handler_chain)
+        return voot_packet_handler_chain (packet);
+    else
+        return FALSE;
 }
 
 bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
@@ -210,51 +123,6 @@ bool voot_send_command (uint8 type)
     /* STAGE: Return with a true boolean. */
 
     return !!voot_printf (VOOT_PACKET_TYPE_COMMAND, "%c", type);
-}
-
-void voot_dump_buffer (const uint8 *in_data, uint32 in_data_length)
-{
-    uint32          index;
-    uint32          remain;
-    uint32          segment_size;
-    voot_packet    *sizer;
-
-    segment_size = sizeof (sizer->buffer) - 1;
-
-    /* STAGE: Notify the client we're transmitting a dump buffer. */
-
-    voot_send_command (VOOT_COMMAND_TYPE_DUMPON);
-
-    /* STAGE: Dump the specified data. */
-
-    for (index = 0; index < (in_data_length / segment_size); index++)
-    {
-        const uint8    *in_data_segment;
-
-        in_data_segment = in_data + (segment_size * index);
-
-        if (!voot_send_packet (VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
-        {
-            voot_debug ("Error sending packet in main dump loop! Abort!");
-
-            break;
-        }
-
-        /* STAGE: Delay so we don't flood the receiving system. */
-
-        vid_waitvbl ();
-    }
-
-    /* STAGE: Transmit any remaining trailing data... */
-
-    remain = in_data_length % segment_size;
-
-    if (remain)
-        voot_send_packet (VOOT_PACKET_TYPE_DUMP, (in_data + in_data_length) - remain, remain);
-
-    /* STAGE: Notify the client we're done transmitting a dump buffer. */
-
-    voot_send_command (VOOT_COMMAND_TYPE_DUMPOFF);
 }
 
 int32 voot_aprintf (uint8 type, const char *fmt, va_list args)

@@ -1,6 +1,6 @@
 /*  assert.c
 
-    $Id: assert.c,v 1.1 2002/06/12 00:03:43 quad Exp $
+    $Id: assert.c,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DESCRIPTION
 
@@ -14,7 +14,7 @@ DESCRIPTION
 
 #include "vars.h"
 #include "biosfont.h"
-#include "system.h"
+#include "video.h"
 #include "util.h"
 #include "printf.h"
 
@@ -25,26 +25,6 @@ DESCRIPTION
 #define VCON_FIRST_PIXEL    10
 
 static uint32   vc_line;
-
-/* TODO: This should be moved to a seperate video module. */
-
-static void assert_clear (int16 r, int16 g, int16 b)
-{
-    uint16 *vram_s;
-    uint16  pixel = (
-                        ((r >> 3) << 11) |
-                        ((g >> 2) << 5) |
-                        ((b >> 3) << 0)
-                   );
-    int32   i;
-    int32   vram_size;
-
-    vram_s      = VIDEO_VRAM_START;
-    vram_size   = 640 * 480;
-
-    for (i = 0; i < vram_size; i++)
-        vram_s[i] = pixel;
-}
 
 static void assert_puts (const char *in_str)
 {
@@ -88,7 +68,7 @@ static void assert_puts (const char *in_str)
         */
 
         if (bfont_draw (vram_index += 12, 640, *in_str++))
-            return assert_clear (100, 0, 0);
+            return video_clear (100, 0, 0);
     }
 
     vc_line++;

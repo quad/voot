@@ -1,6 +1,6 @@
 /*  exception.h 
 
-    $Id: exception.h,v 1.1 2002/06/11 20:31:59 quad Exp $
+    $Id: exception.h,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 */
 
@@ -63,7 +63,7 @@
 #define VBR_CACHE(tab)  ((void *) ((unsigned int) tab) + 0x400)
 #define VBR_INT(tab)    ((void *) ((unsigned int) tab) + 0x600)
 
-#define EXP_TABLE_SIZE  10
+#define EXP_TABLE_SIZE  7
 
 typedef struct
 {

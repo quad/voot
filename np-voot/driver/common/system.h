@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.1 2002/06/11 20:38:01 quad Exp $
+    $Id: system.h,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 */
 
@@ -22,9 +22,6 @@
 #define EXP_CODE_UBC        0x1E0
 #define EXP_CODE_RXI        0x720
 #define EXP_CODE_BAD        0xFFF
-
-#define VIDEO_VRAM_START    ((uint16 *) (0xa5000000 + *(REGISTER(uint32) 0xa05f8050)))
-#define VIDEO_FB_BUFFER     0xa05f8050
 
 typedef struct
 {

@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.1 2002/06/11 22:29:51 quad Exp $
+# $Id: Makefile,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 
@@ -37,6 +37,9 @@ DRIVER_OBJS += controller.o
 
 # VMU access.
 DRIVER_OBJS += vmu.o
+
+# Framebuffer & PVR access.
+DRIVER_OBJS += video.o
 
 all: clean $(DRIVER_TARGET).a
 

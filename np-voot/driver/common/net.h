@@ -1,6 +1,6 @@
 /*  net.h
 
-    $Id: net.h,v 1.1 2002/06/11 23:16:02 quad Exp $
+    $Id: net.h,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 */
 
@@ -44,7 +44,7 @@ typedef struct
     uint8   dest[ETHER_MAC_SIZE]    __attribute__ ((packed));
     uint8   source[ETHER_MAC_SIZE]  __attribute__ ((packed));
     uint16  ethertype               __attribute__ ((packed));
-} ether_ii_header_t                 __attribute__ ((packed));
+} ether_ii_header_t;
 
 typedef struct
 {
@@ -56,7 +56,7 @@ typedef struct
     uint8   control                 __attribute__ ((packed));
     uint8   vendor_code[3]          __attribute__ ((packed));
     uint16  ethertype               __attribute__ ((packed));
-} ether_8023_header_t               __attribute__ ((packed));
+} ether_8023_header_t;
 
 typedef struct
 {
@@ -67,7 +67,7 @@ typedef struct
     uint32  length                  __attribute__ ((packed));
     uint8  *data                    __attribute__ ((packed));
     uint16  crc                     __attribute__ ((packed));
-} ether_info_packet_t               __attribute__ ((packed));
+} ether_info_packet_t;
 
 typedef struct
 {
@@ -81,7 +81,7 @@ typedef struct
     uint16  checksum                __attribute__ ((packed));
     uint32  source                  __attribute__ ((packed));
     uint32  dest                    __attribute__ ((packed));
-} ip_header_t                       __attribute__ ((packed));
+} ip_header_t;
 
 typedef struct
 {
@@ -89,7 +89,7 @@ typedef struct
     uint8   code                    __attribute__ ((packed));
     uint16  checksum                __attribute__ ((packed));
     uint32  misc                    __attribute__ ((packed));
-} icmp_header_t                     __attribute__ ((packed));
+} icmp_header_t;
 
 typedef struct
 {
@@ -97,7 +97,7 @@ typedef struct
     uint16  dest                    __attribute__ ((packed));
     uint16  length                  __attribute__ ((packed));
     uint16  checksum                __attribute__ ((packed));
-} udp_header_t                      __attribute__ ((packed));
+} udp_header_t;
 
 typedef struct
 {
@@ -106,7 +106,7 @@ typedef struct
     uint8   zero                    __attribute__ ((packed));
     uint8   protocol                __attribute__ ((packed));
     uint16  length                  __attribute__ ((packed));
-} udp_pseudo_header_t               __attribute__ ((packed));
+} udp_pseudo_header_t;
 
 /* NOTE: Module Definitions */
 

@@ -1,11 +1,13 @@
 /*  dumpio.h
 
-    $Id: dumpio.h,v 1.1 2002/06/11 23:52:05 quad Exp $
+    $Id: dumpio.h,v 1.2 2002/06/12 09:33:51 quad Exp $
 
 */
 
 #ifndef __COMMON_DUMPIO_H__
 #define __COMMON_DUMPIO_H__
+
+#include "voot.h"
 
 #define UPSCALE_5_STYLE(bits)   (((bits) << 3) | ((bits) >> 2))
 #define UPSCALE_6_STYLE(bits)   (((bits) << 2) | ((bits) >> 4))
@@ -23,8 +25,11 @@ typedef struct
 /* NOTE: Module Declarations */
 
 void    dump_framebuffer    (void);
+void    dump_buffer         (const uint8 *in_data, uint32 in_data_length);
 void    dump_add            (const uint8 *in_data, uint32 in_data_size);
 void    dump_start          (uint32 target_loc);
 uint32  dump_stop           (void);
+bool    dump_packet_handler (voot_packet *packet);
+void    dump_init           (void);
 
 #endif
