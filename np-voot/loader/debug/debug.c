@@ -1,6 +1,6 @@
 /*  debug.c
 
-    $Id: debug.c,v 1.2 2002/10/25 20:56:29 quad Exp $
+    $Id: debug.c,v 1.3 2002/10/25 20:58:11 quad Exp $
 
 DESCRIPTION
 
@@ -41,6 +41,10 @@ void wait_for_user (void)
 {
     cont_cond_t cond;
 
+    /* STAGE: Tell the user what the hell to do... */
+
+    conio_putstr (next_page_msg);
+
     /* STAGE: Clear out the buttons so our first evalution is true... */
 
     cond.buttons = 0;
@@ -68,7 +72,7 @@ int main (void)
     /* STAGE: Display our welcome and copyright text. */ 
 
     conio_putstr (startup_msg);
-    conio_putstr (next_page_msg);
+
     wait_for_user ();
     conio_clear ();
 
@@ -84,7 +88,6 @@ int main (void)
         {
             if (!stricmp ("<hr>", line))
             {
-                conio_putstr (next_page_msg);
                 wait_for_user ();
                 conio_clear ();
             }
@@ -97,6 +100,7 @@ int main (void)
     else
     {
         conio_putstr (no_desc_msg);
+
         wait_for_user ();
         conio_clear ();
     }
