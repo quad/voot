@@ -45,6 +45,12 @@ CHANGELOG
     Tue Feb 26 14:24:44 PST 2002    Scott Robinson <scott_vo@quadhome.com>
         Cleaned up some of the dump user messages and the code in general.
 
+    Tue Feb 26 15:52:22 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Changed most of the functions in the module to "static"s. Wrote a
+        new little function parser which offers quite a bit more flexibility
+        than the older one did. Also started implementing the "c-dump-file"
+        command.
+
 */
 
 #include <stdlib.h>
@@ -130,18 +136,18 @@ static const char *npc_log_level_desc[] = {
       (char *) memcpy (__new, __old, __len);                                  \
     }))
 
-void display_start_banner(void)
+static void display_start_banner(void)
 {
     printf(banner_text);
     printf(gpl_text);
 }
 
-void display_exit_banner(void)
+static void display_exit_banner(void)
 {
     printf(exit_text);
 }
 
-void frontend_init(char *pname)
+static void frontend_init(char *pname)
 {
     prog_name = strdup(pname);
 
@@ -150,13 +156,13 @@ void frontend_init(char *pname)
     pthread_create(&input_poll_thread, NULL, input_poll, NULL);
 }
 
-void frontend_cleanup(void)
+static void frontend_cleanup(void)
 {
     rl_callback_handler_remove();
     free(prog_name);
 }
 
-void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command type, const char *vis_type)
+static void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command type, const char *vis_type)
 {
     char *tokidx_work;
     char *tokidx;
@@ -202,7 +208,7 @@ void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command typ
     printf("%s: connecting to %s %s:%u ...\n", prog_name, vis_type, command->text, command->port);
 }
 
-void parse_options(int argc, char *argv[])
+static void parse_options(int argc, char *argv[])
 {
     int opt;
     bool connect_slave, connect_server, listen_server;
@@ -312,46 +318,81 @@ void input_handler(char *line)
 {
     if (line)
     {
+        char *line_saved;
+        char *command, *command_args;
         int32 string_index;
         npc_data_t *system;
 
-        system = npc_expose();
+        if (strlen(line))
+        {
+            add_history(line);
+            line_saved = strdup(line);
+        }
+        else
+            line_saved = NULL;
 
-        /* First, lowercase the damn string. */
+        command = strtok_r(line, " ", &command_args);
+
+        if (!command)
+            command = line;
+
+        /* First, lowercase the damn command. */
         string_index = 0;
-        while((line[string_index] = tolower(line[string_index])))
+        while((command[string_index] = tolower(command[string_index])))
             string_index++;
 
-        if (strlen(line))
-            add_history(line);
+        system = npc_expose();
 
         /* Now parse simple commands. */
-        if (!strcmp(line, "c-inject"))
+        if (!strcmp(command, "c-inject"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
-        else if (!strcmp(line, "c-netstat"))
+        else if (!strcmp(command, "c-netstat"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_NETSTAT);
-        else if (!strcmp(line, "c-health"))
+        else if (!strcmp(command, "c-health"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_HEALTH);
-        else if (!strcmp(line, "c-time"))
+        else if (!strcmp(command, "c-time"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_TIME);
-        else if (!strcmp(line, "c-version"))
+        else if (!strcmp(command, "c-version"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_VERSION);
-        else if (!strcmp(line, "c-passive-on"))
+        else if (!strcmp(command, "c-passive-on"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PASVON);
-        else if (!strcmp(line, "c-screenshot"))
+        else if (!strcmp(command, "c-screenshot"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_SCREEN);
-        else if (!strcmp(line, "c-dump-memory"))
+        else if (!strcmp(command, "c-dump-memory"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPMEM);
-        else if (!strcmp(line, "c-dump-gamedata"))
+        else if (!strcmp(command, "c-dump-gamedata"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPGAME);
-        else if (!strcmp(line, "inject"))
+        else if (!strcmp(command, "c-dump-send"))
+        {
+            char *filename, *maybe_address;
+
+            filename = strtok_r(command_args, " ", &maybe_address);
+
+            if (filename)
+            {
+                FILE *file;
+
+                file = fopen(filename, "r");
+
+                if (file)
+                {
+                    //dump_send_file(0x8CCF9ECC, file);
+                    fclose(file);
+                }
+                else
+                    printf("%s: [dump-send] Unable to open file '%s' for dumping.\n", prog_name, filename);
+            }
+            else
+                printf("%s: [dump-send] You need to specify a filename, as command option, for dumping.\n", prog_name);
+        }
+        else if (!strcmp(command, "inject"))
         {
             char data[] = "012345678901234567890123456789012345678901234567890123456789";
 
             voot_send_data(system->slave_socket, VOOT_PACKET_TYPE_DATA, data, sizeof(data));
         }
-        else
-            voot_send_data(system->server_socket, VOOT_PACKET_TYPE_DEBUG, line, strlen(line) + 1);
+        else if (line_saved)
+            voot_send_data(system->server_socket, VOOT_PACKET_TYPE_DEBUG, line_saved, strlen(line) + 1);
           
         free(line);
     }
