@@ -3,7 +3,7 @@
 
 /*
 
-    Gamedata structure starts at: 0x8CCF9ECC
+    Gamedata structure starts at: 0x8CCF9ECC (8ccf0000 is the index in the VOOT code)
 
     01-XXXXXX   8-bit constant write
     000000YY
@@ -69,15 +69,16 @@ uint8 unknown_b;            /* 0x45: Game complete, temjin in fog. */
 /*
 
 Total Guesstimated System Memory:
-    8CCF9C00 - 8CCFAFFF (0x13ff / 5119d)
+    8CCF0000 - 8CCFAFFF
 
-Initial Focus:
-    8CCF9EE0 - 8CCF9EFF
+0x9f1a seems important.
 
 */
 
-#define VOOT_MEM_START      0x8CCF9ECC
+#define VOOT_MEM_START      0x8CCF0000
 #define VOOT_MEM_END        0x8CCFA2CC
+
+#define VOOT_MODULE_NAME    0x8CCF9ECC
 
 bool replace_game_text(const char *key, const char *repl);
 void gamedata_enable_debug(void);

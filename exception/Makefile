@@ -82,6 +82,8 @@ mrproper: clean
 	-rm -f *.bin *.srec
 	-rm -f *~
 	-rm -f scramble makeip bin2c logoinsert
+	-rm -f DEADJOE
+	-rm -f npc-dump.*
 
 run: $(BIN).bin
 	dc-tool -n -x $(BIN).elf

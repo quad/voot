@@ -16,6 +16,7 @@ TODO
 #include "util.h"
 #include "voot.h"
 #include "gamedata.h"
+#include "printf.h"
 
 #include "customize.h"
 
@@ -25,6 +26,7 @@ static char gamebin_c[20];
 static customize_check_mode custom_status;
 
 #define HARD_BREAK
+//#define VECTOR_TRACK
 
 static void customize_locate_func(void)
 {
@@ -57,10 +59,11 @@ static void customize_locate_func(void)
 bool customize_reinit(void)
 {
 #ifdef HARD_BREAK
-    //*UBC_R_BARA = 0x8c39d864;
-    *UBC_R_BARA = 0x8c399ea8;
+    //*UBC_R_BARA = 0x8c397f62;     /* Main animation loop breakpoint. */
+    *UBC_R_BARA = 0x8ccf022a;
     *UBC_R_BAMRA = UBC_BAMR_NOASID;
-    *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
+    //*UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
+    *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_OPERAND;
 
     ubc_wait();
 
@@ -71,7 +74,7 @@ bool customize_reinit(void)
     if (custom_status == RUN && !memcmp((uint8 *) custom_func, custom_func_key, sizeof(custom_func_key)))
         return TRUE;
     /* STAGE: Is the current vector still known broken? (with no chance of having changed. */
-    else if (custom_status == LOAD && !strcmp((uint8 *) VOOT_MEM_START, gamebin_c))
+    else if (custom_status == LOAD && !strcmp((uint8 *) VOOT_MODULE_NAME, gamebin_c))
         return FALSE;
     /* STAGE: Ignore any references from outside the game module. */
     else if (spc() < 0x8c270000)
@@ -99,7 +102,7 @@ bool customize_reinit(void)
     else
     {
         custom_status = LOAD;
-        strncpy(gamebin_c, (uint8 *) VOOT_MEM_START, sizeof(gamebin_c));
+        strncpy(gamebin_c, (uint8 *) VOOT_MODULE_NAME, sizeof(gamebin_c));
     }
 
     /* STAGE: This iteration is invalid. Don't let the handler touch it. */
@@ -128,21 +131,62 @@ void customize_init(void)
 static void* my_customize_handler(register_stack *stack, void *current_vector)
 {
     static uint32 play_vector = 0;
+    static uint32 osd_vector = 0;
 
     /* STAGE: Make a vague attempt at a reinitialization. */
     if (!customize_reinit())
         return current_vector;
 
-    // 8c389468
-    //customize (VR %u, PLR %u, CUST %x, CMAP %x)
+/*
+    8c389468
+    customize (VR %u, PLR %u, CUST %x, CMAP %x)
 
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "(%x, %x, %x, %x) from %x", stack->r4, stack->r5, stack->r6, stack->pr);
+    8c0201b4
+    vmu_load_file(DRIVE %u, FILE %s, BUFFER %x, NUM_BLOCKS %u)
+
+    npclient: [npc|INFO] DEBUG(slave): (0, 'VOORATAN.SYS', 8ce01c00, from 8c30b8ac
+    npclient: [npc|INFO] DEBUG(slave): (1, 'VOORATAN.SYS', 8ce01c00, from 8c30b8ac
+*/
+
+    //voot_printf(VOOT_PACKET_TYPE_DEBUG, "func (%x, %x, %x, %x)", stack->r4, stack->r5, stack->r6, stack->r7);
+
+    //voot_printf(VOOT_PACKET_TYPE_DEBUG, "(%u [%u], '%s', %x, %u) from %x", stack->r4, *((uint8 *) (0x8ccf0000 + 0x9f06)), stack->r5, stack->r6, stack->r7, stack->pr);
+
+    if (*((uint16 *) 0x8ccf022a) == 0xf && *((uint16 *) 0x8ccf0228) == 0x3)
+    {
+        if (!play_vector || play_vector == spc())
+        {
+            uint16 *p1_health_a = (uint16 *) 0x8CCF6284;
+            uint16 *p1_health_b = (uint16 *) 0x8CCF6286;
+
+            uint16 *p1_varmour_mod = (uint16 *) 0x8CCF63ec;
+            uint16 *p1_varmour_base = (uint16 *) 0x8CCF63ee;
+
+            uint16 *p2_health_a = (uint16 *) 0x8CCF7400;
+            uint16 *p2_health_b = (uint16 *) 0x8CCF7402;
+
+            uint16 *p2_varmour_mod = (uint16 *) 0x8CCF7568;
+            uint16 *p2_varmour_base = (uint16 *) 0x8CCF756a;
+            char cbuffer[40];
+
+            snprintf(cbuffer, sizeof(cbuffer), "Health 1 [%u -> %u]", *p1_health_b, *p1_health_a);
+            (*(void (*)()) 0x8c39573c)(5, 100, cbuffer);
+
+            snprintf(cbuffer, sizeof(cbuffer), "Health 2 [%u -> %u]", *p2_health_b, *p2_health_a);
+            (*(void (*)()) 0x8c39573c)(100, 100, cbuffer);
+
+            play_vector = spc();
+        }
+    }
+    else
+        play_vector = 0;
 
 #ifdef VECTOR_TRACK 
-    if (play_vector != stack->r13)
+    if (spc() > 0x8c270000 && play_vector != spc())
     {
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "play_vector = %x", stack->r13);
-        play_vector = stack->r13;
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "spc() = %x from %x [gm %x] [?? %x]", spc(), stack->pr, *((uint16 *) 0x8ccf022a), *((uint16 *) 0x8ccf0228));
+
+        play_vector = spc();
     }
 #endif
 

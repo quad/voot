@@ -25,10 +25,20 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
     {
         case VOOT_COMMAND_TYPE_HEALTH:
         {
-            uint16 *p1_health = (uint16 *) 0x8CCF6284;
-            uint16 *p2_health = (uint16 *) 0x8CCF7402;
-            
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
+            uint16 *p1_health_a = (uint16 *) 0x8CCF6284;
+            uint16 *p1_health_b = (uint16 *) 0x8CCF6286;
+
+            uint16 *p1_varmour_mod = (uint16 *) 0x8CCF63ec;
+            uint16 *p1_varmour_base = (uint16 *) 0x8CCF63ee;
+
+            uint16 *p2_health_a = (uint16 *) 0x8CCF7400;
+            uint16 *p2_health_b = (uint16 *) 0x8CCF7402;
+
+            uint16 *p2_varmour_mod = (uint16 *) 0x8CCF7568;
+            uint16 *p2_varmour_base = (uint16 *) 0x8CCF756a;
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p1 health [%u / %u] varmour [%u / %u]", *p1_health_a, *p1_health_b, *p1_varmour_mod, *p1_varmour_base);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "p2 health [%u / %u] varmour [%u / %u]", *p2_health_a, *p2_health_b, *p2_varmour_mod, *p2_varmour_base);
 
             break;
         }
