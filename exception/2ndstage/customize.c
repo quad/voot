@@ -40,8 +40,6 @@ static uint8 file_number = 0;
 static uint8 *file_buffer = NULL;
 static customize_data* colors[2][CUSTOMIZE_VR_COUNT]; 
 
-#define HEALTH_OSD
-
 void customize_init(void)
 {
     exception_table_entry new;
@@ -281,10 +279,11 @@ static void maybe_do_load_customize(void)
 
 static void* my_anim_handler(register_stack *stack, void *current_vector)
 {
-#ifdef HEALTH_OSD
     static uint32 play_vector = 0;
     static uint32 osd_vector = 0;
-#endif
+    static int32 p1_health_save[2] = {-1, -1};
+    static int32 p2_health_save[2] = {-1, -1};
+
     static uint16 save_mode_a = 0;
     static uint16 save_mode_b = 0;
     uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
@@ -336,20 +335,19 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
     else
         maybe_do_load_customize();
 
-#ifdef HEALTH_OSD
     /* STAGE: Health OSD segment - only triggers in game mode. */
     if (*anim_mode_b == 0xf && *anim_mode_a == 0x3)
     {
-        if (!play_vector || play_vector == spc())
+        if ((!play_vector || play_vector == spc()) && (!strcmp("training54.bin", (const char *) VOOT_MODULE_NAME) || !strcmp("training.bin", (const char *) VOOT_MODULE_NAME)))
         {
-            uint16 *p1_health_a = (uint16 *) 0x8CCF6284;
-            uint16 *p1_health_b = (uint16 *) 0x8CCF6286;
+            uint16 *p1_health_real = (uint16 *) 0x8CCF6284;
+            uint16 *p1_health_stat = (uint16 *) 0x8CCF6286;
 
             uint16 *p1_varmour_mod = (uint16 *) 0x8CCF63ec;
             uint16 *p1_varmour_base = (uint16 *) 0x8CCF63ee;
 
-            uint16 *p2_health_a = (uint16 *) 0x8CCF7400;
-            uint16 *p2_health_b = (uint16 *) 0x8CCF7402;
+            uint16 *p2_health_real = (uint16 *) 0x8CCF7400;
+            uint16 *p2_health_stat = (uint16 *) 0x8CCF7402;
 
             uint16 *p2_varmour_mod = (uint16 *) 0x8CCF7568;
             uint16 *p2_varmour_base = (uint16 *) 0x8CCF756a;
@@ -366,26 +364,42 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
             /* STAGE: If we found it, display the health OSD. */
             if (osd_vector)
             {
-                snprintf(cbuffer, sizeof(cbuffer), "Health 1 [%u -> %u]", *p1_health_a, *p1_health_b);
-                (*(void (*)()) osd_vector)(5, 100, cbuffer);
+                snprintf(cbuffer, sizeof(cbuffer), "Dam 1 [%u > %u | %d]", *p1_health_real, *p1_health_stat, p1_health_save[1]);
+                (*(void (*)()) osd_vector)(5, 340, cbuffer);
 
-                snprintf(cbuffer, sizeof(cbuffer), "V.Armour 1 [%u -> %u]", *p1_varmour_base, *p1_varmour_mod);
-                (*(void (*)()) osd_vector)(5, 115, cbuffer);
+                snprintf(cbuffer, sizeof(cbuffer), "V.A 1 [%u > %u]", *p1_varmour_base, *p1_varmour_mod);
+                (*(void (*)()) osd_vector)(5, 355, cbuffer);
 
-                snprintf(cbuffer, sizeof(cbuffer), "Health 2 [%u -> %u]", *p2_health_a, *p2_health_b);
-                (*(void (*)()) osd_vector)(5, 200, cbuffer);
+                snprintf(cbuffer, sizeof(cbuffer), "Dam 2 [%u > %u | %d]", *p2_health_real, *p2_health_stat, p2_health_save[1]);
+                (*(void (*)()) osd_vector)(5, 400, cbuffer);
 
-                snprintf(cbuffer, sizeof(cbuffer), "V.Armour 2 [%u -> %u]", *p2_varmour_base, *p2_varmour_mod);
-                (*(void (*)()) osd_vector)(5, 215, cbuffer);
+                snprintf(cbuffer, sizeof(cbuffer), "V.A 2 [%u > %u]", *p2_varmour_base, *p2_varmour_mod);
+                (*(void (*)()) osd_vector)(5, 415, cbuffer);
+            }
+
+            /* STAGE: If the health values have changed, update our status. */
+            if (*p1_health_real != p1_health_save[0])
+            {
+                if (p1_health_save[0] >= 0)
+                    p1_health_save[1] = p1_health_save[0] - *p1_health_real;
+
+                p1_health_save[0] = *p1_health_real;
+            }
+            if (*p2_health_real != p2_health_save[0])
+            {
+                if (p2_health_save[0] >= 0)
+                    p2_health_save[1] = p2_health_save[0] - *p2_health_real;
+
+                p2_health_save[0] = *p2_health_real;
             }
         }
     }
     else
     {
-        play_vector = 0;
-        osd_vector = 0;
+        play_vector = osd_vector = 0;
+        p1_health_save[0] = p2_health_save[0] = -1;
+        p1_health_save[1] = p2_health_save[1] = 0;
     }
-#endif
 
     return current_vector;
 }
