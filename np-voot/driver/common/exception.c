@@ -1,16 +1,10 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.7 2002/07/06 14:18:15 quad Exp $
+    $Id: exception.c,v 1.8 2002/07/07 04:41:09 quad Exp $
 
 DESCRIPTION
 
     Handle incoming exceptions in readable C-code.
-
-TODO
-
-    Ensure exceptions cannot be added to the table unless the system is
-    initialized. (or some derivative, because of the delayed initialization
-    system.)
 
 */
 
@@ -60,9 +54,6 @@ exception_init_e exception_init (void)
 
         We must also have already waited a certain number of clean
         exceptions before screwing with the VBR. This is paranoia.
-
-        TODO: Determine if the vbr is variable. If not, remove all
-        vbr_buffer and vbr_buffer_katana references and replace with macros.
     */
 
     if (!vbr_buffer || exception_vbr_ok () || (exp_table.ubc_exception_count < 5))

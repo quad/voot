@@ -1,14 +1,10 @@
 /*  asic.c
 
-    $Id: asic.c,v 1.5 2002/07/06 14:18:15 quad Exp $
+    $Id: asic.c,v 1.6 2002/07/07 04:41:09 quad Exp $
 
 DESCRIPTION
 
     Handle the SEGA-G2 bus ASIC controller.
-
-TODO
-
-    Reinitialize the ASIC when reinitializing the VBR table.
 
 */
 
@@ -70,6 +66,59 @@ static void* asic_handle_exception (register_stack *stack, void *current_vector)
         return new_vector;
 }
 
+static void asic_enable_irq (const asic_lookup_table_entry *entry)
+{
+    volatile uint32    *mask_base;
+
+    /* STAGE: Determine which ASIC IRQ bank, if any, the given mask will be enabled on. */
+
+    switch (entry->irq)
+    {
+        case EXP_CODE_INT9 :
+            mask_base = ASIC_IRQ9_MASK;
+            break;
+
+        case EXP_CODE_INT11 :
+            mask_base = ASIC_IRQ11_MASK;
+            break;
+
+        case EXP_CODE_INT13 :
+            mask_base = ASIC_IRQ13_MASK;
+            break;
+
+        case EXP_CODE_ALL :
+        {
+            /* STAGE: Mask the first two ASIC banks. */
+
+            mask_base = ASIC_IRQ9_MASK;
+            mask_base[0] |= entry->mask0;
+            mask_base[1] |= entry->mask1;
+
+            mask_base = ASIC_IRQ11_MASK;
+            mask_base[0] |= entry->mask0;
+            mask_base[1] |= entry->mask1;
+
+            /* STAGE: Have the code further on take care of the last mask. */
+
+            mask_base = ASIC_IRQ13_MASK;
+
+            break;
+        }
+
+        /* STAGE: Probably an empty entry. Either way, we can't do anything. */
+
+        default :
+            mask_base = NULL;
+            break;
+    }
+
+    /* STAGE: Enable the selected G2 IRQs on the ASIC. */
+
+    if (mask_base)
+        mask_base[0] |= entry->mask0;
+        mask_base[1] |= entry->mask1;
+}
+
 bool asic_add_handler (const asic_lookup_table_entry *new_entry, asic_handler_f *parent_handler)
 {
     uint32  index;
@@ -94,59 +143,13 @@ bool asic_add_handler (const asic_lookup_table_entry *new_entry, asic_handler_f 
         }
         else if (!(asic_table.table[index].irq))
         {
-            volatile uint32    *mask_base;
-
             /* STAGE: Ensure there isn't any parent handler given back. */
 
             *parent_handler = NULL;
 
-            /* STAGE: Determine which ASIC IRQ bank, if any, the given mask will be enabled on. */
+            /* STAGE: Enable the IRQ bank on the ASIC as specified by the entry. */
 
-            switch (new_entry->irq)
-            {
-                case EXP_CODE_INT9 :
-                    mask_base = ASIC_IRQ9_MASK;
-                    break;
-
-                case EXP_CODE_INT11 :
-                    mask_base = ASIC_IRQ11_MASK;
-                    break;
-
-                case EXP_CODE_INT13 :
-                    mask_base = ASIC_IRQ13_MASK;
-                    break;
-
-                case EXP_CODE_ALL :
-                {
-                    /* STAGE: Mask the first two ASIC banks. */
-
-                    mask_base = ASIC_IRQ9_MASK;
-                    mask_base[0] |= new_entry->mask0;
-                    mask_base[1] |= new_entry->mask1;
-
-                    mask_base = ASIC_IRQ11_MASK;
-                    mask_base[0] |= new_entry->mask0;
-                    mask_base[1] |= new_entry->mask1;
-
-                    /* STAGE: Have the code further on take care of the last mask. */
-
-                    mask_base = ASIC_IRQ13_MASK;
-
-                    break;
-                }
-
-                /* STAGE: Assume the caller knows what the hell they're doing. */
-
-                default :
-                    mask_base = NULL;
-                    break;
-            }
-
-            /* STAGE: Enable the selected G2 IRQs on the ASIC. */
-
-            if (mask_base)
-                mask_base[0] |= new_entry->mask0;
-                mask_base[1] |= new_entry->mask1;
+            asic_enable_irq (new_entry);
 
             /* STAGE: Copy the new entry into our table. */
 
@@ -166,7 +169,16 @@ void asic_init (void)
     /* STAGE: Ensure we can't initialize ourselves twice. */
 
     if (asic_table.inited)
+    {
+        uint32  index;
+
+        /* STAGE: Reinitialize the active IRQs on the ASIC. */
+
+        for (index = 0; index < ASIC_TABLE_SIZE; index++)
+            asic_enable_irq (&asic_table.table[index]);
+
         return;
+    }
 
     /* STAGE: Works for all the interrupt types... */
 

@@ -1,17 +1,10 @@
 /*  anim.c
 
-    $Id: anim.c,v 1.3 2002/07/06 14:18:15 quad Exp $
+    $Id: anim.c,v 1.4 2002/07/07 04:41:09 quad Exp $
 
 DESCRIPTION
 
     A module which provides a function hook chain on the VOOT render-cycle.
-
-TODO
-
-    Handle the case of reinitialization. (we've overwritten the two
-    instructions of the matched functions.)
-
-    Do not allow the module to be accessed unless initialized.
 
 */
 
