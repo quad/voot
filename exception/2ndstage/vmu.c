@@ -4,6 +4,10 @@ DESCRIPTION
 
     VMU access functions into VOOT's (Katana's?) actual code.
 
+TODO
+
+    Remove the DC-VOOT-US vmu_mount hardcoded parameters.
+
 */
 
 #include "vars.h"
