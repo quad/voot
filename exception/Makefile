@@ -34,10 +34,8 @@ $(BIN).bin: $(BIN).elf
 $(BIN).elf: $(OBJS)
 	$(CC) -Wl,-Ttext,0x8C010000 -nostartfiles -o $(BIN).elf $(OBJS) $(LIBS)
 
-2ndstage/2ndstage.bin:
-	(cd 2ndstage ; make)
-
-2ndstage.c: bin2c 2ndstage/2ndstage.bin
+2ndstage.c: bin2c
+	make -C 2ndstage
 	./bin2c 2ndstage/2ndstage.bin stage_two_bin 2ndstage.c
 
 %.o: %.c
@@ -57,9 +55,12 @@ bin2c:
 	gcc -o bin2c bin2c.c
 
 clean:
+	make -C 2ndstage clean
+	-rm 2ndstage.c
 	-rm -f *.o *.elf 1ST_READ.BIN *.bck $(EXTRA_CLEAN)
 
 reallyclean: clean
+	make -C 2ndstage clean
 	-rm -f *.bin *.srec bin2c
 
 run: $(BIN).bin

@@ -7,6 +7,7 @@
 #include "net.h"
 #include "rtl8139c.h"
 #include "serial.h"
+#include "util.h"
 #include "biudp.h"
 
 biudp_control_t control;
@@ -30,6 +31,7 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     uint16 ip_header_length;
     uint16 ip_length;
     udp_header_t *udp;
+    char ibuffer[10];
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
     frame_out = (ether_ii_header_t *) rtl_info.frame_out_buffer;
@@ -49,14 +51,19 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     ip->flags_frag_offset = htons(0x4000);  /* One order of IP packet, hold the fragmentation. */
     ip->ttl = 0x20;     /* 32 seems like plenty - it gets me to Kirk. */
     ip->protocol = IP_PROTO_UDP;
+    ip->checksum = 0;
 
     ubc_serial_write_str("[UBC] @frame_out = 0x");
     ubc_serial_write_hex((uint32) frame_out);
-    ubc_serial_write_str(" @ip = 0x");
-    ubc_serial_write_hex((uint32) ip);
+    ubc_serial_write_str(" @ip->source = 0x");
+    ubc_serial_write_hex((uint32) &ip->source);
     ubc_serial_write_str("\r\n");
 
-    ubc_serial_write_str("[UBC] Crash Point: pre");
+    ubc_serial_write_str("[UBC] Crash Point: pre [");
+
+    uint_to_string(ip->source, ibuffer);
+    ubc_serial_write_str(ibuffer);
+    ubc_serial_write_str("]");
 
     ip->source = control.source_ip;
     ip->dest = control.dest_ip;
