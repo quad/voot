@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.6 2003/01/20 21:11:54 quad Exp $
+    $Id: voot.c,v 1.7 2003/03/08 08:10:53 quad Exp $
 
 DESCRIPTION
 
@@ -28,6 +28,7 @@ TODO
 static voot_packet_handler_f    voot_packet_handler_chain;
 static np_reconf_handler_f      my_reconfigure_handler;
 static struct udp_pcb          *voot_pcb;
+static uint32                   last_packet_time;
 
 static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p, struct ip_addr *addr, uint16 port)
 {
@@ -82,9 +83,10 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
         packet = p->payload;
     }
 
-    /* STAGE: Connect the UDP endpoint to whoever sent to us. */
+    /* STAGE: Focus on whoever is talking and update timeout timer. */
 
     udp_connect (upcb, addr, port);
+    last_packet_time = time();
 
     /* STAGE: Pass on to the first packet handler. */
 
@@ -259,6 +261,7 @@ void voot_init (void)
 
         udp_bind (voot_pcb, IP_ADDR_ANY, VOOT_UDP_PORT);
         udp_recv (voot_pcb, voot_handle_packet, NULL);
+        udp_connect (voot_pcb, IP_ADDR_BROADCAST, VOOT_UDP_PORT);
     }
 
     if (!voot_packet_handler_chain)

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.10 2003/03/07 20:25:45 quad Exp $
+    $Id: net.c,v 1.11 2003/03/08 08:10:53 quad Exp $
 
 DESCRIPTION
 
@@ -94,6 +94,7 @@ static void net_handle_reconfigure ()
 {
     /* STAGE: Release ownership of all interfaces. */
 
+    netif_set_default (NULL);
     bbaif_set_netif (NULL);
 
     return my_reconfigure_handler ();

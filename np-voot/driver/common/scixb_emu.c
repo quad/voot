@@ -1,15 +1,11 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.1 2003/03/07 20:43:05 quad Exp $
+    $Id: scixb_emu.c,v 1.2 2003/03/08 08:10:48 quad Exp $
 
 DESCRIPTION
 
     SCIXB RX and TX emulation layer. This doesn't emulate the chip, but it
     does trick SCIXB enough for reception.
-
-TODO
-
-    Add pointer checks to the FIFO logic.
 
 */
 
@@ -18,6 +14,7 @@ TODO
 #include "searchmem.h"
 #include "ubc.h"
 #include "exception.h"
+#include "init.h"
 #include "malloc.h"
 #include "anim.h"
 
@@ -67,6 +64,7 @@ static const uint8  fifo_key[]      = {
 
 static bool                     inited;
 static exception_handler_f      old_trap_handler;
+static np_reconf_handler_f      my_reconfigure_handler;
 static scixb_fifo_t            *voot_fifo;
 static scixb_fifo_t             delay_fifo;
 
@@ -241,6 +239,16 @@ static void* trap_handler (register_stack *stack, void *current_vector)
         return current_vector;
 }
 
+static void scixb_handle_reconfigure ()
+{
+    /* STAGE: Clear out reinitialized data... */
+
+    delay_fifo.pointer = NULL;
+
+    return my_reconfigure_handler ();
+}
+
+
 void scixb_init (void)
 {
     uint16  init_trap;
@@ -289,6 +297,8 @@ void scixb_init (void)
         inited = exception_add_handler (&new_entry, &old_trap_handler);
 
         anim_add_render_chain (my_anim_chain, &old_anim_chain);
+
+        my_reconfigure_handler = np_add_reconfigure_chain (scixb_handle_reconfigure);
     }
 
     if (init_tx_root && main_tx_root && init_link_root && inited)
