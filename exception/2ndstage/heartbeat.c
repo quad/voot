@@ -17,8 +17,6 @@ DESCRIPTION
 
 #include "heartbeat.h"
 
-static char vm_mode;
-
 void init_heartbeat(void)
 {
     asic_lookup_table_entry new_irq;

@@ -36,6 +36,8 @@ void* memcpy(void *dest, const void *src, uint32 n);
 int memcmp(const void *s1, const void *s2, uint32 n);
 void *memset(void *s, int32 c, uint32 n);
 uint32 strlen(const char *s);
+int strcmp(const char *s1, const char *s2);
+char *strncpy(char *dest, const char *src, uint32 n);
 
 /* Our prototypes. */
 

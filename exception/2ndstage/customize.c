@@ -6,7 +6,7 @@ DESCRIPTION
 
 TODO
 
-    Nirvana
+    VMU Loading.
 
 */
 
@@ -16,22 +16,79 @@ TODO
 #include "exception-lowlevel.h"
 #include "util.h"
 #include "voot.h"
+#include "gamedata.h"
 
 #include "customize.h"
 
 static const uint8 custom_func_key[] = { 0xe6, 0x2f, 0x53, 0x6e, 0xd6, 0x2f, 0xef, 0x63, 0xc6, 0x2f, 0x38, 0x23 };
+static uint32 custom_func;
+static char gamebin_c[20];
+static customize_check_mode custom_status;
+
+static void customize_locate_func(void)
+{
+    /* STAGE: Locate the customization function beginning. */
+    custom_func = (uint32) search_sysmem_at(custom_func_key, sizeof(custom_func_key), GAME_MEM_START, SYS_MEM_END);
+
+    /* STAGE: If we found the customization function, configure UBC Channel
+        A to break on it. */
+    if (custom_func)
+    {
+        *UBC_R_BARA = custom_func;
+        *UBC_R_BAMRA = UBC_BAMR_NOASID;
+        *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
+    }
+    /* STAGE: Otherwise set our break on Temjin's customize data. */
+    else
+    {
+        *UBC_R_BARA = 0x8ccf9f15;
+        *UBC_R_BAMRA = UBC_BAMR_NOASID;
+        *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_OPERAND;
+    }
+
+    ubc_wait();
+}
+
+bool customize_reinit(void)
+{
+    /* STAGE: Is the current vector still valid? */
+    if (custom_status == RUN && !memcmp((uint8 *) custom_func, custom_func_key, sizeof(custom_func_key)))
+        return TRUE;
+    /* STAGE: Is the current vector still known broken? (with no chance of having changed. */
+    else if (custom_status == LOAD && !strcmp((uint8 *) VOOT_MEM_START, gamebin_c))
+        return FALSE;
+    /* STAGE: Ignore any references from outside the game module. */
+    else if (spc() < 0x8c270000)
+        return FALSE;
+
+    /* STAGE: Function reference is either invalid or we're allowed to search again. */
+    customize_locate_func();
+
+    /* STAGE: If the function was located, set our status to run but DO NOT
+        allow the handler to process this iteration. */
+    if (custom_func)
+        custom_status = RUN;
+    /* STAGE: No customization function was located. Continue in LOAD mode. */
+    else
+    {
+        custom_status = LOAD;
+        strncpy(gamebin_c, (uint8 *) VOOT_MEM_START, sizeof(gamebin_c));
+    }
+
+    /* STAGE: This iteration is invalid. Don't let the handler touch it. */
+    return FALSE;
+}
 
 void customize_init(void)
 {
     exception_table_entry new;
 
+    /* STAGE: Notify the module we're in the LOAD process. */
+    custom_status = LOAD;
+    custom_func = 0x0;
+
+    /* STAGE: Make a (futile) search for the customization function. */
     customize_reinit();
-
-    /* STAGE: Configure UBC Channel A for breakpoint */
-    *UBC_R_BAMRA = UBC_BAMR_NOASID;
-    *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
-
-    ubc_wait();
 
     /* STAGE: Add exception handler for serial access. */
     new.type = EXP_TYPE_GEN;
@@ -41,26 +98,12 @@ void customize_init(void)
     add_exception_handler(&new);
 }
 
-void customize_reinit(void)
-{
-    static uint32 custom_func = 0x0;
-
-    /* STAGE: Check if the current custom_func is valid. */
-    if (!memcmp((const char *) custom_func, custom_func_key, sizeof(custom_func_key)))
-        return;
-
-    /* STAGE: Locate the customization function beginning. */
-    custom_func = (uint32) search_sysmem_at(custom_func_key, sizeof(custom_func_key), GAME_MEM_START, SYS_MEM_END);
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "Found customization function @ %x", custom_func);
-
-    /* STAGE: Configure UBC Channel A for breakpoint */
-    *UBC_R_BARA = custom_func;
-
-    ubc_wait();
-}
-
 static void* my_customize_handler(register_stack *stack, void *current_vector)
 {
+    /* STAGE: Make a vague attempt at a reinitialization. */
+    if (!customize_reinit())
+        return current_vector;
+
     voot_printf(VOOT_PACKET_TYPE_DEBUG, "customize break hit @ %x", spc());
     voot_printf(VOOT_PACKET_TYPE_DEBUG, "(%x, %x, %x, %x)", stack->r4, stack->r5, stack->r6, stack->r7);
 
