@@ -49,28 +49,28 @@ void boot_loader(unsigned char *bootstrap_name)
 
     vc_clear(COLOR_BOOT_INIT);
 
-    vc_puts("Initializing CD subsystem...");
-    cdrom_reinit();
+    vc_puts("Initializing ...");
 
-    vc_puts("Initializing ISO subsystem...");
+    cdrom_reinit();
     iso_init();
 
     /* Attempt to load the media. If it's a GD-ROM, the bootstrap and second
        stage are loaded into memory and plain executed. If the media is a
        CD, however, we need to descramble the 1ST_READ.BIN in order to use
        it. */
-    vc_puts("Accessing media...");
+    vc_puts("Accessing ...");
     do_descramble = open_gd_or_cd(&fd, bootstrap_name);
     
     if (!fd)
     {
-        vc_puts("What the hell kinda media is this?!\n");
+        vc_puts("We are not familiar with the media inserted.\n");
         return;
     }
 
     /* Load the actual bootstrap into memory */
     bin_size = iso_total(fd);
-    vc_printf("Loading %s (%ub)...", bootstrap_name, bin_size);
+    /* vc_printf("Loading %s (%ub)...", bootstrap_name, bin_size); */
+    vc_puts("Loading ...");
     iso_read(fd, first_load_buffer, bin_size);
     iso_close(fd);
 
@@ -78,10 +78,9 @@ void boot_loader(unsigned char *bootstrap_name)
         vc_puts("WAREZ_LOAD active! Bad pirate.");
 
     /* Copy the second stage into the IP.BIN area and execute it */
-    vc_puts("Relocating second stage...");
     memcpy(ip_buffer, stage_two_bin, stage_two_bin_size);
 
-    vc_puts("Executing second stage!");
+    vc_puts("Go!");
     *first_load_size = bin_size;
     (*(void (*)()) RUN_POINT) (do_descramble);    /* If you don't screw with R4. */
 }
@@ -94,13 +93,17 @@ void dc_main(void)
 
     cdrom_init();
 
+    vc_puts("Welcome to Netplay VOOT Extensions - BETA");
+    vc_puts("(loader built at " __TIME__" on " __DATE__ ")");
+    vc_puts("");
+
     while (1)
     {
-        vc_puts("Insert a GD-ROM.");
+        vc_puts("Please insert a Virtual-On GD-ROM.");
         wait_for_gdrom();
 
         boot_loader(FIRST_LOAD_FILE);
 
-        vc_puts("I guess something bad happened.");
+        vc_puts("An error occured accessing your GD-ROM.");
     }
 }
