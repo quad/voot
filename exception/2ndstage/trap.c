@@ -76,6 +76,8 @@ static void phy_sync(void)
 
 static bool phy_fifo_add(uint8 in_data, dir_e dir)
 {
+    uint32 fifo_index;
+
     /* STAGE: Do we have space in the physical fifo? */
     if (phy_fifo.size >= PHY_FIFO_SIZE)
     {
@@ -84,7 +86,9 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir)
     }
         
     /* STAGE: Add the byte to the end of the physical fifo. */
-    phy_fifo.data[(phy_fifo.start + phy_fifo.size) % PHY_FIFO_SIZE].direction = dir;
+    fifo_index = (phy_fifo.start + phy_fifo.size) % PHY_FIFO_SIZE;
+    phy_fifo.data[fifo_index].data = in_data;
+    phy_fifo.data[fifo_index].direction = dir;
     phy_fifo.size++;
 
     return TRUE;
