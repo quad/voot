@@ -382,7 +382,7 @@ void logger_callback(npc_log_level severity, const char *format, ...)
 
 bool packet_callback(uint8 type, const voot_packet *packet)
 {
-    static uint32 dump_file = 0;
+    static int32 dump_file = 0;
 
     if (type == C_PACKET_FROM_SLAVE)
     {
@@ -396,27 +396,36 @@ bool packet_callback(uint8 type, const voot_packet *packet)
                         char template[] = "npc-dump.XXXXXX";
 
                         dump_file = mkstemp(template);
-
-                        printf("%s: [dump] Opened dump file. (%d)\n", prog_name, dump_file);
-
+                        if (dump_file > 0)
+                        {
+                            printf("%s: [dump] Opened dump file. (%d)\n", prog_name, dump_file);
+                        }
+                        else
+                        {
+                            printf("%s: [dump] Unable to open a dump file.\n", prog_name);
+                            dump_file = 0;
+                        }
                     }
                     break;
 
                 case VOOT_COMMAND_TYPE_DUMPOFF:
                     if (dump_file)
-                        close(dump_file);
-                    dump_file = 0;
+                    {
+                        int32 t_dump_file;
 
-                    printf("%s: [dump] Closed dump file.\n", prog_name);
+                        t_dump_file = dump_file;
+                        dump_file = 0;
 
+                        close(t_dump_file);
+
+                        printf("%s: [dump] Closed dump file. (%d)\n", prog_name, t_dump_file);
+                    }
                     break;
             }
         }
         else if (packet->header.type == VOOT_PACKET_TYPE_DUMP && dump_file)
         {
             int out;
-
-            //printf("%s: [dump] Writing dump data...\n", prog_name);
 
             out = write(dump_file, packet->buffer, (ntohs(packet->header.size) - 1));
 
