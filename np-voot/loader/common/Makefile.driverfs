@@ -1,6 +1,6 @@
 # Generate ROMFS with specified driver Makefile
 #
-# $Id: Makefile.driverfs,v 1.3 2002/10/18 19:52:20 quad Exp $
+# $Id: Makefile.driverfs,v 1.4 2002/11/07 02:15:59 quad Exp $
 
 include ../../Makefile.config
 
@@ -8,7 +8,7 @@ ifdef LOADER_FILES
 	LOADER_FILES_REAL = $(foreach LOADER_FILE, $(LOADER_FILES), $(NP_BASE)/loader/$(LOADER_TARGET)/$(LOADER_FILE))
 endif
 
-all: clean $(DRIVER).o
+all: $(DRIVER).o
 
 $(DRIVER).bin:
 	make -C $(NP_BASE)/driver/$(DRIVER) $(DRIVER).bin

@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.4 2002/10/18 19:52:20 quad Exp $
+    $Id: boot.c,v 1.1 2002/11/07 02:16:00 quad Exp $
 
 DESCRIPTION
 
@@ -17,13 +17,17 @@ CHANGELOG
     Mon Jun 24 22:53:47 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Shifted load address to new safe page.
 
+    Wed Nov  6 17:57:34 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added the filename option and "merged" the two versions of the same
+        bootloader.
+
 */
 
 #include <kos.h>
 
 #include "boot.h"
 
-void boot_loader (void)
+void boot_loader (const char *filename)
 {
     int     in_driver;
     uint8  *driver_buffer;
@@ -33,7 +37,7 @@ void boot_loader (void)
 
     /* STAGE: Open and read in the driver binary. */
 
-    in_driver = fs_open ("/rd/driver.bin", O_RDONLY);
+    in_driver = fs_open (filename, O_RDONLY);
 
     /*
         STAGE: If the driver wasn't found, it means this loader package is

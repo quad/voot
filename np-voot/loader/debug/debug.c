@@ -1,6 +1,6 @@
 /*  debug.c
 
-    $Id: debug.c,v 1.4 2002/11/04 18:38:26 quad Exp $
+    $Id: debug.c,v 1.5 2002/11/07 02:16:02 quad Exp $
 
 DESCRIPTION
 
@@ -27,8 +27,8 @@ CHANGELOG
 
 #include <kos.h>
 #include <conio/conio.h>
+#include <boot.h>
 #include "gdrom.h"
-#include "boot.h"
 
 #include "debug.h"
 
@@ -137,7 +137,7 @@ int main (void)
             conio_putstr (bad_disc_msg);
         else
         {
-            boot_loader ();
+            boot_loader ("/rd/driver.bin");
 
             conio_putstr (broken_dist_msg);
         }
