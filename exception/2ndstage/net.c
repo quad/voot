@@ -15,31 +15,7 @@
 #include "serial.h"
 #include "net.h"
 #include "bswap.h"
-
-static void maybe_respond_command(uint32 maybe_command)
-{
-    volatile uint16 *player_a_health = (uint16 *) 0x8CCF6284;
-    volatile uint16 *player_b_health = (uint16 *) 0x8CCF7402;
-
-    switch (maybe_command)
-    {
-        case 1:
-            ubc_serial_write_str("[UBC] Resetting player A health.\r\n");
-            *player_a_health = 1200;
-            break;
-
-        case 2:
-            ubc_serial_write_str("[UBC] Resetting player B health.\r\n");
-            *player_b_health = 1200;
-            break;
-
-        default:
-            ubc_serial_write_str("[UBC] command = 0x");
-            ubc_serial_write_hex(maybe_command);
-            ubc_serial_write_str("\r\n");
-            break;
-    }
-}
+#include "voot.h"
 
 /*
  *
@@ -47,7 +23,7 @@ static void maybe_respond_command(uint32 maybe_command)
  *
  */
 
-static void net_transmit(ether_info_packet_t *frame_in)
+void net_transmit(ether_info_packet_t *frame_in)
 {
     ether_ii_header_t *frame_out;
 
@@ -110,6 +86,152 @@ static ether_info_packet_t eth_discover_frame(uint8 *frame_data, uint32 frame_si
 
     /* Couldn't find an ethertype, thus it can't possibly have IP in it. */
     return frame;
+}
+
+/*
+ *
+ *  ICMP Sub-System
+ *
+ */
+
+static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
+{
+    char temp_mac[ETHER_MAC_SIZE];
+    uint32 temp_ipaddr;
+    ip_header_t *ip;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: We want to reply to a ping. */
+    icmp->type = ICMP_TYPE_ECHO_REPLY;
+
+    /* STAGE: Ether - point to our origiantor. */
+    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
+
+    /* STAGE: IP - point to our originator. */
+    temp_ipaddr = ip->source;
+    ip->source = ip->dest;
+    ip->dest = temp_ipaddr;
+
+    /* STAGE: Compute IP checksum. */
+    ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
+
+    /* STAGE: Compute ICMP checksum. */
+    icmp->checksum = icmp_checksum(icmp, icmp_data_length);
+
+    /* STAGE: Transmit it, god willing. */
+    net_transmit(frame);
+}
+
+static void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
+{
+    icmp_header_t *icmp;
+
+    icmp = (icmp_header_t *) (frame->data + ip_header_length);
+
+    /* STAGE: ICMP header checksum */
+    if (icmp->checksum != icmp_checksum(icmp, icmp_data_length))
+    {
+        ubc_serial_write_str("[UBC] Bad ICMP checksum.\r\n");
+        return;
+    }
+
+    /* STAGE: Handle ICMP packet types */
+    switch (icmp->type)
+    {
+        /* Replay to these straight back with its own packet! Woo ha ha! */
+        case ICMP_TYPE_ECHO_REQUEST:
+            icmp_echo_reply(frame, icmp, icmp_data_length);
+            break;
+
+        default:    /* Whatever it is, we don't support it yet. */
+            break;
+    }
+}
+
+/*
+ *
+ *  UDP Sub-System
+ *
+ */
+
+static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
+{
+    char temp_mac[ETHER_MAC_SIZE];
+    uint32 temp_ipaddr;
+    uint16 temp_port;
+    uint16 ip_header_size;
+    ip_header_t *ip;
+
+    ip = (ip_header_t *) frame->data;
+    ip_header_size = IP_HEADER_SIZE(ip);
+
+    /* STAGE: Ether - point to our origiantor. */
+    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
+
+    /* STAGE: IP - point to our originator. */
+    temp_ipaddr = ip->source;
+    ip->source = ip->dest;
+    ip->dest = temp_ipaddr;
+
+    /* STAGE: Compute IP checksum. */
+    ip->checksum = ip_checksum(ip, ip_header_size);
+
+    /* STAGE: UDP - we want to reply from our echo port to their port. */
+    temp_port = udp->src;
+    udp->src = udp->dest;
+    udp->dest = temp_port;
+
+    /* STAGE: Compute UDP checksum. */
+    udp->checksum = udp_checksum(ip, ip_header_size);
+
+    /* STAGE: Transmit it, god willing. */
+    net_transmit(frame);
+}
+
+static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
+{
+    udp_header_t *udp;
+
+    udp = (udp_header_t *) (frame->data + ip_header_length);
+
+    /* STAGE: UDP header checksum */
+    if (udp->checksum)
+    {
+        uint16 checksum;
+
+        checksum = udp_checksum((ip_header_t *) frame->data, ip_header_length);
+
+        if (!checksum)  /* Fix the complementation "problem" */
+            checksum = 0xffff;
+
+        if (checksum != udp->checksum)
+        {
+            ubc_serial_write_str("[UBC] Bad UDP checksum.\r\n");
+            return;
+        }
+    }
+    else
+        ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
+
+    /* STAGE: Handle UDP packets based on port. */
+    switch(ntohs(udp->dest))
+    {
+        case 7:     /* UDP Echo */
+            udp_echo_reply(frame, udp, udp_data_length);
+            break;
+
+        case 5007:  /* now the official VOOT network protocol port. */
+            voot_handle_packet(frame, udp, udp_data_length);
+            break;
+
+        default:    /* Drop on the floor any network data we couldn't possibly understand. */
+            break;
+    }
 }
 
 /*
@@ -213,7 +335,7 @@ uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length)
     return calc_checksum;
 }
 
-void ip_handle_packet(ether_info_packet_t *frame)
+static void ip_handle_packet(ether_info_packet_t *frame)
 {
     ip_header_t *ip;
     uint16 ip_data_length;
@@ -251,152 +373,6 @@ void ip_handle_packet(ether_info_packet_t *frame)
         default:    /* Yeah, we don't support this. */
             ubc_serial_write_str("[UBC] Unfamiliar packet type.\r\n");
             return;
-    }
-}
-
-/*
- *
- *  UDP Sub-System
- *
- */
-
-static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
-{
-    char temp_mac[ETHER_MAC_SIZE];
-    uint32 temp_ipaddr;
-    uint16 temp_port;
-    uint16 ip_header_size;
-    ip_header_t *ip;
-
-    ip = (ip_header_t *) frame->data;
-    ip_header_size = IP_HEADER_SIZE(ip);
-
-    /* STAGE: Ether - point to our origiantor. */
-    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-    temp_ipaddr = ip->source;
-    ip->source = ip->dest;
-    ip->dest = temp_ipaddr;
-
-    /* STAGE: Compute IP checksum. */
-    ip->checksum = ip_checksum(ip, ip_header_size);
-
-    /* STAGE: UDP - we want to reply from our echo port to their port. */
-    temp_port = udp->src;
-    udp->src = udp->dest;
-    udp->dest = temp_port;
-
-    /* STAGE: Compute UDP checksum. */
-    udp->checksum = udp_checksum(ip, ip_header_size);
-
-    /* STAGE: Transmit it, god willing. */
-    net_transmit(frame);
-}
-
-void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
-{
-    udp_header_t *udp;
-
-    udp = (udp_header_t *) (frame->data + ip_header_length);
-
-    /* STAGE: UDP header checksum */
-    if (udp->checksum)
-    {
-        uint16 checksum;
-
-        checksum = udp_checksum((ip_header_t *) frame->data, ip_header_length);
-
-        if (!checksum)  /* Fix the complementation "problem" */
-            checksum = 0xffff;
-
-        if (checksum != udp->checksum)
-        {
-            ubc_serial_write_str("[UBC] Bad UDP checksum.\r\n");
-            return;
-        }
-    }
-    else
-        ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
-
-    /* STAGE: Handle UDP packets based on port. */
-    switch(ntohs(udp->dest))
-    {
-        case 7:     /* UDP Echo */
-            udp_echo_reply(frame, udp, udp_data_length);
-            break;
-
-        case 5007:  /* now the official VOOT network protocol port. */
-        default:    /* Drop on the floor any network data we couldn't possibly understand. */
-            break;
-    }
-}
-
-/*
- *
- *  ICMP Sub-System
- *
- */
-
-static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
-{
-    char temp_mac[ETHER_MAC_SIZE];
-    uint32 temp_ipaddr;
-    ip_header_t *ip;
-
-    ip = (ip_header_t *) frame->data;
-
-    /* STAGE: We want to reply to a ping. */
-    icmp->type = ICMP_TYPE_ECHO_REPLY;
-
-    /* STAGE: Ether - point to our origiantor. */
-    memcpy(temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy(frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-    temp_ipaddr = ip->source;
-    ip->source = ip->dest;
-    ip->dest = temp_ipaddr;
-
-    /* STAGE: Compute IP checksum. */
-    ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
-
-    /* STAGE: Compute ICMP checksum. */
-    icmp->checksum = icmp_checksum(icmp, icmp_data_length);
-
-    /* STAGE: Transmit it, god willing. */
-    net_transmit(frame);
-}
-
-void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
-{
-    icmp_header_t *icmp;
-
-    icmp = (icmp_header_t *) (frame->data + ip_header_length);
-
-    /* STAGE: ICMP header checksum */
-    if (icmp->checksum != icmp_checksum(icmp, icmp_data_length))
-    {
-        ubc_serial_write_str("[UBC] Bad ICMP checksum.\r\n");
-        return;
-    }
-
-    /* STAGE: Handle ICMP packet types */
-    switch (icmp->type)
-    {
-        /* Replay to these straight back with its own packet! Woo ha ha! */
-        case ICMP_TYPE_ECHO_REQUEST:
-            /* Check to see if we can respond to the data type - this can be
-                a cheap communications method. */
-            maybe_respond_command(*((uint32 *) icmp + sizeof(icmp_header_t)));
-            icmp_echo_reply(frame, icmp, icmp_data_length);
-            break;
-
-        default:    /* Whatever it is, we don't support it yet. */
-            break;
     }
 }
 
