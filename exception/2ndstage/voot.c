@@ -33,8 +33,11 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
         }
 
         case VOOT_COMMAND_TYPE_TIME:
+        {
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+
             break;
+        }
 
         case VOOT_COMMAND_TYPE_VERSION:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
