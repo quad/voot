@@ -18,6 +18,7 @@
 #include "vars.h"
 #include "system.h"
 #include "asic.h"
+#include "exception-lowlevel.h"
 #include "net.h"
 #include "util.h"
 #include "rtl8139c.h"
@@ -442,5 +443,5 @@ void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
     }
 
     /* STAGE: Return from the handler */
-    return current_vector;
+    return my_exception_finish;
 }

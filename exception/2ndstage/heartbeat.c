@@ -14,16 +14,6 @@
 
 my_pageflip pageflip_info;
 
-void init_ubc_a_exception(void)
-{
-    /* STAGE: Configure UBC Channel A for breakpoint on page flip */
-    *UBC_R_BARA = 0xa05f8050;
-    *UBC_R_BAMRA = UBC_BAMR_NOASID;
-    *UBC_R_BBRA = UBC_BBR_WRITE | UBC_BBR_OPERAND;
-
-    ubc_wait();
-}
-
 void init_heartbeat(void)
 {
     exception_table_entry new_exception;

@@ -4,6 +4,7 @@
 */
 
 #include "vars.h"
+#include "util.h"
 #include "printf.h"
 
 #define ZEROPAD	1		/* pad with zero */
@@ -14,16 +15,15 @@
 #define SPECIAL	32		/* 0x */
 #define LARGE	64		/* use 'ABCDEF' instead of 'abcdef' */
 
-#define strnlen(s, max) ((strlen(s) > max) ? max : strlen(s))
-#define is_digit(c)	((c) >= '0' && (c) <= '9')
 #define do_div(n, base) ({ int __res; __res = ((unsigned long) n) % (unsigned) base; n = ((unsigned long) n) / (unsigned) base; __res; })
 
 static int skip_atoi(const char **s)
 {
-	int i=0;
+	int i = 0;
 
-	while (is_digit(**s))
+	while (isdigit(**s))
 		i = i*10 + *((*s)++) - '0';
+
 	return i;
 }
 
@@ -129,7 +129,7 @@ int vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
 		
 		/* get field width */
 		field_width = -1;
-		if (is_digit(*fmt))
+		if (isdigit(*fmt))
 			field_width = skip_atoi(&fmt);
 		else if (*fmt == '*') {
 			++fmt;
@@ -145,7 +145,7 @@ int vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
 		precision = -1;
 		if (*fmt == '.') {
 			++fmt;	
-			if (is_digit(*fmt))
+			if (isdigit(*fmt))
 				precision = skip_atoi(&fmt);
 			else if (*fmt == '*') {
 				++fmt;

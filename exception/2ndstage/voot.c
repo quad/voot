@@ -106,6 +106,10 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         }
             break;
 
+        case 't':
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "%u\n", time());
+            break;
+
         case 'v':
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\n");
             break;

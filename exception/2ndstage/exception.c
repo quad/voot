@@ -8,6 +8,7 @@
 #include "exception-lowlevel.h"
 #include "util.h"
 #include "rtl8139c.h"
+#include "voot.h"
 #include "heartbeat.h"
 #include "biosfont.h"
 #include "exception.h"
@@ -17,6 +18,16 @@ exception_table exp_table;
 /* The VBR Buffer - we better find out how large VO's actually is */
 uint8 vbr_buffer[VO_VBR_SIZE];
 uint8 *vbr_buffer_katana;
+
+void init_ubc_a_exception(void)
+{
+    /* STAGE: Configure UBC Channel A for breakpoint on page flip */
+    *UBC_R_BARA = 0xa05f8050;
+    *UBC_R_BAMRA = UBC_BAMR_NOASID;
+    *UBC_R_BBRA = UBC_BBR_WRITE | UBC_BBR_OPERAND;
+
+    ubc_wait();
+}
 
 static void init_vbr_table(void)
 {
@@ -48,7 +59,7 @@ static bool is_vbr_switch_time(void)
                             interrupt_sub_handler_end - interrupt_sub_handler);
 
     /* Have we had enough exceptions to make it worthwhile? */
-    return exp_table.ubc_exception_count >= 5 && int_installed;
+    return int_installed && exp_table.ubc_exception_count >= 5;
 }
 
 uint32 add_exception_handler(const exception_table_entry *new_entry)
@@ -79,7 +90,7 @@ void* exception_handler(register_stack *stack)
         case EXP_TYPE_GEN:
             exp_table.general_exception_count++;
             exception_code = *REG_EXPEVT;
-            if (exception_code == EXP_CODE_UBC)    /* Never pass on UBC interrupts to the game */
+            if (exception_code == EXP_CODE_UBC)    /* Never pass on UBC interrupts to the game. */
             {
                 exp_table.ubc_exception_count++;
                 back_vector = my_exception_finish;
@@ -121,22 +132,24 @@ void* exception_handler(register_stack *stack)
         {
             if (pci_bb_init())
             {
-                if(rtl_init())
-                {
-                    /* STAGE: Handle ASIC exceptions */
-                    init_asic_handler();
-                }
+                rtl_init();
             }
         }
-
-        /* STAGE: Grab a UBC timer. */
-        init_heartbeat();
 
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
 
+        /* STAGE: Handle ASIC exceptions */
+        init_asic_handler();
+
+        /* STAGE: Grab a UBC timer. */
+        init_heartbeat();
+
         /* STAGE: Pre-cache the biosfont address. */
         bfont_init(); 
+
+        /* DEBUG: Notification. */
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR\n");
     }
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)
@@ -144,7 +157,7 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
 
-        /* DEBUG: Notify about reinitialization. */
+        /* DEBUG: Notification. */
         biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR\n");
     }
 
@@ -154,6 +167,7 @@ void* exception_handler(register_stack *stack)
         if (exp_table.table[index].code == exception_code &&
             exp_table.table[index].type == stack->exception_type)
         {
+            /* STAGE: Call the handler and use whatever hook it returns. */
             back_vector = exp_table.table[index].handler(stack, back_vector);
         }
     }

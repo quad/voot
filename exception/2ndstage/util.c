@@ -118,18 +118,18 @@ void* sq_cpy(void *dest, const uint32 *src, int n)
     n >>= 5;
     while (n--)
     {
-	    d[0] = *(src++);
-    	d[1] = *(src++);
-    	d[2] = *(src++);
-    	d[3] = *(src++);
-    	d[4] = *(src++);
-    	d[5] = *(src++);
-    	d[6] = *(src++);
-    	d[7] = *(src++);
+        d[0] = *(src++);
+        d[1] = *(src++);
+        d[2] = *(src++);
+        d[3] = *(src++);
+        d[4] = *(src++);
+        d[5] = *(src++);
+        d[6] = *(src++);
+        d[7] = *(src++);
 
-    	asm("pref @%0" : : "r" (d));
+        asm("pref @%0" : : "r" (d));
 
-    	d += 8;
+        d += 8;
     }
 
     /* Wait for both store queues to complete */
@@ -137,4 +137,55 @@ void* sq_cpy(void *dest, const uint32 *src, int n)
     d[0] = d[8] = 0;
 
     return dest;
+}
+
+/* Returns seconds since 1/1/1950 */
+uint32 time(void)
+{
+    uint32 vals[2];
+
+    vals[0] = *((volatile uint32 *) (0xA0710000));
+    vals[1] = *((volatile uint32 *) (0xA0710004));
+
+    return (((vals[0] & 0x0000FFFF) << 16) | (vals[1] & 0x0000FFFF));
+}
+
+uint32 strtoul(const char *cp, char **endp, uint32 base)
+{
+    uint32 result, value;
+
+    result = 0;
+
+    if (!base)
+    {
+        /* By default, we're decimal. */
+        base = 10;
+
+        if (*cp == '0')
+        {
+            /* However, if the first character is a 0 we're octal. */
+            base = 8;
+
+            cp++;
+
+            /* ... and, of course, if after that '0' is an 'x', we're hexadecimal. */
+            if ((*cp == 'x') && isxdigit(cp[1]))
+            {
+                cp++;
+                base = 16;
+            }
+        }
+    }
+
+    while (isxdigit(*cp) &&
+           (value = isdigit(*cp) ? *cp-'0' : (islower(*cp) ? toupper(*cp) : *cp)-'A'+10) < base)
+    {
+        result = result * base + value;
+        cp++;
+    }
+
+    if (endp)
+        *endp = (char *) cp;
+
+    return result;
 }

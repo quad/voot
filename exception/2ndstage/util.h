@@ -8,6 +8,13 @@
 
 #define MALLOC_FREE_INDEX   0xCE
 
+#define tolower(c)      ((c)-'A'+'a')
+#define toupper(c)      ((c)-'a'+'A')
+#define isdigit(c)	    ((c) >= '0' && (c) <= '9')
+#define isxdigit(c)	    (isdigit(c) || ((toupper(c)>='A') && (toupper(c)<='F')))
+#define islower(c)      ((c) >= 'a' && (c) <= 'z')
+#define strnlen(s, max) ((strlen(s) > max) ? max : strlen(s))
+
 typedef union unikey
 {
     uint32  i;
@@ -23,5 +30,7 @@ void malloc_init(void);
 void* malloc(uint32 size);
 void free(void *data);
 void* sq_cpy(void *dest, const uint32 *src, int n);
+uint32 time(void);
+uint32 strtoul(const char *cp, char **endp, uint32 base);
 
 #endif
