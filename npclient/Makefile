@@ -5,7 +5,7 @@ OBJS += client.o npc.o voot.o
 CC = gcc -g -Wall
 
 INCS =
-LIBS =
+LIBS = -lpthread
 
 all: $(BIN)
 

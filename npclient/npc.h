@@ -22,7 +22,9 @@ typedef enum
     C_SET_SERVER_PORT,      /* Sets the port used for TCP reliable connections. */
 
     C_PACKET_FROM_SLAVE,    /* On reception of a packet from the slave. */
+    C_CLOSE_SLAVE,          /* Need to close the slave socket. */
     C_PACKET_FROM_SERVER,   /* On reception of a packet from the server. */
+    C_CLOSE_SERVER,         /* Need to close the server socket. */
 
     C_EXIT                  /* Exit from the client. */
 } npc_command;
@@ -63,10 +65,10 @@ typedef struct
     uint16              server_port;
     int32               server_socket;
     int32               server_socket_wait;
+    pthread_t           server_thread;
 } npc_data_t;
 
-uint32 handle_npc_command(npc_command_t *command);
-
+int32 handle_npc_command(npc_command_t *command);
 npc_command_t* npc_get_event(void);
 npc_command_t* npc_io_check(int32 socket, npc_command type);
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);

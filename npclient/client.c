@@ -4,13 +4,13 @@
 
 CHANGELOG:
 
-    Sun Sep  9 22:46:15 PDT 2001    SSR
+    Sun Sep  9 22:46:15 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Started the code base. Specifically the banner and options handling code.
 
-    Wed Sep 12 16:30:00 PDT 2001    SSR
+    Wed Sep 12 16:30:00 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Started coding connection code to np-voot-slave.
 
-    Thu Sep 20 00:07:07 PDT 2001    SSR
+    Thu Sep 20 00:07:07 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Finished extraction of NPC command module and renamed module to client.
 
 TODO:

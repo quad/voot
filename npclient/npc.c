@@ -13,9 +13,16 @@ CHANGELOG
     Sun Nov 25 23:32:04 PST 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Start writing slave interface logic.
 
+    Thu Nov 29 00:39:23 PST 2001    Scott Robinson <scott_np@dsn.itgo.com>
+        Finished initial version of all event logic. Need to add VOOT
+        protocol linkages and accept() thread.
+
+    Fri Nov 30 10:39:17 PST 2001    Scott Robinson <scott_np@dsn.itgo.com>
+        Improved the stability of socket relations. More specificially, we
+        can handle disconnected sockets.
+
 TODO
 
-    Create the socket interface logic.
     Remove console system assumptions. All IO logic should be handled by the client itself.
 
 */
@@ -26,6 +33,7 @@ TODO
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "voot.h"
 #include "npc.h"
@@ -34,9 +42,9 @@ TODO
 
 npc_data_t  npc_system;
 
-unsigned int handle_npc_command(npc_command_t *command)
+int32 handle_npc_command(npc_command_t *command)
 {
-    unsigned int retval;
+    int32 retval;
 
     retval = 0;
 
@@ -46,18 +54,14 @@ unsigned int handle_npc_command(npc_command_t *command)
             npc_system.slave_port = command->port;
             retval = npc_system.slave_port;
 
-            #ifdef NPC_DEBUG
-                fprintf(stderr, "[npc] set slave port to %u.\n", npc_system.slave_port);
-            #endif
+            fprintf(stderr, "[npc] set slave port to %u.\n", npc_system.slave_port);
             break;
 
         case C_SET_SERVER_PORT:
             npc_system.server_port = command->port;
             retval = npc_system.server_port;
 
-            #ifdef NPC_DEBUG
-                fprintf(stderr, "[npc] set server port to %u.\n", npc_system.server_port);
-            #endif
+            fprintf(stderr, "[npc] set server port to %u.\n", npc_system.server_port);
             break;
 
         case C_CONNECT_SLAVE:
@@ -85,10 +89,8 @@ unsigned int handle_npc_command(npc_command_t *command)
         case C_LISTEN_SERVER:
             retval = npc_server_listen();
 
-            #ifdef NPC_DEBUG
-                if (retval)
-                    fprintf(stderr, "[npc] unable to start server on port %u.\n", npc_system.server_port);
-            #endif
+            if (retval)
+                fprintf(stderr, "[npc] unable to start server on port %u.\n", npc_system.server_port);
             break;
 
         case C_PACKET_FROM_SLAVE:
@@ -105,10 +107,22 @@ unsigned int handle_npc_command(npc_command_t *command)
             free(command->packet);
             break;
 
+        case C_CLOSE_SLAVE:
+            fprintf(stderr, "[npc] received request to disconnect slave socket! Is this even possible?!\n");
+            break;
+
         case C_PACKET_FROM_SERVER:
             fprintf(stderr, "[npc] received a packet from the server.\n");
 
             free(command->packet);
+            break;
+
+        case C_CLOSE_SERVER:
+            fprintf(stderr, "[npc] closing server socket.\n");
+
+            close(npc_system.server_socket);
+            npc_system.server_socket = -1;
+
             break;
 
         case C_EXIT:
@@ -159,7 +173,16 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
     packet = voot_parse_socket(socket);
 
     if (!packet)
-        return NULL;
+    {
+        if (!recv(socket, NULL, 0, MSG_DONTWAIT | MSG_PEEK | MSG_TRUNC))
+        {
+            type++;         /* this is a bad hack, I'll talk more about it in the enum. */
+        }
+        else
+        {
+            return NULL;
+        }
+    }
 
     event = (npc_command_t *) malloc(sizeof(npc_command_t));
     event->type = type;
@@ -205,16 +228,43 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     {
         char v_string[] = "c  v";
 
-        //send(new_socket, v_string, strlen(v_string), 0);
-        sendto(new_socket, v_string, strlen(v_string), 0, (struct sockaddr *) &address, sizeof(address));
+        send(new_socket, v_string, strlen(v_string), 0);
     }
 
     return new_socket;
 }
 
-int npc_server_listen(void)
+static void* npc_server_accept_task(void *arg)
 {
-    int server_socket;
+    int32 wait_socket;
+    int32 new_socket;
+
+    wait_socket = (int32) arg;
+
+    fprintf(stderr, "[npc] waiting for connection on server.\n");
+
+    while((new_socket = accept(wait_socket, NULL, 0)))
+    {
+        if (new_socket >= 0 && (npc_system.server_socket < 0))
+        {
+            npc_system.server_socket = new_socket;
+            fprintf(stderr, "[npc] accepted connection for server!\n");
+        }
+        else
+        {
+            close(new_socket);
+            fprintf(stderr, "[npc] dropped incoming connection for server.\n");
+        }
+    }
+
+    fprintf(stderr, "[npc] no longer accepting connections.\n");
+
+    return NULL;
+}
+
+int32 npc_server_listen(void)
+{
+    int32 server_socket;
     struct sockaddr_in my_address;
 
     bzero(&my_address, sizeof(my_address));
@@ -223,7 +273,7 @@ int npc_server_listen(void)
     if (server_socket < 0)
     {
         fprintf(stderr, "[npc] unable to open a socket for serving.\n");
-        return 1;
+        return -1;
     }
 
     my_address.sin_family = AF_INET;
@@ -234,14 +284,21 @@ int npc_server_listen(void)
     {
         close(server_socket);
         fprintf(stderr, "[npc] unable to bind a socket for serving.\n");
-        return 2;
+        return -2;
     }
 
     if (listen(server_socket, 1))
     {
         close(server_socket);
         fprintf(stderr, "[npc] unable to listen on port %u for serving.\n", npc_system.server_port);
-        return 3;
+        return -3;
+    }
+
+    if (pthread_create(&(npc_system.server_thread), NULL, npc_server_accept_task, (void *) server_socket))
+    {
+        close(server_socket);
+        fprintf(stderr, "[npc] unable to start acceptance thread for serving.\n");
+        return -4;
     }
 
     /* Update npc_system with socket and addressing information. */
