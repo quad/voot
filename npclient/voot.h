@@ -10,6 +10,10 @@ CHANGELOG
         Added this changelog entry. The header file has actually been around
         for quite some time.
 
+    Sun Feb 24 17:13:06 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Updated with the latest revision of the VOOT protocol. This will
+        happen a lot.
+
 */
 
 #ifndef __VOOT_H__
@@ -20,7 +24,6 @@ CHANGELOG
 #define VOOT_SLAVE_PORT     5007
 #define VOOT_SERVER_PORT    5008
 
-#define VOOT_PACKET_HEADER_SIZE     3
 #define VOOT_PACKET_TYPE_DEBUG      'd'
 #define VOOT_PACKET_TYPE_DATA       '>'
 #define VOOT_PACKET_TYPE_HUD        'h'
@@ -30,8 +33,6 @@ CHANGELOG
 #define VOOT_PACKET_TYPE_DUMP       'D'
 
 #define VOOT_COMMAND_TYPE_INJECTTST 'i'
-#define VOOT_COMMAND_TYPE_PRINTFTST 'p'
-#define VOOT_COMMAND_TYPE_MALLOCTST 'm'
 #define VOOT_COMMAND_TYPE_NETSTAT   'n'
 #define VOOT_COMMAND_TYPE_HEALTH    'h'
 #define VOOT_COMMAND_TYPE_TIME      't'
@@ -40,8 +41,11 @@ CHANGELOG
 #define VOOT_COMMAND_TYPE_DUMPON    'D'
 #define VOOT_COMMAND_TYPE_DUMPOFF   'd'
 #define VOOT_COMMAND_TYPE_SCREEN    's'
+#define VOOT_COMMAND_TYPE_DUMPMEM   'S'
+#define VOOT_COMMAND_TYPE_DUMPGAME  'g'
 
-#define BIUDP_SEGMENT_SIZE  1024
+#define VOOT_PACKET_HEADER_SIZE     3
+#define BIUDP_SEGMENT_SIZE          1024
 
 typedef struct
 {

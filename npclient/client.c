@@ -39,6 +39,9 @@ CHANGELOG
         Added the new callback initialization functionality and stub code
         for packet callbacks.
 
+    Sun Feb 24 17:13:33 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added the ability to send the "gamedata dump" command.
+
 */
 
 #include <stdlib.h>
@@ -316,15 +319,12 @@ void input_handler(char *line)
         while((line[string_index] = tolower(line[string_index])))
             string_index++;
 
-        add_history(line);
+        if (strlen(line))
+            add_history(line);
 
         /* Now parse simple commands. */
         if (!strcmp(line, "c-inject"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
-        else if (!strcmp(line, "c-printf"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PRINTFTST);
-        else if (!strcmp(line, "c-malloc"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_MALLOCTST);
         else if (!strcmp(line, "c-netstat"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_NETSTAT);
         else if (!strcmp(line, "c-health"))
@@ -337,6 +337,10 @@ void input_handler(char *line)
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PASVON);
         else if (!strcmp(line, "c-screenshot"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_SCREEN);
+        else if (!strcmp(line, "c-dump-memory"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPMEM);
+        else if (!strcmp(line, "c-dump-gamedata"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPGAME);
         else if (!strcmp(line, "inject"))
         {
             char data[] = "012345678901234567890123456789012345678901234567890123456789";
