@@ -47,6 +47,7 @@ uint32 add_asic_handler(const asic_lookup_table_entry *new_entry)
             mask_base[1] |= new_entry->mask1;
 
             memcpy(&asic_table.table[index], new_entry, sizeof(asic_lookup_table_entry));
+
             return index + 1;
         }
     }

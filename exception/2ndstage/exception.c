@@ -38,6 +38,10 @@ void clear_ubc_a_exception(void)
     /* STAGE: Clear UBC Channel A because we (supposedly) now have interrupt control. */
     *UBC_R_BBRA = 0;
 
+    /* STAGE: Clear the break bit, if we need too. */
+    if (*UBC_R_BRCR & UBC_BRCR_CMFB)
+        *UBC_R_BRCR &= ~(UBC_BRCR_CMFB);
+
     ubc_wait();
 }
 
@@ -145,7 +149,7 @@ void* exception_handler(register_stack *stack)
 
 #ifndef REINIT_VBR_ON_RESET
         /* STAGE: Deinitialize the UBC for future use. */
-        //clear_ubc_a_exception();
+        clear_ubc_a_exception();
 #endif
 
         /* STAGE: Initialize the VBR hooks. */

@@ -7,6 +7,7 @@ DESCRIPTION
 */
 
 #include "vars.h"
+#include "assert.h"
 #include "voot.h"
 #include "util.h"
 #include "system.h"
@@ -56,6 +57,8 @@ void dump_add(const uint8 *in_data, uint32 in_data_size)
         return;
 
     memcpy((uint8 *) (control.target + control.index), in_data, in_data_size);
+    assert(!memcmp((uint8 *) (control.target + control.index), in_data, in_data_size));
+
     control.index += in_data_size;
 }
 

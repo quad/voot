@@ -11,6 +11,7 @@ DESCRIPTION
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "util.h"
+#include "assert.h"
 #include "warez_load.h"
 
 #define LOADED_POINT        0x8C300000
@@ -48,6 +49,6 @@ int32 dc_main(int32 do_warez)
         (*(void (*)()) REAL_LOAD_POINT) ();
     }
 
-    /* STAGE: Freeze the system on crash. */
-    while(1);
+    /* STAGE: Freeze it in an interesting fashion. */
+    assert(0);
 }

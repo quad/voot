@@ -48,6 +48,5 @@ void* malloc(uint32 size);
 void free(void *data);
 void* sq_cpy(void *dest, const uint32 *src, uint32 n);
 uint32 time(void);
-uint32 strtoul(const char *cp, char **endp, uint32 base);
 
 #endif
