@@ -13,7 +13,6 @@ DESCRIPTION
 #include "asic.h"
 #include "voot.h"
 #include "gamedata.h"
-#include "trap.h"
 
 #include "heartbeat.h"
 
@@ -49,8 +48,6 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
 
         done_once = TRUE;
     }
-
-    trap_ping_perframe();
 
     return current_vector;
 }

@@ -11,7 +11,6 @@ TODO
 */
 
 #include "vars.h"
-#include "trap.h"
 #include "util.h"
 #include "printf.h"
 #include "dumpio.h"
@@ -42,8 +41,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
             break;
 
         case VOOT_COMMAND_TYPE_PASVON:
-            trap_set_passive(TRUE);
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive monitoring ON!");
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive mode disabled.");
             break;
 
         case VOOT_COMMAND_TYPE_DUMPON:
@@ -109,7 +107,10 @@ static bool maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
             return maybe_handle_command(packet->buffer[0], packet);
 
         case VOOT_PACKET_TYPE_DATA:
+#if 0
+            /* TODO: We await the return of the trap. */
             trap_inject_data(packet->buffer, packet->header.size - 1);
+#endif
             break;
 
         case VOOT_PACKET_TYPE_DUMP:

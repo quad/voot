@@ -10,7 +10,6 @@ DESCRIPTION
 #include "vars.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
-#include "trap.h"
 #include "util.h"
 #include "warez_load.h"
 
@@ -28,7 +27,6 @@ int32 dc_main(int32 do_warez)
 
     /* STAGE: Initialize both UBC channels. */
     init_ubc_a_exception();
-    //init_ubc_b_serial();
 
     /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();

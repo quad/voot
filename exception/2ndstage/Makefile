@@ -15,7 +15,9 @@ OBJS += main.o warez_load.o
 OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
 OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
 OBJS += heartbeat.o
-OBJS += trap.o
+
+# Ill-fated game-smart SCIF emulation logic
+#OBJS += trap.o
 
 # Ill-fated ADX patch
 #OBJS += cdda_patch.o
