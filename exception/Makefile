@@ -58,6 +58,12 @@ np-voot-slave.iso: 1ST_READ.BIN IP.BIN
 	mkisofs -l -V NPVOOTSLAVE -C 0,11702 -o temp.iso 1ST_READ.BIN IP.BIN
 	( cat IP.BIN ; dd if=temp.iso bs=2048 skip=16 ) > $@
 
+data.iso-inzip: np-voot-slave.iso
+	cp np-voot-slave.iso np-voot-slave/data.iso
+
+np-voot-slave.zip: data-inzip
+	zip -r np-voot-slave.zip np-voot-slave/
+
 scramble:
 	gcc -o scramble tools/scramble/scramble.c
 
@@ -73,6 +79,7 @@ clean:
 	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
 	-rm -f temp.iso
 	-rm -f 1ST_READ.BIN IP.BIN np-voot-slave.iso
+	-rm -f np-voot-slave/data.iso
 
 mrproper: clean
 	make -C 2ndstage mrproper
