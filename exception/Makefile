@@ -62,7 +62,7 @@ data.iso-inzip: np-voot-slave.iso
 	cp np-voot-slave.iso np-voot-slave/data.iso
 
 np-voot-slave.zip: data.iso-inzip
-	zip -x CVS -r np-voot-slave.zip np-voot-slave/
+	zip -r np-voot-slave.zip np-voot-slave/ -x np-voot-slave/CVS/*
 
 scramble:
 	gcc -o scramble tools/scramble/scramble.c
