@@ -6,13 +6,12 @@ DESCRIPTION
 
 CHANGELOG
 
-    Sun Jan  6 19:14:48 PST 2002    Scott Robinson <scott_np@quadhome.com>
+    Sun Jan  6 19:14:48 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added a changelog. I figure I should do some cleaning up so when I
         write a final version some day.
 
-TODO
-
-    Add protocol OUT functionality.
+    Tue Jan 22 00:31:19 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Changed the recvfrom() to recv(). I think it made a difference in the win32 port.
 
 */
 
@@ -55,7 +54,7 @@ voot_packet* voot_parse_socket(int32 socket)
     unsigned char data[BIUDP_SEGMENT_SIZE];
     int rx;
 
-    rx = recvfrom(socket, data, sizeof(data), 0, NULL, NULL);
+    rx = recv(socket, data, sizeof(data), 0);
 
     return voot_parse_buffer(data, rx);
 }    

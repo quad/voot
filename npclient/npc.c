@@ -51,6 +51,7 @@ TODO
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
+#include <netinet/in.h>
 #include <fcntl.h>
 #include <pthread.h>
 
@@ -272,7 +273,8 @@ npc_command_t* npc_get_event(void)
 void* npc_io_check(void *in_arg)
 {
     npc_io_check_t *arg;
-    volatile int32 *socket;
+    int32 socket;
+    volatile int32 *check_socket;
     npc_command type;
     fd_set read_fds;
     voot_packet *packet;
@@ -281,35 +283,37 @@ void* npc_io_check(void *in_arg)
 
     /* Obtain the full parameters from the passed arg. */
     arg = (npc_io_check_t *) in_arg;
-    socket = arg->socket;
+    check_socket = arg->socket;
     type = arg->type;
     free(arg);
 
     poll_done = FALSE;
 
-    while(*socket >= 0 && !poll_done)
+    while(*check_socket >= 0 && !poll_done)
     {
+        socket = *check_socket;
+
         /* Check if we have received data on the socket. */
         FD_ZERO(&read_fds);
-        FD_SET(*socket, &read_fds);
-        if (select(*socket + 1, &read_fds, NULL, NULL, NULL) > 0)
+        FD_SET(socket, &read_fds);
+        if (select(FD_SETSIZE, &read_fds, NULL, NULL, NULL) > 0)
         {
             uint32 out_type;
 
-            packet = voot_parse_socket(*socket);
+            packet = voot_parse_socket(socket);
 
             if (!packet)
             {
-                fcntl(*socket, F_SETFL, O_NONBLOCK);
-                if (!recv(*socket, NULL, 0, MSG_PEEK))
+                fcntl(socket, F_SETFL, O_NONBLOCK);
+                if (!recv(socket, NULL, 0, MSG_PEEK))
                 {
-                    fcntl(*socket, F_SETFL, NULL);
+                    fcntl(socket, F_SETFL, NULL);
                     out_type = type + 1;         /* this is a bad hack, but I'm essentially "closing" the socket for cleanup issues. */
                     poll_done = TRUE;
                 }
                 else
                 {
-                    fcntl(*socket, F_SETFL, NULL);
+                    fcntl(socket, F_SETFL, NULL);
                     continue;          /* skip on the whole event sending. */
                 }
             }
