@@ -22,5 +22,6 @@ void grep_memory(const char *key, uint32 key_size);
 void malloc_init(void);
 void* malloc(uint32 size);
 void free(void *data);
+void* sq_cpy(void *dest, const uint32 *src, int n);
 
 #endif

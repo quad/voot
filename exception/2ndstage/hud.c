@@ -19,13 +19,14 @@ volatile uint16 *vid_mem;
 
 #define HUD_CHAR_WIDTH      40
 #define HUD_CHAR_HEIGHT     4
-#define HUD_BORDER          4
-#define HUD_WIDTH           ((HUD_CHAR_WIDTH * BFONT_CHAR_WIDTH) + (HUD_BORDER * 2))
-#define HUD_HEIGHT          ((HUD_CHAR_HEIGHT * BFONT_CHAR_HEIGHT) + (HUD_BORDER * 2))
+#define HUD_WIDTH           ((HUD_CHAR_WIDTH * BFONT_CHAR_WIDTH))
+#define HUD_HEIGHT          ((HUD_CHAR_HEIGHT * BFONT_CHAR_HEIGHT))
+#define HUD_STRIP_BUF_SIZE  (HUD_WIDTH + 1)
 
 bool hud_initialized;
 uint8 hud_char_buffer[HUD_CHAR_HEIGHT][HUD_CHAR_WIDTH];
 uint8 *hud_vid_buffer;
+uint16 *hud_vid_strip_buffer;
 
 static bool hud_ok(void)
 {
@@ -37,13 +38,19 @@ void hud_init(void)
     /* STAGE: Malloc our off-screen buffer. */
     free(hud_vid_buffer);
     hud_vid_buffer = malloc((HUD_WIDTH * HUD_HEIGHT));
+    memset(hud_vid_buffer, (HUD_WIDTH * HUD_HEIGHT), 0);
+
+    /* STAGE: Malloc our off-screen strip buffer. */
+    free(hud_vid_strip_buffer);
+    hud_vid_strip_buffer = malloc(HUD_STRIP_BUF_SIZE / sizeof(uint32));
 
     /* DEBUG: Report whether our malloc()s worked. */
-    if (hud_vid_buffer)
+    if (hud_vid_buffer && hud_vid_strip_buffer)
         biudp_printf(VOOT_PACKET_TYPE_DEBUG, "hud ok\n");
     else
     {
         free(hud_vid_buffer);
+        free(hud_vid_strip_buffer);
         biudp_printf(VOOT_PACKET_TYPE_DEBUG, "hud not ok\n");
         return;
     }
@@ -113,8 +120,12 @@ void display_hud(void)
     {
         for (x = 0; x < HUD_WIDTH; x++)
         {
-            if (*(hud_vid_buffer + (y * HUD_HEIGHT) + x))
-                *(vid_mem + (y * 640) + x) = 0xFFFF;
+            if (hud_vid_buffer[(y * HUD_HEIGHT) + x])
+                hud_vid_strip_buffer[x] = 0xFFFF;
+            else
+                hud_vid_strip_buffer[x] = 0x0;
         }
+
+        sq_cpy((void *) (vid_mem + (y * 640)), (uint32 *) hud_vid_strip_buffer, HUD_STRIP_BUF_SIZE);
     }
 }

@@ -99,3 +99,42 @@ void free(void *data)
     if (malloc_root)
         return (*(void (*)()) (malloc_root + MALLOC_FREE_INDEX))(data);
 }
+
+/* thanks to AndrewK - store queue accessor */
+
+#define QACR0 (*(volatile uint32 *) 0xff000038)
+#define QACR1 (*(volatile uint32 *) 0xff00003c)
+
+/* copies n bytes from src to dest, dest must be 32-byte aligned */
+void* sq_cpy(void *dest, const uint32 *src, int n)
+{
+    uint32 *d = (unsigned int *) (0xe0000000 | (((unsigned long) dest) & 0x03ffffc0));
+    
+    /* Set store queue memory area as desired */
+    QACR0 = ((((uint32) dest) >> 26) << 2) & 0x1c;
+    QACR1 = ((((uint32) dest) >> 26) << 2) & 0x1c;
+    
+    /* fill/write queues as many times necessary */
+    n >>= 5;
+    while (n--)
+    {
+	    d[0] = *(src++);
+    	d[1] = *(src++);
+    	d[2] = *(src++);
+    	d[3] = *(src++);
+    	d[4] = *(src++);
+    	d[5] = *(src++);
+    	d[6] = *(src++);
+    	d[7] = *(src++);
+
+    	asm("pref @%0" : : "r" (d));
+
+    	d += 8;
+    }
+
+    /* Wait for both store queues to complete */
+    d = (uint32 *) 0xe0000000;
+    d[0] = d[8] = 0;
+
+    return dest;
+}
