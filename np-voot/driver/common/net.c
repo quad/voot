@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: net.c,v 1.3 2002/06/13 02:05:27 quad Exp $
 
 DESCRIPTION
 
@@ -25,6 +25,8 @@ TODO
 #include "bswap.h"
 #include "biudp.h"
 #include "voot.h"
+
+#include "assert.h"
 
 #include "net.h"
 
@@ -146,21 +148,24 @@ static bool ip_packet_ok (ether_info_packet_t *frame, uint16 ip_header_length, u
 
     ip = (ip_header_t *) frame->data;
 
-    /* TODO: Check IP header version. */
+    /* STAGE: Check IP header version. */
+
+    if ((ip->version_ihl & 0xf0) != 0x40)
+        return FALSE;
 
     /* TODO: Check if length matches frame size. */
 
     /* STAGE: IP Header checksum */
 
     if (ip->checksum != ip_checksum (ip, ip_header_length))
-        return TRUE;
+        return FALSE;
 
     /* STAGE: Check if the packet is fragmented. We don't support it - yet. */
 
     if (ntohs (ip->flags_frag_offset) & 0x3fff)
-        return TRUE;
+        return FALSE;
 
-    return FALSE;
+    return TRUE;
 }
 
 uint16 ip_checksum (ip_header_t *ip, uint16 ip_header_length)
@@ -201,7 +206,7 @@ bool ip_handle_packet (ether_info_packet_t *frame)
 
     /* STAGE: Sanity checks on the IP packet. */
 
-    if (ip_packet_ok (frame, ip_header_length, ip_data_length))
+    if (!ip_packet_ok (frame, ip_header_length, ip_data_length))
         return FALSE;
 
     /* STAGE: ... and handle the appropriate protocol type! */

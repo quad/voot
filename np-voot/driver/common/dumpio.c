@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.3 2002/06/12 10:29:01 quad Exp $
+    $Id: dumpio.c,v 1.4 2002/06/13 02:05:27 quad Exp $
 
 DESCRIPTION
 
@@ -187,7 +187,7 @@ bool dump_packet_handler (voot_packet *packet)
                 }
 
                 /*
-                    TODO: After taking a certain number of screenshots, it appears
+                    NOTE: After taking a certain number of screenshots, it appears
                     to crash the system.
 
                     Maybe the dump_framebuffer() call should be moved into the

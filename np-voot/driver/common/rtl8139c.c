@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: rtl8139c.c,v 1.3 2002/06/13 02:05:27 quad Exp $
 
 DESCRIPTION
 
@@ -16,10 +16,6 @@ DESCRIPTION
     CREDIT: Andrew has also contributed to this card with great reference
     code and even better personal support in #dcdev@EFNet. Give the guy a
     damn hand.
-
-TODO
-
-    Rewrite the rtl_tx logic into something I understand.
 
 */
 

@@ -1,15 +1,10 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: heartbeat.c,v 1.3 2002/06/13 02:05:27 quad Exp $
 
 DESCRIPTION
 
-    Every pageflip we receive a call here. It's a great timer.
-
-TODO
-
-    This causes random crashs. The delay on the pageflip seems to be
-    harmful. I need to find a better pageflip vector.
+    Every VSYNC interrupt we receive a call here. It's a great timer.
 
 */
 
@@ -21,6 +16,7 @@ TODO
 void heartbeat_init (void)
 {
     asic_lookup_table_entry new_irq;
+
 
     /* STAGE: Catch on TA_DONE ASIC interrupts. */
     new_irq.irq     = EXP_CODE_INT9;
