@@ -6,6 +6,7 @@
 #include "vars.h"
 #include "net.h"
 #include "rtl8139c.h"
+#include "util.h"
 #include "serial.h"
 #include "biudp.h"
 
@@ -23,7 +24,7 @@ void biudp_init(const biudp_control_t *in_control)
 
 /* This entire section is essentially a duplicate of the net_transmit code,
     except its formatted differently. I wish I could combine them somehow. */
-void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
+static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
 {
     ether_ii_header_t *frame_out;
     ip_header_t *ip;
@@ -51,8 +52,16 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     ip->protocol = IP_PROTO_UDP;
     ip->checksum = 0;
 
-    memcpy(&ip->source, &control.source_ip, sizeof(uint32));
-    memcpy(&ip->dest, &control.dest_ip, sizeof(uint32));
+    IP_ADDR_COPY(ip->source, control.source_ip);
+    IP_ADDR_COPY(ip->dest, control.dest_ip);
+
+/*
+    *(((uint16 *) &ip->source)    ) = *(((uint16 *) &control.source_ip)    );
+    *(((uint16 *) &ip->source) + 1) = *(((uint16 *) &control.source_ip) + 1);
+
+    *(((uint16 *) &ip->dest)    ) = *(((uint16 *) &control.dest_ip)    );
+    *(((uint16 *) &ip->dest) + 1) = *(((uint16 *) &control.dest_ip) + 1);
+*/
 
     /* STAGE: Calculate the IP checksum last. */
     ip_header_length = IP_HEADER_SIZE(ip);
@@ -76,6 +85,19 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
 }
 
+/* STAGE: Split the incoming into 1024 byte chunks and feed those out. */
+void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
+{
+    uint32 index, remain;
+
+    for (index = 0; index < (in_data_length / BIUDP_SEGMENT_SIZE); index++)
+        biudp_write_segment(in_data + (BIUDP_SEGMENT_SIZE * index), BIUDP_SEGMENT_SIZE);
+
+    remain = in_data_length % BIUDP_SEGMENT_SIZE;
+    if (remain)
+        biudp_write_segment((in_data + in_data_length) - remain, remain);
+}
+
 void biudp_write(const uint8 in)
 {
     biudp_write_buffer(&in, sizeof(uint8));
@@ -84,4 +106,13 @@ void biudp_write(const uint8 in)
 void biudp_write_str(const uint8 *in_string)
 {
     biudp_write_buffer(in_string, strlen(in_string));
+}
+
+void biudp_write_hex(uint32 val)
+{
+    uint8 uint_buffer[10];
+
+    uint_to_string(val, uint_buffer);
+
+    biudp_write_str(uint_buffer);
 }

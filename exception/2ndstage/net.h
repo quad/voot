@@ -16,6 +16,11 @@
 
 #define IP_HEADER_SIZE(hdr) ((hdr->version_ihl & 0x0f) * 4)
 
+#define IP_ADDR_COPY(trgt, src)     {                           \
+    *(((uint16 *) &(trgt))    ) = *(((uint16 *) &(src))    );   \
+    *(((uint16 *) &(trgt)) + 1) = *(((uint16 *) &(src)) + 1);   \
+                                    }
+
 /* Straight from "Internetworking with TCP/IP" and just about any TCP/IP
     stack in existance. */
 #define ICMP_TYPE_ECHO_REQUEST  8
