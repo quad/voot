@@ -1,6 +1,6 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.1 2002/08/04 05:48:05 quad Exp $
+    $Id: scixb_emu.c,v 1.2 2002/11/12 19:58:05 quad Exp $
 
 DESCRIPTION
 
@@ -14,14 +14,15 @@ DESCRIPTION
 #include <searchmem.h>
 #include <ubc.h>
 #include <exception.h>
-#include <voot.h>
 #include <serial.h>
 #include <malloc.h>
 #include <anim.h>
 
+#include <lwip/voot.h>
+
 #include "scixb_emu.h"
 
-#define USE_SERIAL
+#define SERIAL_PASSTHROUGH
 
 static uint16      *init_tx_root;
 static const uint8  init_tx_key[]   = {
@@ -121,7 +122,7 @@ static void my_anim_chain (uint16 anim_mode_a, uint16 anim_mode_b)
         {
             voot_send_packet (VOOT_PACKET_TYPE_DATA, out_data_buffer, out_data_buffer_index);
 
-#ifdef USE_SERIAL
+#ifdef SERIAL_PASSTHROUGH
             serial_write_buffer (out_data_buffer, out_data_buffer_index);
 #endif
         }
@@ -141,7 +142,7 @@ static void tx_handler (uint8 in_data, bool main_tx)
     {
         voot_send_packet (VOOT_PACKET_TYPE_DATA, &in_data, sizeof (in_data));
 
-#ifdef USE_SERIAL
+#ifdef SERIAL_PASSTHROUGH
         serial_write_char (in_data);
 #endif
     }
@@ -178,7 +179,6 @@ static void* trap_handler (register_stack *stack, void *current_vector)
         return current_vector;
 }
 
-
 void scixb_init (void)
 {
     uint16  init_trap;
@@ -188,10 +188,6 @@ void scixb_init (void)
         STAGE: Set the SCIF into loopback mode, so we don't have to worry
         about the serial port weirding up.
     */
-
-#ifndef USE_SERIAL
-    *SCIF_R_FC |= SCIF_FC_LOOP;
-#endif
 
     /* STAGE: Generate our traps for comparison testing... */
 

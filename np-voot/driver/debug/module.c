@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.12 2002/11/07 02:24:05 quad Exp $
+    $Id: module.c,v 1.13 2002/11/12 19:58:05 quad Exp $
 
 DESCRIPTION
 
@@ -13,18 +13,49 @@ DESCRIPTION
 
 #include <vars.h>
 #include <anim.h>
+#include <lwip/net.h>
+#include <timer.h>
+#include <lwip/voot.h>
 
 #include "scixb_emu.h"
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
+static voot_packet_handler_f    old_voot_packet_handler;
+static uint32                   version_count;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active.");
+    anim_printf_debug (0.0, 0.0, "Test module active. [%u]", version_count++);
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
+}
+
+static bool my_voot_packet_handler (voot_packet *packet, void *ref)
+{
+    switch (packet->header.type)
+    {
+        case VOOT_PACKET_TYPE_COMMAND :
+        {
+            /* STAGE: Ensure there is actually a command. */
+
+            if (!(packet->header.size))
+                break;
+
+            /* STAGE: Handle the version command. */
+
+            if (packet->buffer[0] == VOOT_COMMAND_TYPE_VERSION)
+                version_count++;
+
+            break;
+        }
+
+        default :
+            break;
+    }
+
+    return old_voot_packet_handler (packet, ref);
 }
 
 /*
@@ -47,6 +78,17 @@ void module_configure (void)
 
     anim_add_render_chain (my_anim_chain, &old_anim_chain);
 
+    /* STAGE: Initialize the networking drivers. */
+
+    net_init ();
+    voot_init ();
+
+    old_voot_packet_handler = voot_add_packet_chain (my_voot_packet_handler);
+
+    /* STAGE: Initialize the SCIXB emulation layer. */
+
+    scixb_init ();
+
 #ifdef SCIXB
     /* STAGE: Initialize the serial buffer. */
 
@@ -61,3 +103,4 @@ void module_bios_vector (void)
         driver core.
     */
 }
+

@@ -1,13 +1,13 @@
 /*  dumpio.h
 
-    $Id: dumpio.h,v 1.4 2002/06/29 12:57:04 quad Exp $
+    $Id: dumpio.h,v 1.5 2002/11/12 19:58:03 quad Exp $
 
 */
 
 #ifndef __COMMON_DUMPIO_H__
 #define __COMMON_DUMPIO_H__
 
-#include "voot.h"
+#include "lwip/voot.h"
 
 #define UPSCALE_5_STYLE(bits)   (((bits) << 3) | ((bits) >> 2))
 #define UPSCALE_6_STYLE(bits)   (((bits) << 2) | ((bits) >> 4))

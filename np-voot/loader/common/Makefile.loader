@@ -2,7 +2,7 @@
 #
 # NOTE: Path is within a loader source directory.
 #
-# $Id: Makefile.loader,v 1.3 2002/11/07 02:16:00 quad Exp $
+# $Id: Makefile.loader,v 1.4 2002/11/12 19:58:05 quad Exp $
 
 include ../../Makefile.config
 
@@ -34,4 +34,4 @@ clean-driver:
 	make -C $(LOADER_WORK) -f Makefile.driverfs clean DRIVER=$(DRIVER) LOADER_TARGET=$(LOADER_TARGET) LOADER_FILES=$(LOADER_FILES)
 
 run: $(LOADER_TARGET).elf
-	dc-tool -x $(LOADER_TARGET).elf
+	dc-tool -n -x $(LOADER_TARGET).elf

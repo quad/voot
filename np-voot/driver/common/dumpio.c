@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.9 2002/11/12 18:15:32 quad Exp $
+    $Id: dumpio.c,v 1.10 2002/11/12 19:58:02 quad Exp $
 
 DESCRIPTION
 
@@ -32,7 +32,7 @@ TODO
 static dump_control_t           control;
 static voot_packet_handler_f    old_voot_packet_handler;
 
-static bool dump_packet_handler (voot_packet *packet)
+static bool dump_packet_handler (voot_packet *packet, void *ref)
 {
     switch (packet->header.type)
     {
@@ -117,7 +117,7 @@ static bool dump_packet_handler (voot_packet *packet)
             break;
     }
 
-    return old_voot_packet_handler (packet);
+    return old_voot_packet_handler (packet, ref);
 }
 
 void dump_framebuffer (void)
