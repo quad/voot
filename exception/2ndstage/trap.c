@@ -23,9 +23,9 @@ void init_ubc_b_serial(void)
     exception_table_entry new;
 
     /* STAGE: Configure UBC Channel B for breakpoint on serial port access */
-    *UBC_R_BARB = 0xFFE80014;
-    *UBC_R_BAMRB = UBC_BAMR_NOASID;
-    *UBC_R_BBRB = UBC_BBR_READ | UBC_BBR_OPERAND;
+    *UBC_R_BARB = 0xFFE80000;
+    *UBC_R_BAMRB = UBC_BAMR_NOASID | UBC_BAMR_MASK_10;
+    *UBC_R_BBRB = UBC_BBR_RW | UBC_BBR_OPERAND;
 
     ubc_wait();
 
@@ -46,22 +46,30 @@ void init_ubc_b_serial(void)
 
 void* rxi_handler(register_stack *stack, void *current_vector)
 {
-    biudp_write_str("#Received RXI interrupt.\r\n");
+    biudp_write_str("[UBC] Received RXI interrupt.\r\n");
 
     return current_vector;
 }
 
 static void* my_serial_handler(register_stack *stack, void *current_vector)
 {
-    /* STAGE: !!! implement a SPC based trap checker. */
+    /* STAGE: SPC based trap checker. */
     switch (spc())
     {
-    }
+        /* STAGE: Trapped transmission. */
+        case 0x8c0397f4:
+            biudp_write('>');
+            biudp_write(stack->r2);
+            biudp_write_str("\r\n");
+            break;        
 
-    biudp_write('#');
-    biudp_write(stack->r3);
-    biudp_write('#');
-    biudp_write_hex(spc());
+        /* STAGE: Trapped reception. */
+        case 0x8c039b58:
+            biudp_write('<');
+            biudp_write(stack->r3);
+            biudp_write_str("\r\n");
+            break;
+    }
 
     return current_vector;
 }

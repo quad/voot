@@ -30,6 +30,7 @@
 
 /* UBC Bitmasks */
 #define UBC_BAMR_NOASID     (1<<2)
+#define UBC_BAMR_MASK_10    (1)
 #define UBC_BBR_OPERAND     (1<<5)
 #define UBC_BBR_INSTRUCT    (1<<4)
 #define UBC_BBR_WRITE       (1<<3)
