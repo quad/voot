@@ -1,12 +1,12 @@
 /*  main.c
 
-    $Id: init.c,v 1.6 2002/06/29 12:57:04 quad Exp $
+    $Id: init.c,v 1.7 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
     This is the C initialization core for the np-voot common library.
 
-    The "np_init" function is the receiver of the loader's second stage function call.
+    The "np_initialize" function is the receiver of the loader's second stage function call.
 
     The "np_configure" function is the handler of main initializationm,
     after VOOT has been loaded.
@@ -14,32 +14,57 @@ DESCRIPTION
 */
 
 #include "vars.h"
+#include "ubc.h"
 #include "exception.h"
-#include "exception-lowlevel.h"
+#include "video.h"
+#include "callbacks.h"
 #include "util.h"
+#include "asic.h"
 #include "biosfont.h"
 #include "malloc.h"
+
 #include "assert.h"
-#include "callbacks.h"
 
 #include "init.h"
 
+exception_handler_f old_init_handler;
+
 static void handle_bios_vector (void)
 {
-    /* STAGE: Make sure the BIOS hasn't done anything funny. */
-
-    assert_x (dbr () == ubc_handler_lowlevel, dbr ());
-
-    /* STAGE: It's nice to not have a corrupted BSS segment. */
- 
-    assert_x ((uint8 *) vbr () >= end, vbr ());
-
     /*
         STAGE: Give the module configuration core a chance to do something
         wonky.
     */
 
     module_bios_vector ();
+}
+
+static void* init_handler (register_stack *stack, void *current_vector)
+{
+    exception_init_e    init_result;
+
+    init_result = exception_init ();
+
+    /* STAGE: Should be (re-)configure the VBR? */
+
+    if (init_result)
+    {
+        /* STAGE: Configure ASIC interrupt core. */
+
+        asic_init ();
+
+        /* STAGE: Handle the first initialization. */
+
+        if (init_result == INIT)
+            np_configure ();
+    }
+
+    /* STAGE: This code should never occur, but we're polite. */
+
+    if (old_init_handler)
+        return old_init_handler (stack, current_vector);
+    else
+        return current_vector;
 }
 
 /*
@@ -49,9 +74,23 @@ static void handle_bios_vector (void)
 
 void np_initialize (void *arg1, void *arg2, void *arg3, void *arg4)
 {
-    /* STAGE: Initialize the exception handling chain. */
+    exception_table_entry   new_exp;
 
-    exception_init ();
+    /* STAGE: Initialize the UBC. */
+
+    ubc_init ();
+
+    /* STAGE: Ensure we're ready for the UBC exception. */
+
+    new_exp.type    = EXP_TYPE_GEN;
+    new_exp.code    = EXP_CODE_UBC;
+    new_exp.handler = init_handler;
+
+    assert (exception_add_handler (&new_exp, &old_init_handler));
+
+    /* STAGE: Configure the UBC for breaking on PVR pageflip. */
+
+    ubc_configure_channel (UBC_CHANNEL_A, VIDEO_FB_BUFFER, UBC_BBR_WRITE | UBC_BBR_OPERAND);
 
     /* STAGE: Give the module initialization core a chance for overrides. */
 

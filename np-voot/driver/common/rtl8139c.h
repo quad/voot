@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.6 2002/06/29 12:57:04 quad Exp $
+    $Id: rtl8139c.h,v 1.7 2002/07/06 14:18:15 quad Exp $
 
 */
 
@@ -14,7 +14,7 @@
 
 /* NOTE: PCI/G2 register definitions. */
 
-#define PCI_IDENT_STR       (REGISTER(char)     0xa1001400)
+#define PCI_IDENT_STR       (REGISTER(char *)   0xa1001400)
 #define G2_BYTE(idx)        (REGISTER(uint8)    0xa1000000)[(idx)]
 #define G2_SHORT(idx)       (REGISTER(uint16)   0xa1000000)[(idx)/2]
 #define G2_INT(idx)         (REGISTER(uint32)   0xa1000000)[(idx)/4]
@@ -172,9 +172,12 @@
 
 typedef struct
 {
+    bool            inited;
+
     uint16          cur_rx;                 /* NOTE: Current Rx DMA buffer tail index. */
     uint16          cur_tx;                 /* NOTE: Current Tx descriptor. */
     uint8           mac[ETHER_MAC_SIZE];    /* NOTE: Cached MAC address. */
+    bool            link_stable;            /* NOTE: Stability of media auto-configuration. */
 
     asic_handler_f  old_rtl_handler;
 } rtl_t;

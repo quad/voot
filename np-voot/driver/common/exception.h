@@ -1,6 +1,6 @@
 /*  exception.h 
 
-    $Id: exception.h,v 1.5 2002/06/29 12:57:04 quad Exp $
+    $Id: exception.h,v 1.6 2002/07/06 14:18:15 quad Exp $
 
 */
 
@@ -9,6 +9,7 @@
 
 #include "vars.h"
 #include "system.h"
+#include "exception-lowlevel.h"
 
 #define EXP_TABLE_SIZE  5
 
@@ -41,10 +42,17 @@ typedef struct
     bool        vbr_switched;
 } exception_table;
 
+typedef enum
+{
+    FAIL,
+    INIT,
+    REINIT
+} exception_init_e;
+
 /* NOTE: Module definitions. */
 
-void    exception_init          (void);
-bool    exception_add_handler   (const exception_table_entry *new_entry, exception_handler_f *parent_handler);
-void *  exception_handler       (register_stack *stack);
+exception_init_e    exception_init          (void);
+bool                exception_add_handler   (const exception_table_entry *new_entry, exception_handler_f *parent_handler);
+void *              exception_handler       (register_stack *stack);
 
 #endif

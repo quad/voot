@@ -1,15 +1,10 @@
 /*  ubc.c
 
-    $Id: ubc.c,v 1.2 2002/06/29 12:57:04 quad Exp $
+    $Id: ubc.c,v 1.3 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
     Routines for configuring and handling the UBC.
-
-TODO
-
-    Ensure UBC breakpoints can't be placed unless the subsystem is
-    initialized.
 
 */
 
@@ -19,6 +14,7 @@ TODO
 
 #include "ubc.h"
 
+static bool                 inited;
 static exception_handler_f  old_ubc_handler;
 
 static void* ubc_handler (register_stack *stack, void *current_vector)
@@ -55,17 +51,36 @@ void ubc_init (void)
 
     *UBC_R_BRCR     = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
 
+    /* STAGE: Ensure interrupts are being directed properly. */
+
+    dbr_set (ubc_handler_lowlevel);
+
+    /* STAGE: Don't allow multiple hooks on the exception. */
+
+    if (inited)
+        return;
+
     /* STAGE: Install the UBC clearing handler. */
 
     new_entry.type      = EXP_TYPE_GEN;
     new_entry.code      = EXP_CODE_UBC;
     new_entry.handler   = ubc_handler;
 
-    exception_add_handler (&new_entry, &old_ubc_handler);
+    inited = exception_add_handler (&new_entry, &old_ubc_handler);
 }
 
-void ubc_configure_channel (ubc_channel channel, uint32 breakpoint, uint16 options)
+bool ubc_configure_channel (ubc_channel channel, uint32 breakpoint, uint16 options)
 {
+    /* STAGE: Ensure the UBC has been initialized. */
+
+    if (!inited)
+        return FALSE;
+
+    /*
+        STAGE: Configure the appropriate channel with the specified
+        breakpoint.
+    */
+
     switch (channel)
     {
         case UBC_CHANNEL_A :
@@ -90,20 +105,22 @@ void ubc_configure_channel (ubc_channel channel, uint32 breakpoint, uint16 optio
         */
 
         default :
-            return;
+            return FALSE;
     }
 
     ubc_wait ();
+
+    return TRUE;
 }
 
 void ubc_clear_channel (ubc_channel channel)
 {
+    /* STAGE: Clear the appropriate channel's options. */
+
     switch (channel)
     {
         case UBC_CHANNEL_A :
         {
-            /* STAGE: Clear the UBC channel options. */
-
             *UBC_R_BBRA = 0;
 
             ubc_clear_break (channel);
@@ -113,8 +130,6 @@ void ubc_clear_channel (ubc_channel channel)
 
         case UBC_CHANNEL_B :
         {
-            /* STAGE: Clear the UBC channel options. */
-
             *UBC_R_BBRB = 0;
 
             ubc_clear_break (channel);
@@ -136,17 +151,15 @@ void ubc_clear_channel (ubc_channel channel)
 
 void ubc_clear_break (ubc_channel channel)
 {
+    /* STAGE: Clear the appropriate channel's break bit. */
+
     switch (channel)
     {
         case UBC_CHANNEL_A :
-            /* STAGE: Clear the UBC channel break bit. */
-
             *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
             break;
 
         case UBC_CHANNEL_B :
-            /* STAGE: Clear the UBC channel break bit. */
-
             *UBC_R_BRCR &= ~(UBC_BRCR_CMFB);
             break;
 

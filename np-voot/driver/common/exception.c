@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.6 2002/06/29 12:57:04 quad Exp $
+    $Id: exception.c,v 1.7 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -15,7 +15,6 @@ TODO
 */
 
 #include "vars.h"
-#include "exception-lowlevel.h"
 #include "ubc.h"
 #include "video.h"
 #include "asic.h"
@@ -29,10 +28,46 @@ static exception_table exp_table;
 /* NOTE: Pointers to the VBR Buffer. */
 
 static uint8   *vbr_buffer;
-static uint8   *vbr_buffer_katana;
+static uint8   *vbr_buffer_katana;      /* NOTE: Is only valid after exception_init () */
 
-static void init_vbr_table (void)
+static bool exception_vbr_ok (void)
 {
+    uint32  int_changed;
+    uint32  gen_changed;
+
+    /* STAGE: Check to see if our VBR hooks are still installed. */
+
+    int_changed = memcmp (VBR_INT (vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
+                          interrupt_sub_handler,
+                          interrupt_sub_handler_end - interrupt_sub_handler
+                         );
+
+    gen_changed = memcmp (VBR_GEN (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
+                          general_sub_handler,
+                          general_sub_handler_end - general_sub_handler
+                         );
+
+    /* STAGE: After enough exceptions, allow the initialization. */
+
+    return !(int_changed || gen_changed);
+}
+
+exception_init_e exception_init (void)
+{
+    /*
+        STAGE: We must have already begun processing an exception to have
+        initialized. The easiest method of doing this is via calling ubc_init.
+
+        We must also have already waited a certain number of clean
+        exceptions before screwing with the VBR. This is paranoia.
+
+        TODO: Determine if the vbr is variable. If not, remove all
+        vbr_buffer and vbr_buffer_katana references and replace with macros.
+    */
+
+    if (!vbr_buffer || exception_vbr_ok () || (exp_table.ubc_exception_count < 5))
+        return FAIL;
+
     /* STAGE: INTERRUPT magic sprinkles of evil to the VOOT VBR. */
 
     memcpy (VBR_INT (vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
@@ -57,45 +92,18 @@ static void init_vbr_table (void)
 
     /* STAGE: Notify ourselves of the change. */
 
-    exp_table.vbr_switched = TRUE;
+    if (exp_table.vbr_switched)
+    {
+        return REINIT;
+    }
+    else
+    {
+        exp_table.vbr_switched = TRUE;
+
+        return INIT;
+    }
 }
 
-static bool is_vbr_switch_time (void)
-{
-    uint32  int_changed;
-    uint32  gen_changed;
-
-    /* STAGE: Check to see if our VBR hooks are still installed. */
-
-    int_changed = memcmp (VBR_INT (vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
-                          interrupt_sub_handler,
-                          interrupt_sub_handler_end - interrupt_sub_handler
-                         );
-
-    gen_changed = memcmp (VBR_GEN (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
-                          general_sub_handler,
-                          general_sub_handler_end - general_sub_handler
-                         );
-
-    /* STAGE: After enough exceptions, allow the initialization. */
-
-    return (int_changed || gen_changed) && exp_table.ubc_exception_count >= 5;
-}
-
-void exception_init (void)
-{
-    /* STAGE: Initialize the UBC. */
-
-    ubc_init ();
-
-    /* STAGE: Configure the UBC for breaking on PVR pageflip. */
-
-    ubc_configure_channel (UBC_CHANNEL_A, VIDEO_FB_BUFFER, UBC_BBR_WRITE | UBC_BBR_OPERAND);
-
-    /* STAGE: Ensure we receive UBC interrupts. */
-
-    dbr_set (ubc_handler_lowlevel);
-}
 
 bool exception_add_handler (const exception_table_entry *new_entry, exception_handler_f *parent_handler)
 {
@@ -139,7 +147,8 @@ void* exception_handler (register_stack *stack)
     uint32  exception_code;
     uint32  index;
     void   *back_vector;
-    bool    do_vbr_switch;
+
+    /* STAGE: Ensure vbr buffer is set... */
 
     vbr_buffer = vbr ();
 
@@ -154,6 +163,7 @@ void* exception_handler (register_stack *stack)
             exception_code = *REG_EXPEVT;
 
             /* STAGE: Never pass on UBC interrupts to the game. */
+
             if ((exception_code == EXP_CODE_UBC) || (exception_code == EXP_CODE_TRAP))
             {
                 exp_table.ubc_exception_count++;
@@ -195,46 +205,6 @@ void* exception_handler (register_stack *stack)
             back_vector     = my_exception_finish;
 
             break;
-        }
-    }
-
-    /* STAGE: Is some form of initialization necessary? */
-
-    do_vbr_switch = is_vbr_switch_time ();
-
-    if (do_vbr_switch)
-    {
-        bool vbr_switched;
-
-        /* STAGE: Save the switch status before we might reinitialize. */
-
-        vbr_switched = exp_table.vbr_switched;
-
-        /* STAGE: Initialize the VBR hooks. */
-
-        init_vbr_table ();
-
-        /* STAGE: Handle the first initialization. */
-
-        if (!vbr_switched)
-        {
-            /*
-                STAGE: Clear the UBC channel which triggered us, thus not
-                confusing the module.
-
-                NOTE: This isn't bad behavior becuase it only occurs on the
-                initial UBC breakpoint.
-            */
-
-            ubc_clear_break (UBC_CHANNEL_A);
-
-            /* STAGE: Handle ASIC exceptions. */
-
-            asic_init_handler ();
-
-            /* STAGE: Handle the initialization core. */
-
-            np_configure ();
         }
     }
 

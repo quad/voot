@@ -1,6 +1,6 @@
 /*  module.h
 
-    $Id: module.h,v 1.4 2002/06/23 03:22:52 quad Exp $
+    $Id: module.h,v 1.5 2002/07/06 14:18:16 quad Exp $
 
 */
 
@@ -33,8 +33,5 @@ typedef enum
 void    module_initialize   (void);
 void    module_configure    (void);
 void    module_bios_vector  (void);
-
-void *  debug_handler       (register_stack *stack, void *current_vector);
-void *  trap_handler        (register_stack *stack, void *current_vector);
 
 #endif

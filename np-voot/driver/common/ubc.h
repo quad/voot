@@ -1,6 +1,6 @@
 /*  ubc.h
 
-    $Id: ubc.h,v 1.3 2002/06/30 09:15:06 quad Exp $
+    $Id: ubc.h,v 1.4 2002/07/06 14:18:15 quad Exp $
 
 */
 
@@ -8,6 +8,7 @@
 #define __COMMON_UBC_H__
 
 #include "system.h"
+#include "exception-lowlevel.h"
 
 /* NOTE: UBC register bitmasks. */
 
@@ -46,7 +47,7 @@ typedef enum
 /* NOTE: Module definitions. */
 
 void    ubc_init                (void);
-void    ubc_configure_channel   (ubc_channel channel, uint32 breakpoint, uint16 options);
+bool    ubc_configure_channel   (ubc_channel channel, uint32 breakpoint, uint16 options);
 void    ubc_clear_channel       (ubc_channel channel);
 void    ubc_clear_break         (ubc_channel channel);
 bool    ubc_is_channel_break    (ubc_channel channel);

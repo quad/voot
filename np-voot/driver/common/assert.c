@@ -1,6 +1,6 @@
 /*  assert.c
 
-    $Id: assert.c,v 1.4 2002/06/30 09:15:06 quad Exp $
+    $Id: assert.c,v 1.5 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -71,7 +71,7 @@ static void assert_puts (const char *in_str)
             laziness on the coder's part.
         */
 
-        if (bfont_draw (vram_index += 12, 640, *in_str++))
+        if (!(bfont_draw (vram_index += 12, 640, *in_str++)))
             return video_clear (100, 0, 0);
     }
 

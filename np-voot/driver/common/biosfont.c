@@ -1,6 +1,6 @@
 /*  biosfont.c
 
-    $Id: biosfont.c,v 1.3 2002/06/30 09:15:06 quad Exp $
+    $Id: biosfont.c,v 1.4 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -13,7 +13,7 @@ CREDIT
 
 TODO
 
-    Remove optional resolutions and lock calculations into 640x480.
+    Remove optional resolutions and determine calculations from video registers.
 
     Attempt to cleanup and optimize bfont_draw inner loops.
 
@@ -76,19 +76,22 @@ bool bfont_draw (uint16 *buffer, uint32 bufwidth, uint32 c)
     uint32  y;
 
     if (!bfont_address)
-        return TRUE;
+        return FALSE;
 
     /* STAGE: Check the BIOS mutex. */
+
     if (!bfont_lock ())
     {
         memcpy (ch, (uint8 *) bfont_find_char (c), sizeof (ch));
+
         bfont_unlock ();
-        ch_base = 0;
     }
     else
     {
-        return TRUE;
+        return FALSE;
     }
+
+    ch_base = 0;
 
     for (y = 0; y < BFONT_CHAR_HEIGHT; )
     {
@@ -129,16 +132,16 @@ bool bfont_draw (uint16 *buffer, uint32 bufwidth, uint32 c)
         ch_base += 3;
     }
 
-    return FALSE;
+    return TRUE;
 }
 
 bool bfont_draw_str (uint16 *buffer, uint32 width, const char *str)
 {
     bool retval;
 
-    retval = TRUE;
+    retval = FALSE;
 
-    while (*str && !(retval = bfont_draw (buffer += BFONT_CHAR_WIDTH, width, *str++)));
+    while (*str && (retval = bfont_draw (buffer += BFONT_CHAR_WIDTH, width, *str++)));
 
     return retval;
 }

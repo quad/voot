@@ -1,6 +1,6 @@
 /*  serial.c
 
-    $Id: serial.c,v 1.4 2002/06/30 09:15:06 quad Exp $
+    $Id: serial.c,v 1.5 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -20,9 +20,11 @@ TODO
 void serial_set_baudrate (uint16 baud_rate)
 {
     /* STAGE: 8N1, use P0 clock */
+
     *SCIF_R_SM = 0;
 
     /* STAGE: Set baudrate, N = P0/(32*B)-1 */
+
     *SCIF_R_BR = (50000000 / (32 * baud_rate)) - 1;
 }
 

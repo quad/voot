@@ -1,6 +1,6 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.7 2002/06/30 09:15:06 quad Exp $
+    $Id: heartbeat.c,v 1.8 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -19,6 +19,7 @@ TODO
 
 #include "heartbeat.h"
 
+static bool             inited;
 static asic_handler_f   old_vsync_handler;
 
 static void* my_heartbeat (register_stack *stack, void *current_vector)
@@ -44,11 +45,16 @@ void heartbeat_init (void)
 {
     asic_lookup_table_entry new_irq;
 
+    /* STAGE: Ensure we don't handle the interrupt twice. */
+
+    if (inited)
+        return;
+
     /* STAGE: Catch on TA_DONE ASIC interrupts. */
 
     new_irq.irq     = EXP_CODE_INT9;
     new_irq.mask0   = ASIC_MASK0_VSYNC;
     new_irq.handler = vsync_handler;
 
-    asic_add_handler (&new_irq, &old_vsync_handler);
+    inited = asic_add_handler (&new_irq, &old_vsync_handler);
 }

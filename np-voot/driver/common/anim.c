@@ -1,6 +1,6 @@
 /*  anim.c
 
-    $Id: anim.c,v 1.2 2002/06/30 09:15:06 quad Exp $
+    $Id: anim.c,v 1.3 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -31,6 +31,7 @@ TODO
 
 anim_printf_debug_f __anim_printf_debug = (anim_printf_debug_f) 0x8c0153c4;
 
+static bool         inited;
 static uint16       *anim_render_root;
 static const uint8  anim_render_key[] = {
                                             0xdd, 0x04, 0x33, 0x34, 0x34, 0x8b,
@@ -62,11 +63,16 @@ static void* anim_trap_handler (register_stack *stack, void *current_vector)
 
 void anim_init (void)
 {
+    uint16                  anim_trap;
     exception_table_entry   new_exception;
 
-    /* STAGE: Locate the animation trappoint, if possible. */
+    /* STAGE: Generate our trap code for comparison testing... */
 
-    if (!anim_render_root || memcmp (anim_render_root, anim_render_key, sizeof (anim_render_key)))
+    anim_trap = ubc_generate_trap (TRAP_CODE_ANIM);
+
+    /* STAGE: Locate the animation trappoint, if necessary. */
+
+    if (!anim_render_root || memcmp (anim_render_root, &anim_trap, sizeof (anim_trap)))
         anim_render_root = search_gamemem (anim_render_key, sizeof (anim_render_key));
 
     /* STAGE: Configure an exception handler for traps. */
@@ -75,14 +81,13 @@ void anim_init (void)
     new_exception.code      = EXP_CODE_TRAP;
     new_exception.handler   = anim_trap_handler;
 
-    /* STAGE: Add the trappoint, if we found the function. */
+    if (!inited)
+        inited = exception_add_handler (&new_exception, &old_trap_handler);
 
-    if (anim_render_root && exception_add_handler (&new_exception, &old_trap_handler))
-    {
-        /* STAGE: Patch the logic with our trap. */
+    /* STAGE: Add the trappoint, if we're ready for it. */
 
-        anim_render_root[0] = ubc_generate_trap (TRAP_CODE_ANIM);
-    }
+    if (anim_render_root && inited)
+        anim_render_root[0] = anim_trap;
 }
 
 bool anim_add_render_chain (anim_render_chain_f new_function, anim_render_chain_f *old_function)

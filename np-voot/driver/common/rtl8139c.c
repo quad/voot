@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.11 2002/06/30 09:15:06 quad Exp $
+    $Id: rtl8139c.c,v 1.12 2002/07/06 14:18:15 quad Exp $
 
 DESCRIPTION
 
@@ -17,9 +17,6 @@ DESCRIPTION
 
 TODO
 
-    Ensure card cannot be accessed unless initialized and interrupts handler
-    is assigned.
-
     Remove rtl_rx_all function and replace with a completely interrupt
     driven driver.
 
@@ -30,10 +27,8 @@ TODO
 
 #include "vars.h"
 #include "util.h"
-#include "video.h"
 #include "malloc.h"
 #include "asic.h"
-#include "exception-lowlevel.h"
 
 #include "rtl8139c.h"
 
@@ -69,9 +64,7 @@ static bool pci_detect (void)
 {
     const char  gapspci_ident_str[] = "GAPSPCI_BRIDGE_2";
 
-    /* NOTE: Must be re-casted to char * so we can const-ify it cleanly. Grr. */
-
-    return !memcmp ((char *) PCI_IDENT_STR, gapspci_ident_str, sizeof (gapspci_ident_str));
+    return !memcmp (PCI_IDENT_STR, gapspci_ident_str, sizeof (gapspci_ident_str));
 }
 
 /* NOTE: All of the following code is *very* magic - even more magical than the above code. */
@@ -85,6 +78,7 @@ static bool pci_bb_init (void)
     G2_INT(0x1418) = 0x5a14a501;
 
     count = 10000;
+
     while (!(G2_INT(0x1418) & 1) && count > 0)
         count--;
 
@@ -135,7 +129,7 @@ static void rtl_send_command (uint8 command)
 {
     RTL_IO_BYTE(RTL_CHIPCMD) = command;
 
-    /* NOTE: Ignore all but known command registers */
+    /* NOTE: Ignore all but known command bits. */
 
     while ((RTL_IO_BYTE(RTL_CHIPCMD) & ~0xe3) != command);
 }
@@ -171,8 +165,6 @@ static void rtl_negotiate_media (void)
 
 /*
     NOTE: Packet reception logic!
-
-    TODO: This code hasn't been cleaned up yet for sake of compatibility.
 */
 
 static uint8* rtl_copy_frame (const uint8 *src, uint32 size)
@@ -322,23 +314,25 @@ static void* rtl_irq_handler (void *passer, register_stack *stack, void *current
 
         rtl_start ();
     }
+
     /* STAGE: If we're performing a link change, finish up. */
+
     else if (intr & RTL_INT_LINKCHG)
     {
-        static bool link_stable = FALSE;
-
-        if (link_stable)
+        if (rtl_info.link_stable)
         {
             rtl_negotiate_media ();
 
-            link_stable = FALSE;
+            rtl_info.link_stable = FALSE;
         }
         else
         {
-            link_stable = TRUE;
+            rtl_info.link_stable = TRUE;
         }
     }
+
     /* STAGE: Check if we received frames. */
+
     else if (intr & RTL_INT_RX_OK)
     {
         rtl_rx_all ();
@@ -524,19 +518,21 @@ bool rtl_init (void)
     {
         if (pci_bb_init ())
         {
-            if (rtl_init_real ())
-            {
-                return TRUE;
-            }
+            rtl_info.inited = rtl_init_real ();
         }
     }
 
-    return FALSE;
+    return rtl_info.inited;
 }
 
 bool rtl_tx (const uint8 *header, uint32 header_length, const uint8 *data, uint32 data_length)
 {
     uint32 frame_length;
+
+    /* STAGE: Ensure the driver is initialized. */
+
+    if (!rtl_info.inited)
+        return FALSE;
 
     /* STAGE: Limit the frame to a certain size. */
 
