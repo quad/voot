@@ -77,7 +77,7 @@ static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16
             break;
 
         case 'v':
-            biudp_write_str("[UBC] Netplay VOOT Extensions, BETA - compiled at " __TIME__ " on " __DATE__ "\r\n");
+            biudp_write_str("[UBC] Netplay VOOT Extensions, BETA\r\n");
             break;
 
         default:

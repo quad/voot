@@ -19,6 +19,12 @@
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
 */
 
+struct
+{
+    bool data_in_fifo;
+    uint8 data;
+} scif_fifo_status;
+
 void init_ubc_b_serial(void)
 {
     exception_table_entry new;
@@ -51,8 +57,6 @@ uint32 trap_inject_data(uint8 *data, uint32 size)
 
     biudp_write_str("i>");
 
-    *SCIF_R_FC |= SCIF_FC_LOOP;
-
     /* STAGE: Write the bytes to the FIFO, if possible. */
     data_index = 0;
     while((data_index < size) && (*SCIF_R_FS & SCIF_FS_TDFE))
@@ -75,16 +79,28 @@ uint32 trap_inject_data(uint8 *data, uint32 size)
     if (timeout_count == SCIF_TIMEOUT)
         biudp_write_str("[UBC] SCIF timeout during injection.\r\n");
 
-    *SCIF_R_FC &= ~(SCIF_FC_LOOP);
-
     return data_index;
 }
 
 void* rxi_handler(register_stack *stack, void *current_vector)
 {
-    biudp_write_str("[UBC] Received RXI interrupt.\r\n");
+    void *return_vector;
 
-    return current_vector;
+    /* STAGE: If the data in the buffer is loopback data, drop it on the floor. */
+    if (scif_fifo_status.data_in_fifo && *SCIF_R_FRD == scif_fifo_status.data)
+    {
+        /* STAGE: Theoretically we should only be handling the DR bit, but
+            I'm one paranoid guy. */
+        *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+
+        scif_fifo_status.data_in_fifo = FALSE;
+
+        return_vector = my_exception_finish;
+    }
+    else
+        return_vector = current_vector;
+
+    return return_vector;
 }
 
 static void* my_serial_handler(register_stack *stack, void *current_vector)
@@ -97,6 +113,11 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             biudp_write('>');
             biudp_write(stack->r2);
             biudp_write_str("\r\n");
+
+            /* STAGE: Notify our RXI handler that we should drop the loopbacked data. */
+            scif_fifo_status.data_in_fifo = TRUE;
+            scif_fifo_status.data = stack->r2;
+
             break;        
 
         /* STAGE: Trapped reception. */
@@ -112,8 +133,9 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 
 void* serial_handler(register_stack *stack, void *current_vector)
 {
-    /* STAGE: !!! Reconfigure serial port for testing. */
+    /* STAGE: Reconfigure serial port for testing. */
     serial_set_baudrate(57600);
+    *SCIF_R_FC |= SCIF_FC_LOOP;
 
     /* STAGE: We only break on the serial (channel B) exception. */
     if (*UBC_R_BRCR & UBC_BRCR_CMFB)
