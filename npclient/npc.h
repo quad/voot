@@ -10,6 +10,9 @@ CHANGELOG
         Just added this changelog entry. The file has actually existed for
         quite some time.
 
+    Tue Jan 22 23:37:22 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added the debugging callback functionality.
+
 */
 
 #ifndef __NPC_H__
@@ -78,6 +81,26 @@ typedef struct
 
 typedef struct
 {
+    volatile int32  *socket;
+    npc_command     type;
+} npc_io_check_t;
+
+typedef enum    /* This is all a rather blatant ripoff from syslog - but they've been using it for years, so I see no reason to improve. */
+{
+    LOG_EMERG,      /* system is unusable */
+    LOG_ALERT,      /* action must be taken immediately - system level problem with global effects */
+    LOG_CRIT,       /* critical conditions - system level problems */
+    LOG_ERR,        /* error conditions - internal level problems */
+    LOG_WARNING,    /* warning conditions - something bad but handable happened internally */
+    LOG_NOTICE,     /* normal, but significant, condition - normal users would want to see this */
+    LOG_INFO,       /* informational message - nice for me, but not for final release */
+    LOG_DEBUG       /* debug-level message - hyper verbose debugging, even for me */
+} npc_log_level;
+
+typedef void npc_log_callback_f (npc_log_level, const char *, ...);
+
+typedef struct
+{
     char                *slave_name;
     uint16              slave_port;
     volatile int32      slave_socket;
@@ -94,25 +117,11 @@ typedef struct
     uint32              event_queue_size;
     uint32              event_queue_tail;
     pthread_mutex_t     event_queue_busy;
+
+    npc_log_callback_f  *log_callback_function;
 } npc_data_t;
 
-typedef struct
-{
-    volatile int32  *socket;
-    npc_command     type;
-} npc_io_check_t;
-
-typedef enum    /* This is all a rather blatant ripoff from syslog - but they've been using it for years, so I see no reason to improve. */
-{
-    LOG_EMERG,      /* system is unusable */
-    LOG_ALERT,      /* action must be taken immediately */
-    LOG_CRIT,       /* critical conditions */
-    LOG_ERR,        /* error conditions */
-    LOG_WARNING,    /* warning conditions */
-    LOG_NOTICE,     /* normal, but significant, condition */
-    LOG_INFO,       /* informational message */
-    LOG_DEBUG       /* debug-level message */
-} npc_log_level;
+#define NPC_LOG(sys,sev, args...) (sys.log_callback_function)(sev, ## args)
 
 int32 npc_handle_command(npc_command_t *command);
 bool npc_add_event_queue(npc_command_t *command);
@@ -122,7 +131,7 @@ void* npc_io_check(void *in_arg);
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);
 int npc_server_listen(void);
 void npc_exit(int code);
-void npc_init(void);
+void npc_init(npc_log_callback_f *log_callback_function);
 npc_data_t* npc_expose(void);
 
 #endif

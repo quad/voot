@@ -46,6 +46,10 @@ CHANGELOG
     Tue Jan 22 18:04:17 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Cleaning up syntax and overall code manageability.
 
+    Wed Jan 23 00:31:01 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Removed all direct IO references and centralized the socket closing
+        code for debugability.
+
 */
 
 #include <stdlib.h>
@@ -62,6 +66,21 @@ CHANGELOG
 #include "npc.h"
 
 npc_data_t  npc_system;
+
+static void npc_close_socket(volatile int32 *in_socket, const char *socket_desc)
+{
+    int32 socket;
+
+    socket = *in_socket;
+    if (socket >= 0)
+    {
+        *in_socket = -1;
+        if (close(socket))
+            NPC_LOG(npc_system, LOG_ALERT, "Unable to close %s socket.", socket_desc);
+        else
+            NPC_LOG(npc_system, LOG_DEBUG, "Closed %s socket.", socket_desc);
+    }
+}
 
 int32 npc_handle_command(npc_command_t *command)
 {
@@ -94,7 +113,7 @@ int32 npc_handle_command(npc_command_t *command)
             }
             else
             {
-                fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
+                NPC_LOG(npc_system, LOG_NOTICE, "Unable to connect to slave %s:%u.", npc_system.slave_name, npc_system.slave_port);
             }
 
             break;
@@ -122,7 +141,7 @@ int32 npc_handle_command(npc_command_t *command)
             }
             else
             {
-                fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
+                NPC_LOG(npc_system, LOG_NOTICE, "Unable to connect to server %s:%u.", npc_system.server_name, npc_system.server_port);
             }
 
             break;
@@ -139,9 +158,9 @@ int32 npc_handle_command(npc_command_t *command)
 
             if (pthread_create(command->listen_socket_thread, NULL, npc_io_check, (void *) arg))
             {
-                close(*(command->listen_socket));
-                fprintf(stderr, "[npc] unable to start polling thread for type %d.\n", command->type);
-                *(command->listen_socket) = -1;
+                NPC_LOG(npc_system, LOG_ALERT, "Unable to start polling thread for type %d.", command->type);
+
+                npc_close_socket(command->listen_socket, "IO");
             }
 
             break;
@@ -154,7 +173,7 @@ int32 npc_handle_command(npc_command_t *command)
             retval = npc_server_listen();
 
             if (retval)
-                fprintf(stderr, "[npc] unable to start server on port %u.\n", npc_system.server_port);
+                NPC_LOG(npc_system, LOG_WARNING, "Unable to start server on port %u.", npc_system.server_port);
 
             break;
         }
@@ -165,14 +184,18 @@ int32 npc_handle_command(npc_command_t *command)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
                 {
-                    fprintf(stderr, "[npc] DEBUG(slave): %s", command->packet->buffer);
+                    NPC_LOG(npc_system, LOG_INFO, "DEBUG(slave): %s", command->packet->buffer);
                     break;
                 }
 
                 case VOOT_PACKET_TYPE_DATA:
+                {
+                    NPC_LOG(npc_system, LOG_DEBUG, "DATA(slave): '%c'...", command->packet->buffer[0]);
+
                     voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
-            
+                }
+
                 default:
                     break;
             }
@@ -183,10 +206,9 @@ int32 npc_handle_command(npc_command_t *command)
 
         case C_CLOSE_SLAVE:
         {
-            fprintf(stderr, "[npc] received request to disconnect slave socket! Is this even possible?!\n");
+            NPC_LOG(npc_system, LOG_ERR, "Received request to disconnect slave socket! Is this even possible?!");
 
-            close(npc_system.slave_socket);
-            npc_system.slave_socket = -1;
+            npc_close_socket(&npc_system.slave_socket, "slave");
 
             break;
         }
@@ -197,7 +219,7 @@ int32 npc_handle_command(npc_command_t *command)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
                 {
-                    fprintf(stderr, "[npc] DEBUG(server): %s", command->packet->buffer);
+                    NPC_LOG(npc_system, LOG_INFO, "DEBUG(server): %s", command->packet->buffer);
                     break;
                 }
 
@@ -223,10 +245,7 @@ int32 npc_handle_command(npc_command_t *command)
 
         case C_CLOSE_SERVER:
         {
-            fprintf(stderr, "[npc] closing server socket.\n");
-
-            close(npc_system.server_socket);
-            npc_system.server_socket = -1;
+            npc_close_socket(&npc_system.server_socket, "server");
 
             break;
         }
@@ -242,7 +261,7 @@ int32 npc_handle_command(npc_command_t *command)
 
         default:
         {
-            fprintf(stderr, "[npc] dropping unimplemented npc_command %u.\n", command->type);
+            NPC_LOG(npc_system, LOG_ERR, "Dropping unimplemented npc_command of type %u.", command->type);
             break;
         }
     }
@@ -254,7 +273,7 @@ bool npc_add_event_queue(npc_command_t *command)
 {
     if (npc_system.event_queue_size >= NPC_EVENT_QUEUE_SIZE)
     {
-        fprintf(stderr, "[npc] Event queue overflow!\n");
+        NPC_LOG(npc_system, LOG_ERR, "Event queue overflow!");
         return TRUE;
     }
     else if(pthread_mutex_lock(&(npc_system.event_queue_busy)));
@@ -373,7 +392,7 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     host = gethostbyname(dest_name);
     if (!host)
     {
-        fprintf(stderr, "[npc] could not resolve '%s'.\n", dest_name);
+        NPC_LOG(npc_system, LOG_INFO, "Could not resolve '%s'.", dest_name);
         return -1;
     }
 
@@ -384,18 +403,18 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     new_socket = socket(AF_INET, conntype, 0);
     if (new_socket < 0)
     {
-        fprintf(stderr, "[npc] unable to open a socket.\n");
+        NPC_LOG(npc_system, LOG_ALERT, "Unable to open a socket.");
         return -2;
     }
 
     if (connect(new_socket, (struct sockaddr *) &address, sizeof(address)))
     {
         close(new_socket);
-        fprintf(stderr, "[npc] unable to connect to %s:%u.\n", dest_name, dest_port);
+        NPC_LOG(npc_system, LOG_INFO, "Unable to connect a socket to %s:%u.", dest_name, dest_port);
         return -3;
     }
 
-    fprintf(stderr, "[npc] connected to %s:%u and sending VERSION command.\n", dest_name, dest_port);
+    NPC_LOG(npc_system, LOG_INFO, "Connected to %s:%u and sending VERSION command.", dest_name, dest_port);
     voot_send_command(new_socket, VOOT_COMMAND_TYPE_VERSION);
 
     return new_socket;
@@ -408,7 +427,7 @@ static void* npc_server_accept_task(void *arg)
 
     wait_socket = (int32) arg;
 
-    fprintf(stderr, "[npc] waiting for connection on server.\n");
+    NPC_LOG(npc_system, LOG_NOTICE, "Waiting for connection as server.");
 
     while((new_socket = accept(wait_socket, NULL, 0)))
     {
@@ -426,16 +445,16 @@ static void* npc_server_accept_task(void *arg)
 
             npc_add_event_queue(event);
             
-            fprintf(stderr, "[npc] accepted connection for server! [%d]\n", new_socket);
+            NPC_LOG(npc_system, LOG_NOTICE, "Accepted connection as server!");
         }
         else
         {
             close(new_socket);
-            fprintf(stderr, "[npc] dropped incoming connection for server.\n");
+            NPC_LOG(npc_system, LOG_INFO, "Dropped incoming connection for server.");
         }
     }
 
-    fprintf(stderr, "[npc] no longer accepting connections.\n");
+    NPC_LOG(npc_system, LOG_NOTICE, "No longer accepting connections.");
 
     return NULL;
 }
@@ -450,7 +469,7 @@ int32 npc_server_listen(void)
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0)
     {
-        fprintf(stderr, "[npc] unable to open a socket for serving.\n");
+        NPC_LOG(npc_system, LOG_ALERT, "Unable to open a socket for serving.");
         return -1;
     }
 
@@ -461,21 +480,21 @@ int32 npc_server_listen(void)
     if (!bind(server_socket, (struct sockaddr *) &my_address, sizeof(my_address)) < 0)
     {
         close(server_socket);
-        fprintf(stderr, "[npc] unable to bind a socket for serving.\n");
+        NPC_LOG(npc_system, LOG_CRIT, "Unable to bind a socket for serving.");
         return -2;
     }
 
     if (listen(server_socket, 1))
     {
         close(server_socket);
-        fprintf(stderr, "[npc] unable to listen on port %u for serving.\n", npc_system.server_port);
+        NPC_LOG(npc_system, LOG_CRIT, "Unable to listen on port %u for serving.", npc_system.server_port);
         return -3;
     }
 
     if (pthread_create(&(npc_system.server_listen_thread), NULL, npc_server_accept_task, (void *) server_socket))
     {
         close(server_socket);
-        fprintf(stderr, "[npc] unable to start acceptance thread for serving.\n");
+        NPC_LOG(npc_system, LOG_ALERT, "Unable to start acceptance thread for serving.");
         return -4;
     }
 
@@ -487,36 +506,21 @@ int32 npc_server_listen(void)
 
 void npc_exit(int code)
 {
-    int32 socket;
     /* Clean up both the slave and server sockets. */
 
     free(npc_system.slave_name);
-    socket = npc_system.slave_socket;
-    if (socket >= 0)
-    {
-        npc_system.slave_socket = -1;
-        if (close(socket))
-            fprintf(stderr, "[npc] unable to close slave socket.\n");
-        else
-            fprintf(stderr, "[npc] closed slave socket.\n");
-    }
+    npc_close_socket(&npc_system.slave_socket, "slave");
 
     free(npc_system.server_name);
-    socket = npc_system.server_socket;
-    if (socket >= 0)
-    {
-        npc_system.server_socket = -1;
-        if (close(socket))
-            fprintf(stderr, "[npc] unable to close server socket.\n");
-        else
-            fprintf(stderr, "[npc] closed server socket.\n");
-    }
+    npc_close_socket(&npc_system.server_socket, "server");
 }
 
-void npc_init(void)
+void npc_init(npc_log_callback_f *log_callback_function)
 {
     memset(&npc_system, 0x0, sizeof(npc_system));
     npc_system.slave_socket = npc_system.server_socket = npc_system.server_socket_wait = -1;
+
+    npc_system.log_callback_function = log_callback_function;
 
     pthread_mutex_init(&npc_system.event_queue_busy, NULL);
 }
@@ -528,7 +532,7 @@ npc_data_t* npc_expose(void)
         we'll have created an accessor function for it. However, I'll leave
         the functionality in just-in-case. */
 
-    fprintf(stderr, "[npc] npc_system exposed!\n");
+    fprintf(stderr, "[npc] npc_system exposed!");
 
     return &npc_system;
 }

@@ -2,7 +2,8 @@
 
 DESCRIPTION
 
-    VOOT Netplay protocol parser and constructor. It uses file handles and memory structures.
+    VOOT Netplay protocol parser and constructor. It uses file handles and
+    memory structures.
 
 CHANGELOG
 
@@ -11,7 +12,8 @@ CHANGELOG
         write a final version some day.
 
     Tue Jan 22 00:31:19 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
-        Changed the recvfrom() to recv(). I think it made a difference in the win32 port.
+        Changed the recvfrom() to recv(). I think it made a difference in
+        the win32 port.
 
 */
 

@@ -7,13 +7,15 @@ DESCRIPTION
 CHANGELOG
 
     Sun Sep  9 22:46:15 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
-        Started the code base. Specifically the banner and options handling code.
+        Started the code base. Specifically the banner and options handling
+        code.
 
     Wed Sep 12 16:30:00 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Started coding connection code to np-voot-slave.
 
     Thu Sep 20 00:07:07 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
-        Finished extraction of NPC command module and renamed module to client.
+        Finished extraction of NPC command module and renamed module to
+        client.
 
     Tue Jan 22 13:26:29 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added readline callback thread and started coding of command parser
@@ -21,6 +23,9 @@ CHANGELOG
 
     Tue Jan 22 17:27:58 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Now accept host:port syntax and custom ports in the listening task.
+
+    Tue Jan 22 23:37:22 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added the debugging callback functionality.
 
 */
 
@@ -34,6 +39,7 @@ CHANGELOG
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <stdarg.h>
 
 #include "npc.h"
 #include "client.h"
@@ -41,6 +47,45 @@ CHANGELOG
 char *prog_name;
 bool input_handler_poll;
 pthread_t input_poll_thread;
+
+/*
+ *  Various frontend texts.
+ */
+
+static const char banner_text[] = {
+    "Console Netplay VOOT Client (npclient), built " __DATE__ " at " __TIME__ "\n"
+    "Copyright (C) 2001, 2002, Scott Robinson. All Rights Reserved.\n"
+};
+
+static const char gpl_text[] = {
+    "\nThis program is distributed in the hope that it will be useful,\n"
+    "but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+    "GNU General Public License for more details.\n"
+    "\n"
+};
+
+static const char help_text[] = {
+    "-c <hostname/IP[:port]>    Connect to the specified slave.\n"
+    "-s <hostname/IP[:port]>    Connect to the specified server.\n"
+    "-l[port]                   Change into server mode.\n"
+    "\n"
+};
+
+static const char exit_text[] = {
+    "npclient exit!\n"
+};
+
+static const char *npc_log_level_desc[] = {
+    "EMERGERNCY",
+    "ALERT",
+    "CRITICAL",
+    "ERROR",
+    "WARNING",
+    "NOTICE",
+    "INFO",
+    "DEBUG"
+};
 
 void display_start_banner(void)
 {
@@ -237,6 +282,21 @@ void input_handler(char *line)
     }
 }
 
+void logger_callback(npc_log_level severity, const char *format, ...)
+{
+    va_list args;
+
+    printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity - 1]); 
+
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+    printf("\n");
+
+    rl_redisplay();
+}
+
 int main(int argc, char *argv[])
 {
     npc_command_t *event;
@@ -245,7 +305,7 @@ int main(int argc, char *argv[])
 
     frontend_init(argv[0]);
 
-    npc_init();
+    npc_init(logger_callback);
 
     parse_options(argc, argv);
 
