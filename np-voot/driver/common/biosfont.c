@@ -1,14 +1,21 @@
 /*  biosfont.c
 
-    $Id: biosfont.c,v 1.2 2002/06/24 00:58:04 quad Exp $
+    $Id: biosfont.c,v 1.3 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     A accessor module for the BIOS font functions.
 
-    CREDIT: This code is an almost exact duplicate from Dan Potter's
-    libdream's biosfont.c - except this version of the source checks the
-    BIOS mutex.
+CREDIT
+
+    This code is an almost exact duplicate from Dan Potter's libdream's
+    biosfont.c - except this version of the source checks the BIOS mutex.
+
+TODO
+
+    Remove optional resolutions and lock calculations into 640x480.
+
+    Attempt to cleanup and optimize bfont_draw inner loops.
 
 */
 

@@ -1,6 +1,6 @@
 /*  util.h
 
-    $Id: util.h,v 1.5 2002/06/23 03:22:52 quad Exp $
+    $Id: util.h,v 1.6 2002/06/30 09:15:06 quad Exp $
 
 */
 
@@ -8,9 +8,6 @@
 #define __COMMON_UTIL_H__
 
 #include "vars.h"
-
-#define MALLOC_MALLOC_INDEX 0x84
-#define MALLOC_FREE_INDEX   0x152
 
 #define tolower(c)          ((c)-'A'+'a')
 #define toupper(c)          ((c)-'a'+'A')
@@ -41,7 +38,6 @@ char *  strncpy (char *dest, const char *src, uint32 n);
 
 /* NOTE: Module defintions. */
 
-void *  sq_cpy              (void *dest, const uint32 *src, uint32 n);
-uint32  time                (void);
+uint32  time    (void);
 
 #endif

@@ -1,10 +1,15 @@
 /*  serial.c
 
-    $Id: serial.c,v 1.3 2002/06/23 03:22:52 quad Exp $
+    $Id: serial.c,v 1.4 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     Serial code for use while inside an exception.
+
+TODO
+
+    Translate the raw values in the prototype functions to symbolic
+    assignments. (placed in the header file)
 
 */
 
@@ -52,3 +57,36 @@ void serial_write_buffer (uint8 *data, uint32 len)
 
     serial_flush ();
 }
+
+int32 serial_read_char (void)
+{
+    int32 c;
+
+    c = -1;
+
+    /* STAGE: Buffer overrun? */
+
+    if (*SCIF_R_LS & SCIF_LS_ORER)
+        *SCIF_R_LS &= ~(SCIF_LS_ORER);
+
+    /* STAGE: Error and break handling. */    
+
+    else if (*SCIF_R_FS & (SCIF_FS_ER | SCIF_FS_BRK))
+        *SCIF_R_FS &= ~(SCIF_FS_ER | SCIF_FS_BRK);
+
+    /* STAGE: Check if we have a character waiting for us. */
+
+    else if (*SCIF_R_FS & (SCIF_FS_RDF | SCIF_FS_DR))
+    {
+        /* STAGE: Get the character. */
+
+        c = *SCIF_R_RD;
+
+        /* STAGE: Flush the character out. */
+
+        *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+    }
+
+    return c;
+}
+

@@ -1,12 +1,20 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.4 2002/06/24 07:37:05 quad Exp $
+    $Id: ether.c,v 1.5 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     Ethernet control module.
 
     Acts as a gateway between the NETWORK LAYER and the HARDWARE LAYER.
+
+TODO
+
+    Rewrite the ether_info_packet_t handling logic to allow for chained
+    info_packets which specify a total buffer of data.
+
+    Reimplement ether_tx to support the chained info_packets using the
+    progressive write functions of the network drivers.
 
 */
 

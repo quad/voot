@@ -1,10 +1,17 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.5 2002/06/23 03:22:52 quad Exp $
+    $Id: voot.c,v 1.6 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     VOOT netplay protocol debug implementation.
+
+TODO
+
+    Remove biudp dependence and implement airhook layer.
+
+    Write a better packet handler chain function. Something more general and
+    portable to other handlers.
 
 */
 

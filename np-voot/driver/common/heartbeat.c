@@ -1,10 +1,15 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.6 2002/06/29 12:57:04 quad Exp $
+    $Id: heartbeat.c,v 1.7 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     Every VSYNC interrupt we receive a call here. It's a great timer.
+
+TODO
+
+    Check to ensure we aren't still crashing the Dreamcast by using this
+    logic. The animation render cycle is probably a better heartbeat.
 
 */
 

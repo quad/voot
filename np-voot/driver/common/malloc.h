@@ -1,11 +1,14 @@
 /*  malloc.h
 
-    $Id: malloc.h,v 1.1 2002/06/12 10:29:01 quad Exp $
+    $Id: malloc.h,v 1.2 2002/06/30 09:15:06 quad Exp $
 
 */
 
 #ifndef __COMMON_MALLOC_H__
 #define __COMMON_MALLOC_H__
+
+#define MALLOC_MALLOC_INDEX 0x84
+#define MALLOC_FREE_INDEX   0x152
 
 /* NOTE: Module definitions. */
 

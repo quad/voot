@@ -1,10 +1,14 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.8 2002/06/29 12:57:04 quad Exp $
+    $Id: biudp.c,v 1.9 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     Bi-directional UDP communications code.
+
+TODO
+
+    Remove and replace with airhook protocol layer.
 
 */
 

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.9 2002/06/24 07:37:05 quad Exp $
+    $Id: net.c,v 1.10 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
@@ -8,7 +8,12 @@ DESCRIPTION
 
 TODO
 
-    Implement ARP and DHCP.
+    Seperate IP, netmask, and gateway information from biudp and write a UDP
+    interface layer.
+
+    Implement an ARP cache and respose based on the stored IP information.
+
+    Implement and access a DHCP client module.
 
 */
 

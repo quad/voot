@@ -1,6 +1,6 @@
 /*  assert.c
 
-    $Id: assert.c,v 1.3 2002/06/29 12:57:04 quad Exp $
+    $Id: assert.c,v 1.4 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
@@ -9,6 +9,10 @@ DESCRIPTION
     In a state of panic, we can't be sure of the networking logic thus the
     module uses biosfont. If biosfont doesn't work, however, the screen is
     blanked to red.
+
+TODO
+
+    Once biosfont is updated, remove the 640x480 argument passed.
 
 */
 

@@ -1,10 +1,21 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.7 2002/06/29 12:57:04 quad Exp $
+    $Id: dumpio.c,v 1.8 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
     Dump IO protocol handling logic.
+
+TODO
+
+    Move screenshot code into real-mode via the anim module. This will
+    reduce the probability of crashes.
+
+    Once airhook layer is implemented, remove the video_vsync () calls which
+    add delay.
+
+    Do not allow dump functionality to be accessed unless module is
+    initialized.
 
 */
 

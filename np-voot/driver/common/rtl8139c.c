@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.10 2002/06/29 12:57:04 quad Exp $
+    $Id: rtl8139c.c,v 1.11 2002/06/30 09:15:06 quad Exp $
 
 DESCRIPTION
 
@@ -17,7 +17,14 @@ DESCRIPTION
 
 TODO
 
-    Ensure card cannot be accessed unless initialized.
+    Ensure card cannot be accessed unless initialized and interrupts handler
+    is assigned.
+
+    Remove rtl_rx_all function and replace with a completely interrupt
+    driven driver.
+
+    Split rtl_tx functionality so it'll allow multiple data transfers to
+    compose a packet.
 
 */
 
@@ -29,8 +36,6 @@ TODO
 #include "exception-lowlevel.h"
 
 #include "rtl8139c.h"
-
-#define MAYBE_REMOVE
 
 /* NOTE: Persistent module status. */
 
@@ -230,12 +235,12 @@ static void rtl_rx_all (void)
         uint32  frame_size;
         uint8  *frame_data;
 
-        frame_in = NULL;
+        frame_in    = NULL;
 
         /* STAGE: Get pointers to frame size and status. */
 
-        rx_status = RTL_DMA_SHORT[rtl_info.cur_rx/2];
-        rx_size = RTL_DMA_SHORT[rtl_info.cur_rx/2 + 1];
+        rx_status   = RTL_DMA_SHORT[rtl_info.cur_rx/2];
+        rx_size     = RTL_DMA_SHORT[rtl_info.cur_rx/2 + 1];
 
         /*
             STAGE: Check if the RTL is still copying frames - if so, try
@@ -250,9 +255,9 @@ static void rtl_rx_all (void)
 
         frame_size = rx_size - 4;
 
-        /* STAGE: Handle that GOOD frame, baby! */
+        /* STAGE: If the frame is done being transferred via DMA. */
 
-        if (rx_status & 1)  /* NOTE: .. if it's done? */
+        if (rx_status & 1)
         {
             /* NOTE: + 4 to skip the header. */
 
@@ -287,8 +292,6 @@ static void rtl_rx_all (void)
 
 /*
     NOTE: Chip interrupt handler.
-
-    TODO: Cleanup for new system.
 */
 
 static void* rtl_irq_handler (void *passer, register_stack *stack, void *current_vector)
