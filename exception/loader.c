@@ -16,6 +16,7 @@ TODO
 */
 
 #include <stdio.h>
+#include <string.h>
 #include <dream.h>
 #include "vconsole.h"
 #include "gdrom.h"
@@ -32,7 +33,8 @@ static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
 static int warez_enable = 1;
 
 static char startup_msg[] = {
-    "Netplay VOOT Extensions (np-voot-slave) - BETA\n"
+//    "Netplay VOOT Extensions (np-voot-slave) - BETA\n"
+    "Customization Append Disc (np-voot-cust) - ALPHA\n"
     "(C) 2001-2002, Scott Robinson. All Rights Reserved.\n"
     "http://voot.sourceforge.net/ for more information.\n"
     "\n"

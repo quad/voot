@@ -4,6 +4,10 @@ DESCRIPTION
 
     Customization reverse engineering helper code.
 
+TODO
+
+    Get Oratan champion heads working. (silver and gold)
+
 */
 
 #include "vars.h"
