@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.1 2002/06/12 00:29:42 quad Exp $
+    $Id: customize.c,v 1.2 2002/06/12 04:41:33 quad Exp $
 
 DESCRIPTION
 
@@ -23,13 +23,13 @@ TODO
 
 */
 
-#include "vars.h"
-#include "exception.h"
-#include "util.h"
-#include "gamedata.h"
-#include "printf.h"
-#include "controller.h"
-#include "vmu.h"
+#include <vars.h>
+#include <exception.h>
+#include <util.h>
+#include <gamedata.h>
+#include <printf.h>
+#include <controller.h>
+#include <vmu.h>
 
 #include "customize.h"
 
@@ -85,7 +85,7 @@ void customize_init (void)
 {
     exception_table_entry   new;
 
-    ubc_configure_channel (UBC_CHANNEL_A, 0x8ccf022a, UBC_BBR_READ | UBC_BBR_OPERAND);
+    ubc_configure_channel (UBC_CHANNEL_A, (uint32) anim_mode_b, UBC_BBR_READ | UBC_BBR_OPERAND);
 
     /* STAGE: Add exception handler for serial access. */
 
