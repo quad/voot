@@ -147,8 +147,13 @@ static uint32 phy_sync_fifo(uint8 *temp_buffer)
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Flushing the SCIF fifo...\n");
 
     /* STAGE: Flush the SCIF fifo. */ 
-    while (*SCIF_R_FS & SCIF_FS_RDF)
+    while (*SCIF_R_FS & SCIF_FS_DR)
     {
+        uint8 serial_data;
+
+        /* DEBUG: Obtain the serial data? */
+        serial_data = *SCIF_R_FRD;
+
         /* STAGE: Drop a single character from the SCIF fifo. */
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
 
@@ -167,18 +172,15 @@ static void phy_sync(void)
     uint8 temp_buffer[PHY_FIFO_SIZE];
     uint32 work_index, temp_index;
 
-#define DO_FIFO_FLUSH
-#ifdef DO_FIFO_FLUSH
+    temp_index = 0;
     if (phy_size())
         temp_index = phy_sync_fifo(temp_buffer);
-#endif
 
     /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
 
     /* DEBUG: Notification of resynchronization. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Resynchronizing the physical and SCIF fifos:\n");
 
-#ifdef DO_FIFO_SYNC
     /* STAGE: Inject the temporary buffer data in both the SCIF and physical fifos. */
     for (work_index = 0; work_index < temp_index; work_index++)
     {
@@ -212,25 +214,24 @@ static void phy_sync(void)
 
     /* DEBUG: Notification of resynchronization completion. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical and SCIF fifos resynchronized. %u bytes retained.\n", temp_index);
-#endif
 }
  
 uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
-#ifndef STUB
-    return 0;
-#else
-
     uint32 data_processed;
 
+#ifdef ACTUALLY_DO_INJECT_DATA
     /* STAGE: Add incoming data to net fifo. */
     data_processed = net_fifo_add(data, size);
+#else
+    /* DEBUG: Fake the data injection. */
+    data_processed = 0;
+#endif
 
     /* STAGE: Resynchronize net and physical fifos. */
     phy_sync();
 
     return data_processed;
-#endif
 }
 
 void* rxi_handler(register_stack *stack, void *current_vector)
@@ -240,33 +241,12 @@ void* rxi_handler(register_stack *stack, void *current_vector)
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
 
-#define STUB
-#ifdef STUB
-    /* STAGE: Flush the SCIF fifo. */ 
-//    while (*SCIF_R_FS & SCIF_FS_RDF)
-    {
-        uint8 serial_data;
-
-        /* DEBUG: Obtain the serial data? */
-        serial_data = *SCIF_R_FRD;
-
-        /* DEBUG: RXI notification. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "RXI'%c'", serial_data);
-
-        /* STAGE: Drop a single character from the SCIF fifo. */
-        *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
-
-        /* DEBUG: Notify for debugging. Make sure this crap is even working. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "...flush SCIF...\n");
-    }
-#else
     /* STAGE: Synchronize the physical fifo. */
     phy_sync();
 
     /* STAGE: If there is any remaining data in the physical fifo, pass on the interrupt. */
     if (phy_size())
         return_vector = current_vector;
-#endif
 
     return return_vector;
 }
