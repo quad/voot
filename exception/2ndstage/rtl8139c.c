@@ -21,7 +21,6 @@ TODO
 */
 
 #include "vars.h"
-#include "assert.h"
 #include "system.h"
 #include "asic.h"
 #include "exception-lowlevel.h"

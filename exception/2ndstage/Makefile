@@ -23,6 +23,9 @@ OBJS += heartbeat.o
 #OBJS += cdda_patch.o
 #OBJS += adx_tlk2.obj adx_tlk2_patch.o sj_mem.obj
 
+# SCIF Emulation layer v2
+OBJS += scif_emu.o
+
 all: $(BIN).srec $(BIN).bin
 
 $(BIN).srec: $(BIN).elf

@@ -11,6 +11,9 @@ TODO
 */
 
 #include "vars.h"
+#include "exception.h"
+#include "exception-lowlevel.h"
+#include "voot.h"
 
 #include "scif_emu.h"
 
@@ -35,15 +38,12 @@ void init_ubc_b_serial(void)
 
 static void* my_serial_handler(register_stack *stack, void *current_vector)
 {
-    uint16 instr_raw;
-    instr instr_parsed;
-    
+    uint16 *instr_raw;
+
     /* The UBC breaks with the PC + 2 from the actual access. */
-    instr_raw = &((uint16 *) (spc() - 2));
+    instr_raw = (uint16 *) (spc() - 2);
 
-    parse_instruction(&instr_parsed, instruction, stack);
-
-    if(instr_parsed.type = 
+    return current_vector;
 }
 
 void* serial_handler(register_stack *stack, void *current_vector)
