@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.4 2002/06/20 10:20:04 quad Exp $
+    $Id: exception.c,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -15,8 +15,8 @@ TODO
 */
 
 #include "vars.h"
-#include "system.h"
 #include "exception-lowlevel.h"
+#include "ubc.h"
 #include "asic.h"
 #include "util.h"
 #include "init.h"
@@ -30,96 +30,6 @@ static exception_table exp_table;
 static uint8   *vbr_buffer;
 static uint8   *vbr_buffer_katana;
 
-void ubc_init (void)
-{
-    /* STAGE: Clear both UBC channels. */
-
-    *UBC_R_BBRA     = *UBC_R_BBRB   = 0;
-    *UBC_R_BAMRA    = *UBC_R_BAMRB  = UBC_BAMR_NOASID;
-
-    /* STAGE: Initialize the global UBC configuration. */
-
-    *UBC_R_BRCR     = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
-
-    /* STAGE: Send future UBC exceptions our way... */
-
-    dbr_set (exception_handler_lowlevel);
-}
-
-void ubc_configure_channel (ubc_channel channel, uint32 breakpoint, uint16 options)
-{
-    switch (channel)
-    {
-        case UBC_CHANNEL_A :
-        {
-            *UBC_R_BARA = breakpoint;
-            *UBC_R_BBRA = options;
-
-            break;
-        }
-
-        case UBC_CHANNEL_B :
-        {
-            *UBC_R_BARB = breakpoint;
-            *UBC_R_BBRB = options;
-
-            break;
-        }
-
-        /*
-            STAGE: If it isn't one of the two channels, we really can't do
-            anything anyway...
-        */
-
-        default :
-            return;
-    }
-
-    ubc_wait ();
-}
-
-void ubc_clear_channel (ubc_channel channel)
-{
-    switch (channel)
-    {
-        case UBC_CHANNEL_A :
-        {
-            /* STAGE: Clear the UBC channel. */
-
-            *UBC_R_BBRA = 0;
-
-            /* STAGE: Clear the break bit. */
-
-            *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
-
-            break;
-        }
-
-        case UBC_CHANNEL_B :
-        {
-            /* STAGE: Clear the UBC channel. */
-
-            *UBC_R_BBRB = 0;
-
-            /* STAGE: Clear the break bit. */
-
-            *UBC_R_BRCR &= ~(UBC_BRCR_CMFB);
-
-            break;
-        }
-
-        /*
-            STAGE: If it isn't one of the two channels, we really can't do
-            anything anyway...
-        */
-
-        default :
-            return;
-    }
-
-    ubc_wait ();
-}
-
 static void init_vbr_table (void)
 {
     /* STAGE: INTERRUPT magic sprinkles of evil to the VOOT VBR. */
@@ -131,10 +41,11 @@ static void init_vbr_table (void)
 
     /* STAGE: GENERAL magic sprinkes of evil to the VOOT VBR. */
 
-    memcpy (VBR_INT (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
+    memcpy (VBR_GEN (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
             general_sub_handler,
             general_sub_handler_end - general_sub_handler
            );
+
     /* STAGE: Relocate the Katana VBR index - bypass our entry logic. */
 
     vbr_buffer_katana = vbr_buffer + (sizeof (uint16) * 4);
@@ -160,7 +71,7 @@ static bool is_vbr_switch_time (void)
                           interrupt_sub_handler_end - interrupt_sub_handler
                          );
 
-    gen_changed = memcmp (VBR_INT (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
+    gen_changed = memcmp (VBR_GEN (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
                           general_sub_handler,
                           general_sub_handler_end - general_sub_handler
                          );
@@ -170,7 +81,7 @@ static bool is_vbr_switch_time (void)
     return (int_changed || gen_changed) && exp_table.ubc_exception_count >= 5;
 }
 
-uint32 add_exception_handler (const exception_table_entry *new_entry)
+uint32 exception_add_handler (const exception_table_entry *new_entry)
 {
     uint32  index;
 
@@ -196,7 +107,7 @@ void* exception_handler (register_stack *stack)
 
     vbr_buffer = vbr ();
 
-    /* STAGE: Increase our counters and set the proper back_vectors */
+    /* STAGE: Increase our counters and set the proper back_vectors. */
 
     switch (stack->exception_type)
     {
@@ -257,20 +168,24 @@ void* exception_handler (register_stack *stack)
 
     if (do_vbr_switch)
     {
-        bool vbr_switched = exp_table.vbr_switched;
+        bool vbr_switched;
+
+        /* STAGE: Save the switch status before we might reinitialize. */
+
+        vbr_switched = exp_table.vbr_switched;
 
         /* STAGE: Initialize the VBR hooks. */
 
         init_vbr_table ();
 
-        /* STAGE: Handle ASIC exceptions. */
-
-        init_asic_handler ();
-
         /* STAGE: Handle the first initialization. */
 
         if (!vbr_switched)
         {
+            /* STAGE: Handle ASIC exceptions. */
+
+            asic_init_handler ();
+
             /* STAGE: Handle the initialization core. */
 
             np_configure ();

@@ -1,6 +1,6 @@
 /*  serial.h
 
-    $Id: serial.h,v 1.2 2002/06/20 10:20:05 quad Exp $
+    $Id: serial.h,v 1.3 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -33,5 +33,8 @@
 /* NOTE: Module definitions. */
 
 void    serial_set_baudrate (uint16 baud_rate);
+void    serial_write_char   (char c);
+void    serial_flush        (void);
+void    serial_write_buffer (uint8 *data, uint32 len);
 
 #endif

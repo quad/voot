@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.3 2002/06/12 10:29:03 quad Exp $
+    $Id: customize.c,v 1.4 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -9,8 +9,6 @@ DESCRIPTION
 TODO
 
     Versus mode needs to be reversed.
-
-    Need Cable Versus selection screen animation IDs.
 
     Menu select side should be checked instead of game side in Cable Versus mode.
 
@@ -24,6 +22,7 @@ TODO
 */
 
 #include <vars.h>
+#include <ubc.h>
 #include <exception.h>
 #include <util.h>
 #include <malloc.h>
@@ -59,6 +58,26 @@ static uint8            file_number = 0;
 static uint8           *file_buffer = NULL;
 static customize_data*  colors[2][VR_SENTINEL]; 
 
+#if 0
+static uint8           *color_buffers[] = {
+                                            NULL,           /* NOTE: [0] Dordray. */
+                                  (uint8 *) 0x8ce547f0,     /* NOTE: [1] Bal-bados. */
+                                            NULL,           /* NOTE: [2] Cypher. */
+                                  (uint8 *) 0x8ce29e30,     /* NOTE: [3] Grys-Vok. */
+                                  (uint8 *) 0x8ce4a890,     /* NOTE: [4] Apharmd B. */
+                                            NULL,           /* NOTE: [5] Bal-Keros or Apharmd B/B. */
+                                  (uint8 *) 0x8ce28470,     /* NOTE: [6] Raiden. */
+                                            NULL,           /* NOTE: [7] Temjin. */
+                                            NULL,           /* NOTE: [8] Fei-Yen. */
+                                            NULL,           /* NOTE: [9] Angelan. */
+                                            NULL,           /* NOTE: [a] Specineff. */
+                                            NULL,           /* NOTE: [b] Apharmd S. */
+                                            NULL,           /* NOTE: [c] Ajim. */
+                                            NULL,           /* NOTE: [d] Bal-Baros. */
+                                            NULL,           /* NOTE: [e] Fei-Yen the something. (Bad) */
+                                            NULL,           /* NOTE: [f] Maybe Tangram? (Bad) */
+                                          };
+#endif
 
 /* NOTE: References into the gamedata structure. */
 
@@ -95,7 +114,7 @@ void customize_init (void)
     new.code    = EXP_CODE_UBC;
     new.handler = customize_handler;
 
-    add_exception_handler (&new);
+    exception_add_handler (&new);
 }
 
 static void customize_clear_player (uint32 player, bool do_head)
@@ -104,11 +123,12 @@ static void customize_clear_player (uint32 player, bool do_head)
 
     /* STAGE: Free and null out all the customization for a particular player. */
 
-    for (vr = 0; vr < VR_SENTINEL ; vr++)
+    for (vr = 0; vr < VR_SENTINEL; vr++)
     {
         if (colors[player][vr])
         {
             free (colors[player][vr]);
+
             colors[player][vr] = NULL;
         }
     }
@@ -327,9 +347,10 @@ static void maybe_do_load_customize (void)
             temp_head = file_buffer[CUSTOMIZE_VMU_HEAD_IDX];
 
             free (file_buffer);
-            colors[player][vr] = malloc (sizeof (customize_data));
 
             /* STAGE: Make sure we actually obtained the memory for the customization. */
+
+            colors[player][vr] = malloc (sizeof (customize_data));
 
             if (colors[player][vr])
             {
@@ -349,12 +370,12 @@ static void maybe_do_load_customize (void)
 
 static void* my_anim_handler (register_stack *stack, void *current_vector)
 {
-    static uint16 save_mode_a       = 0;
-    static uint16 save_mode_b       = 0;
-    static uint32 play_vector       = 0;
-    static uint32 osd_vector        = 0;
-    static int32 p1_health_save[2]  = {-1, -1};
-    static int32 p2_health_save[2]  = {-1, -1};
+    static uint16   save_mode_a         = 0;
+    static uint16   save_mode_b         = 0;
+    static void    *play_vector         = 0;
+    static void    *osd_vector          = 0;
+    static int32    p1_health_save[2]   = {-1, -1};
+    static int32    p2_health_save[2]   = {-1, -1};
 
     /* STAGE: This code occurs are every animation changeover. (game code latch) */
 
@@ -394,13 +415,14 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
     /* STAGE: See if we need to load customization information. */
 
     if ((*anim_mode_a == 0x0 && *anim_mode_b == 0x2)  ||    /* NOTE: Training Mode select. */
+        (*anim_mode_a == 0x6 && *anim_mode_b == 0x4)  ||    /* NOTE: Versus Cable select. */
         (*anim_mode_a == 0x0 && *anim_mode_b == 0x5)  ||    /* NOTE: Single Player 3d select. */
         (*anim_mode_a == 0x2 && *anim_mode_b == 0x9)  ||    /* NOTE: Single Player quick select. */
         (*anim_mode_a == 0x3 && *anim_mode_b == 0x29) ||    /* NOTE: Single Player quick continue. */
         (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* NOTE: Versus select. */
     {
-        voot_vr_id  p1_vr = VR_SENTINEL;
-        voot_vr_id  p2_vr = VR_SENTINEL;
+        voot_vr_id  p1_vr;
+        voot_vr_id  p2_vr;
 
         /* STAGE: Handle customization load process. */
 
@@ -412,12 +434,12 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
         p1_vr = *p1_vr_loc;
         p2_vr = *p2_vr_loc;
 
-        if (p1_vr >= 0 && p1_vr < VR_SENTINEL && colors[0][p1_vr])
+        if ((p1_vr >= 0) && (p1_vr < VR_SENTINEL) && colors[0][p1_vr])
             cust_head[0] = colors[0][p1_vr]->head;
         else
             cust_head[0] = 0x0;
 
-        if (p2_vr >= 0 && p2_vr < VR_SENTINEL && colors[1][p2_vr])
+        if ((p2_vr >= 0) && (p2_vr < VR_SENTINEL) && colors[1][p2_vr])
             cust_head[1] = colors[1][p2_vr]->head;
         else
             cust_head[1] = 0x0;
@@ -448,7 +470,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
             /* STAGE: Locate the OSD vector. */
 
             if (!osd_vector)
-                osd_vector = (uint32) search_sysmem_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
+                osd_vector = search_sysmem_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: If we found it, display the health OSD. */
 
@@ -496,10 +518,10 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
     /*
         STAGE: Check if we're in a VR Customization module.
         
-        If so, enable Button Y to start VR Test.
+        If so, enable Button Y to start VR Test. The module value only
+        applies for 5.66.
+        
     */
-
-    /* NOTE: This value applies only for 5.66. */
 
     if (*anim_mode_a == 0x0 && *anim_mode_b == 0x0 && !strcmp ("vrcust.bin", (const char *) 0x8ccf9edc))
     {

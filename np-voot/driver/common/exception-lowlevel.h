@@ -1,6 +1,6 @@
 /*  exception-lowlevel.h
 
-    $Id: exception-lowlevel.h,v 1.2 2002/06/20 10:20:04 quad Exp $
+    $Id: exception-lowlevel.h,v 1.3 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -23,9 +23,8 @@ extern uint8    interrupt_sub_handler[];
 extern uint8    interrupt_sub_handler_base[];
 extern uint8    interrupt_sub_handler_end[];
 
-extern void     exception_handler_lowlevel  (void);
-extern void     my_exception_finish         (void);
-extern void     ubc_wait                    (void);
+extern void     ubc_handler_lowlevel    (void);
+extern void     my_exception_finish     (void);
 
 extern uint8    bios_patch_base[];
 extern void *   bios_patch_handler;

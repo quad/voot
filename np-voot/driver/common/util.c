@@ -1,6 +1,6 @@
 /*  util.c
 
-    $Id: util.c,v 1.3 2002/06/12 10:29:01 quad Exp $
+    $Id: util.c,v 1.4 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -12,32 +12,6 @@ DESCRIPTION
 #include "searchmem.h"
 
 #include "util.h"
-
-/* CREDIT: Borrowed from Dan Potter's libc. */
-
-void* memmove (void *dest, const void *src, uint32 count)
-{
-    uint8 *tmp, *s;
-
-    if (dest <= src)
-    {
-        tmp = (uint8 *) dest;
-        s   = (uint8 *) src;
-
-        while (count--)
-            *tmp++ = *s++;
-    }
-    else
-    {
-        tmp = (uint8 *) dest + count;
-        s   = (uint8 *) src + count;
-
-        while (count--)
-            *--tmp = *--s;
-    }
-
-    return dest;
-}
 
 /*
     Store Queue functions.

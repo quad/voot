@@ -1,6 +1,6 @@
 /*  exception.h 
 
-    $Id: exception.h,v 1.3 2002/06/20 10:20:04 quad Exp $
+    $Id: exception.h,v 1.4 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -38,19 +38,9 @@ typedef struct
     bool        vbr_switched;
 } exception_table;
 
-typedef enum
-{
-    UBC_CHANNEL_A,
-    UBC_CHANNEL_B
-} ubc_channel;
-
 /* NOTE: Module definitions. */
 
-void    ubc_init                (void);
-void    ubc_configure_channel   (ubc_channel channel, uint32 breakpoint, uint16 options);
-void    ubc_clear_channel       (ubc_channel channel);
-
-uint32  add_exception_handler   (const exception_table_entry *new_entry);
+uint32  exception_add_handler   (const exception_table_entry *new_entry);
 void *  exception_handler       (register_stack *stack);
 
 #endif

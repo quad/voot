@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.4 2002/06/20 10:20:05 quad Exp $
+    $Id: voot.c,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -26,6 +26,13 @@ bool voot_packet_handle_default (voot_packet *packet)
     {
         case VOOT_PACKET_TYPE_COMMAND :
         {
+            /* STAGE: Ensure there is actually a command. */
+
+            if (!(packet->header.size))
+                break;
+
+            /* STAGE: Handle the version command. */
+
             if (packet->buffer[0] == VOOT_COMMAND_TYPE_VERSION)
             {
                 uint32  freesize;
@@ -33,7 +40,7 @@ bool voot_packet_handle_default (voot_packet *packet)
 
                 malloc_stat (&freesize, &max_freesize);
 
-                __voot_debug ("Netplay VOOT Extensions, DEBUG [mem: %u block: %u]", freesize, max_freesize);
+                __voot_debug ("VOX common, PRE-RELEASE [mem: %u block: %u]", freesize, max_freesize);
             }
 
             break;

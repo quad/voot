@@ -1,6 +1,6 @@
 /*  asic.h
 
-    $Id: asic.h,v 1.3 2002/06/20 10:20:04 quad Exp $
+    $Id: asic.h,v 1.4 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -66,8 +66,8 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-uint32  add_asic_handler        (const asic_lookup_table_entry *new_entry);
-void *  handle_asic_exception   (register_stack *stack, void *current_vector);
-void    init_asic_handler       (void);
+uint32  asic_add_handler        (const asic_lookup_table_entry *new_entry);
+void *  asic_handle_exception   (register_stack *stack, void *current_vector);
+void    asic_init_handler       (void);
 
 #endif

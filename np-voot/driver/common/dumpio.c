@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.5 2002/06/20 10:20:04 quad Exp $
+    $Id: dumpio.c,v 1.6 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -190,6 +190,7 @@ bool dump_packet_handler (voot_packet *packet)
                     heartbeat logic and some simple IPC be implemented?
                 */
 
+
                 case VOOT_COMMAND_TYPE_SCREEN :
                     dump_framebuffer ();
                     break;
@@ -205,9 +206,6 @@ bool dump_packet_handler (voot_packet *packet)
                 case VOOT_COMMAND_TYPE_DUMPSELECT :
                     dump_buffer ((const uint8 *) option, 1024);
                     break;
-
-                default :
-                    return old_voot_packet_handler (packet);
             }
             
             break;
@@ -216,12 +214,9 @@ bool dump_packet_handler (voot_packet *packet)
         case VOOT_PACKET_TYPE_DUMP :
             dump_add (packet->buffer, packet->header.size);
             break;
-
-        default :
-            return old_voot_packet_handler (packet);
     }
 
-    return FALSE;
+    return old_voot_packet_handler (packet);
 }
 
 void dump_init (void)

@@ -1,11 +1,11 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.4 2002/06/20 10:20:04 quad Exp $
+# $Id: Makefile,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 
 # FIRST - Base interrupt and exception logic.
-DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o
+DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o ubc.o
 
 # SECOND - Driver initializer.
 DRIVER_OBJS += init.o

@@ -1,6 +1,6 @@
 !   exception-lowlevel.s
 !
-!   $Id: exception-lowlevel.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!   $Id: exception-lowlevel.s,v 1.3 2002/06/23 03:22:52 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -11,7 +11,7 @@
 
     .section .text
 
-    .global _exception_handler_lowlevel
+    .global _ubc_handler_lowlevel
     .global _general_sub_handler
     .global _general_sub_handler_base
     .global _general_sub_handler_end
@@ -22,7 +22,6 @@
     .global _interrupt_sub_handler
     .global _interrupt_sub_handler_base
     .global _interrupt_sub_handler_end
-    .global _ubc_wait
     .global _bios_patch_base
     .global _bios_patch_handler
     .global _bios_patch_end
@@ -31,10 +30,10 @@
 ! HANDLE GENERAL EXCEPTIONS
 !
 
-_exception_handler_lowlevel:
-general_exception:
+_ubc_handler_lowlevel:
+ubc_exception:
 !BEGIN REGISTER SAVE
-!GENERAL
+!UBC via DBR
     mov.l   r0, @-r15
     mov     #1, r0
     mov.l   r0, @-r15
@@ -134,7 +133,7 @@ _general_sub_handler:
 general_exception_handler:
     nop
     mov.l   r0, @-r15
-    mov     #3, r0
+    mov     #1, r0
     mov.l   r0, @-r15
     mov.l   general_handler, r0
     jmp     @r0
@@ -174,7 +173,7 @@ _cache_sub_handler:
 cache_exception_handler:
     nop
     mov.l   r0, @-r15
-    mov     #3, r0
+    mov     #2, r0
     mov.l   r0, @-r15
     mov.l   cache_handler, r0
     jmp     @r0
@@ -218,34 +217,6 @@ _interrupt_sub_handler_base:
     bra     interrupt_exception_handler
     nop
 _interrupt_sub_handler_end:
-
-!
-! Wait enough instructions for the UBC to be refreshed
-!
-
-_ubc_wait:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rts
-    nop
 
 !
 ! Test BIOS bypass functionality.

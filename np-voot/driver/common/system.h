@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.4 2002/06/20 10:20:05 quad Exp $
+    $Id: system.h,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -60,16 +60,20 @@
 
 #define REG_EXPEVT          (REGISTER(uint32) (0xFF000024))
 #define REG_INTEVT          (REGISTER(uint32) (0xFF000028))
+#define REG_TRA             (REGISTER(uint32) (0xFF000020))
 
-/* NOTE: Exception TYPEs and CODEs. */
+/* NOTE: Exception types from the lowlevel handler. */
 
 #define EXP_TYPE_GEN        1
 #define EXP_TYPE_CACHE      2
 #define EXP_TYPE_INT        3
 
+/* NOTE: SH4 exception codes. */
+
 #define EXP_CODE_INT9       0x320
 #define EXP_CODE_INT11      0x360
 #define EXP_CODE_INT13      0x3A0
+#define EXP_CODE_TRAP       0x160
 #define EXP_CODE_UBC        0x1E0
 #define EXP_CODE_RXI        0x720
 #define EXP_CODE_BAD        0xFFF
@@ -134,12 +138,16 @@ extern void     dbr_set     (const void *set);
 extern void *   vbr         (void);
 extern void     vbr_set     (const void *set);
 
+extern void *   spc         (void); 
+extern void     spc_set     (const void *set);
+
 extern uint32   r15         (void);
-extern uint32   spc         (void);
 extern uint32   sr          (void);
 extern uint32   fpscr       (void);
 extern uint32   gbr         (void);
 
 extern void     flush_cache (void);
+
+extern void     ubc_wait    (void);
 
 #endif

@@ -1,6 +1,6 @@
 !   system.s
 !
-!   $Id: system.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!   $Id: system.s,v 1.3 2002/06/23 03:22:52 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -12,12 +12,14 @@
     .global _vbr_set
     .global _dbr
     .global _dbr_set
-    .global _r15
     .global _spc
+    .global _spc_set
+    .global _r15
     .global _sr
     .global _fpscr
     .global _gbr
     .global _flush_cache
+    .global _ubc_wait
 
 _vbr:
     stc     VBR, r0
@@ -39,13 +41,18 @@ _dbr_set:
     rts
     nop
 
-_r15:
-    mov     r15, r0
+_spc:
+    stc     SPC, r0
     rts
     nop
 
-_spc:
-    stc     SPC, r0
+_spc_set:
+    ldc     r4, SPC
+    rts
+    nop
+
+_r15:
+    mov     r15, r0
     rts
     nop
 
@@ -114,12 +121,40 @@ loop1:
     mov.l   r1, @(r0, r5)
     bf      loop1
     nop
+
     nop
     nop
     nop
     nop
+    nop
+    ldc.l   @r15+, sr
+    rts
     nop
 
-    ldc.l   @r15+, sr
+!
+! Wait enough instructions for the UBC to be refreshed
+!
+
+_ubc_wait:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
     rts
     nop

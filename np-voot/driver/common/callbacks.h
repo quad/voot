@@ -1,6 +1,6 @@
 /*  callbacks.h
 
-    $Id: callbacks.h,v 1.2 2002/06/20 10:20:04 quad Exp $
+    $Id: callbacks.h,v 1.3 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,8 @@ DESCRIPTION
 
 #ifndef __COMMON_CALLBACKS_H__
 #define __COMMON_CALLBACKS_H__
+
+#include "system.h"
 
 /* NOTE: External definitions. */
 

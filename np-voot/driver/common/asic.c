@@ -1,6 +1,6 @@
 /*  asic.c
 
-    $Id: asic.c,v 1.2 2002/06/12 10:32:31 quad Exp $
+    $Id: asic.c,v 1.3 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -26,7 +26,7 @@ TODO
 
 static asic_lookup_table    asic_table;
 
-uint32 add_asic_handler (const asic_lookup_table_entry *new_entry)
+uint32 asic_add_handler (const asic_lookup_table_entry *new_entry)
 {
     uint32  index;
 
@@ -68,7 +68,7 @@ uint32 add_asic_handler (const asic_lookup_table_entry *new_entry)
     return 0;
 }
 
-void* handle_asic_exception (register_stack *stack, void *current_vector)
+void* asic_handle_exception (register_stack *stack, void *current_vector)
 {
     uint32  index;
     uint32  code;
@@ -111,30 +111,30 @@ void* handle_asic_exception (register_stack *stack, void *current_vector)
     return new_vector;
 }
 
-void init_asic_handler (void)
+void asic_init_handler (void)
 {
     exception_table_entry new_entry;
 
     /* STAGE: Works for all the interrupt types... */
 
     new_entry.type      = EXP_TYPE_INT;
-    new_entry.handler   = handle_asic_exception;
+    new_entry.handler   = asic_handle_exception;
 
     /* STAGE: ASIC handling of interrupt 13. */
 
     new_entry.code      = EXP_CODE_INT13;
 
-    add_exception_handler (&new_entry);
+    exception_add_handler (&new_entry);
 
     /* STAGE: ASIC handling of interrupt 11. */
 
     new_entry.code      = EXP_CODE_INT11;
 
-    add_exception_handler (&new_entry);
+    exception_add_handler (&new_entry);
 
     /* STAGE: ASIC handling of interrupt 9. */
 
     new_entry.code      = EXP_CODE_INT9;
 
-    add_exception_handler (&new_entry);
+    exception_add_handler (&new_entry);
 }

@@ -1,6 +1,6 @@
 /*  module.h
 
-    $Id: module.h,v 1.3 2002/06/13 01:08:35 quad Exp $
+    $Id: module.h,v 1.4 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -35,5 +35,6 @@ void    module_configure    (void);
 void    module_bios_vector  (void);
 
 void *  debug_handler       (register_stack *stack, void *current_vector);
+void *  trap_handler        (register_stack *stack, void *current_vector);
 
 #endif

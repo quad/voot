@@ -1,6 +1,6 @@
 /*  util.h
 
-    $Id: util.h,v 1.4 2002/06/20 10:20:05 quad Exp $
+    $Id: util.h,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 */
 
@@ -33,6 +33,7 @@
 
 void *  memcpy  (void *dest, const void *src, uint32 n);
 int     memcmp  (const void *s1, const void *s2, uint32 n);
+void *  memmove (void *dest, const void *src, uint32 n);
 void *  memset  (void *s, int32 c, uint32 n);
 uint32  strlen  (const char *s);
 int     strcmp  (const char *s1, const char *s2);
@@ -40,7 +41,6 @@ char *  strncpy (char *dest, const char *src, uint32 n);
 
 /* NOTE: Module defintions. */
 
-void  * memmove             (void *dest, const void *src, uint32 count);
 void *  sq_cpy              (void *dest, const uint32 *src, uint32 n);
 uint32  time                (void);
 

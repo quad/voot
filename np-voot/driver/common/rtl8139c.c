@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.4 2002/06/20 10:20:05 quad Exp $
+    $Id: rtl8139c.c,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -277,7 +277,7 @@ bool rtl_init(void)
 
         /* STAGE: Add hook to interrupt table */
 
-        rtl_info.hdl_tbl_index = add_asic_handler (&entry);
+        rtl_info.hdl_tbl_index = asic_add_handler (&entry);
 
         if (!rtl_info.hdl_tbl_index)    /* We couldn't attach an exception handler - weird, huh? */
         {

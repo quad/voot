@@ -1,6 +1,6 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.4 2002/06/20 10:20:04 quad Exp $
+    $Id: heartbeat.c,v 1.5 2002/06/23 03:22:52 quad Exp $
 
 DESCRIPTION
 
@@ -24,7 +24,7 @@ void heartbeat_init (void)
     new_irq.mask0   = ASIC_MASK0_VSYNC;
     new_irq.handler = ta_handler;
 
-    add_asic_handler (&new_irq);
+    asic_add_handler (&new_irq);
 }
 
 static void* my_heartbeat (register_stack *stack, void *current_vector)
