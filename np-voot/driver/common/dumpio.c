@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: dumpio.c,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -12,6 +12,7 @@ DESCRIPTION
 #include "voot.h"
 #include "gamedata.h"
 #include "util.h"
+#include "system.h"
 #include "video.h"
 
 #include "dumpio.h"
@@ -76,11 +77,7 @@ void dump_buffer (const uint8 *in_data, uint32 in_data_length)
         in_data_segment = in_data + (segment_size * index);
 
         if (!voot_send_packet (VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
-        {
-            voot_debug ("Error sending packet in main dump loop! Abort!");
-
             break;
-        }
 
         /* STAGE: Delay so we don't flood the receiving system. */
 
@@ -177,8 +174,6 @@ bool dump_packet_handler (voot_packet *packet)
                 {
                     dump_start (option);
 
-                    voot_debug ("Processed DUMPON command. (%x)", option);
-
                     break;
                 }
 
@@ -187,8 +182,6 @@ bool dump_packet_handler (voot_packet *packet)
                     uint32  bytes;
 
                     bytes = dump_stop ();
-
-                    voot_debug ("Processed DUMPOFF command. (%u)", bytes);
 
                     break;
                 }
@@ -218,7 +211,7 @@ bool dump_packet_handler (voot_packet *packet)
                     break;
 
                 default :
-                    break;
+                    return old_voot_packet_handler (packet);
             }
             
             break;
@@ -229,10 +222,10 @@ bool dump_packet_handler (voot_packet *packet)
             break;
 
         default :
-            break;
+            return old_voot_packet_handler (packet);
     }
 
-    return old_voot_packet_handler (packet);
+    return FALSE;
 }
 
 void dump_init (void)

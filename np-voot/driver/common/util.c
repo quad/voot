@@ -1,6 +1,6 @@
 /*  util.c
 
-    $Id: util.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: util.c,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -9,12 +9,9 @@ DESCRIPTION
 */
 
 #include "vars.h"
-#include "voot.h"
+#include "searchmem.h"
 
 #include "util.h"
-
-static uint8       *malloc_root;
-static const uint8  malloc_key[] =  { 0xe6, 0x2f, 0xc6, 0x2f, 0xfc, 0x7f, 0x02, 0x00 };
 
 /* CREDIT: Borrowed from Dan Potter's libc. */
 
@@ -40,92 +37,6 @@ void* memmove (void *dest, const void *src, uint32 count)
     }
 
     return dest;
-}
-
-/*
-    Memory searching functions.
-
-    TODO: These should all be moved to their own module.
-*/
-
-uint8* search_sysmem (const uint8 *key, uint32 key_size)
-{
-    return search_sysmem_at (key, key_size, SYS_MEM_START, SYS_MEM_END);
-}
-
-uint8* search_sysmem_at (const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc)
-{
-    const uint8    *cur_loc;
-
-    for (cur_loc = start_loc; cur_loc < end_loc; cur_loc++)
-    {
-        if (*cur_loc == key[0])
-        {
-            if(!memcmp ((const uint8 *) cur_loc, key, key_size))
-                return (uint8 *) cur_loc;
-        }
-    }
-
-    return NULL;
-}
-
-void grep_memory (const uint8 *key, uint32 key_size)
-{
-    uint8  *mem_loc;
-
-    voot_debug ("Grepping memory for '%s' ...", key);
-
-    mem_loc = SYS_MEM_START;
-
-    while ((mem_loc = search_sysmem_at (key, key_size, mem_loc, SYS_MEM_END)))
-    {
-        voot_debug ("Match @ %x", mem_loc);
-        mem_loc++;
-    }
-
-    voot_debug ("Grep done!");
-}
-
-/*
-    Memory allocation functions.
-    
-    CREDIT: Accessor to Katana syMalloc().
-
-    TODO: This should be moved to its own module.
-*/
-
-void malloc_init (void)
-{
-    if (!malloc_root)
-        malloc_root = search_sysmem (malloc_key, sizeof (malloc_key));
-}
-
-void malloc_stat (uint32 *freesize, uint32 *max_freesize)
-{
-    if (malloc_root)
-        return (*(void (*)()) malloc_root) (freesize, max_freesize);
-}
-
-void* malloc (uint32 size)
-{
-    void *mem;
-
-    if (malloc_root)
-    {
-        mem = (*(void* (*)()) (malloc_root + MALLOC_MALLOC_INDEX)) (size);
-
-        return mem;
-    }
-    else
-    {
-        return NULL;
-    }
-}
-
-void free (void *data)
-{
-    if (malloc_root)
-        return (*(void (*)()) (malloc_root + MALLOC_FREE_INDEX)) (data);
 }
 
 /*

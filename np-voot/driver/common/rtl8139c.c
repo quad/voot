@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.1 2002/06/11 22:21:36 quad Exp $
+    $Id: rtl8139c.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -28,6 +28,7 @@ TODO
 #include "asic.h"
 #include "exception-lowlevel.h"
 #include "util.h"
+#include "malloc.h"
 
 #include "rtl8139c.h"
 
@@ -397,7 +398,7 @@ bool rtl_tx (const uint8* frame, uint32 length)
 
     length = (length < 60) ? 60 : length;   /* NOTE: The 8139c doesn't pad the frames. */
 
-    RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) = length;
+    RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) = length;
 
     /* STAGE: And use the next descriptor on the next TX. */
 

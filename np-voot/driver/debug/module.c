@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.3 2002/06/12 09:33:53 quad Exp $
+    $Id: module.c,v 1.4 2002/06/12 10:29:03 quad Exp $
 
 DESCRIPTION
 
@@ -13,7 +13,8 @@ DESCRIPTION
 
 #include <vars.h>
 #include <exception.h>
-#include <util.h>
+#include <searchmem.h>
+#include <gamedata.h>
 #include <printf.h>
 #include <rtl8139c.h>
 #include <dumpio.h>
@@ -74,6 +75,7 @@ void module_configure (void)
         {
             if (rtl_init ())
             {
+                dump_init ();
             }
         }
     }
@@ -113,7 +115,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
             /* STAGE: Locate the OSD vector. */
 
             if (!osd_vector)
-                osd_vector = (uint32) search_sysmem_at (osd_func_key, sizeof (osd_func_key), GAME_MEM_START, SYS_MEM_END);
+                osd_vector = (uint32) search_sysmem_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: If we found it, display the health OSD. */
 
@@ -125,7 +127,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
                 snprintf (cbuffer, sizeof (cbuffer), "V.A 1 [%u > %u]", *p1_varmour_base, *p1_varmour_mod);
                 (*(void (*)()) osd_vector) (5, 355, cbuffer);
 
-                snprintf (cbuffer, sizeof(cbuffer), "Dam 2 [%u > %u | %d]", *p2_health_real, *p2_health_stat, p2_health_save[1]);
+                snprintf (cbuffer, sizeof (cbuffer), "Dam 2 [%u > %u | %d]", *p2_health_real, *p2_health_stat, p2_health_save[1]);
                 (*(void (*)()) osd_vector) (5, 400, cbuffer);
 
                 snprintf (cbuffer, sizeof (cbuffer), "V.A 2 [%u > %u]", *p2_varmour_base, *p2_varmour_mod);

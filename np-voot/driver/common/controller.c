@@ -1,6 +1,6 @@
 /*  controller.c
 
-    $Id: controller.c,v 1.1 2002/06/11 23:21:25 quad Exp $
+    $Id: controller.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -11,6 +11,7 @@ DESCRIPTION
 
 #include "vars.h"
 #include "util.h"
+#include "searchmem.h"
 
 #include "controller.h"
 

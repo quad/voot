@@ -1,19 +1,16 @@
 /*  vmu.c
 
-    $Id: vmu.c,v 1.1 2002/06/11 21:56:21 quad Exp $
+    $Id: vmu.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
     VMU access functions into VOOT's (Katana's?) actual code.
 
-TODO
-
-    Check the new DC-VOOT-JP and see whether this logic will work with it.
-
 */
 
 #include "vars.h"
 #include "util.h"
+#include "searchmem.h"
 
 #include "vmu.h"
 
@@ -30,18 +27,18 @@ static const uint8  vmu_mount_key[] =   { 0x22, 0x4f, 0xfc, 0x7f, 0x0e, 0xd3, 0x
 
 void vmu_init (void)
 {
-    if (!vmu_load_root)
-        vmu_load_root = search_sysmem (vmu_load_key, sizeof(vmu_load_key));
+    if (!vmu_load_root || memcmp (vmu_load_root, vmu_load_key, sizeof (vmu_load_key)))
+        vmu_load_root = search_sysmem (vmu_load_key, sizeof (vmu_load_key));
 
-    if (!vmu_status_root)
-        vmu_status_root = search_sysmem (vmu_status_key, sizeof(vmu_status_key));
+    if (!vmu_status_root || memcmp (vmu_status_root, vmu_status_key, sizeof (vmu_status_key)))
+        vmu_status_root = search_sysmem (vmu_status_key, sizeof (vmu_status_key));
 
-    if (!vmu_exists_root)
-        vmu_exists_root = search_sysmem (vmu_exists_key, sizeof(vmu_exists_key));
+    if (!vmu_exists_root || memcmp (vmu_exists_root, vmu_exists_key, sizeof (vmu_exists_key)))
+        vmu_exists_root = search_sysmem (vmu_exists_key, sizeof (vmu_exists_key));
 
-    if (!vmu_mount_root)
+    if (!vmu_mount_root || memcmp (vmu_mount_root, vmu_mount_key, sizeof (vmu_mount_key)))
     {
-        vmu_mount_root = search_sysmem (vmu_mount_key, sizeof(vmu_mount_key));
+        vmu_mount_root = search_sysmem (vmu_mount_key, sizeof (vmu_mount_key));
 
         /*
             STAGE: Determine VOOT's mount data location.
@@ -52,7 +49,7 @@ void vmu_init (void)
             It's a hack, but it works in both US and JP versions of DC-VOOT. 
         */
 
-        vmu_mount_buffer = *( ( (uint32 *) search_sysmem ((uint8 *) &vmu_mount_root, sizeof(vmu_mount_root)) ) - 1 );
+        vmu_mount_buffer = *( ( (uint32 *) search_sysmem ((uint8 *) &vmu_mount_root, sizeof (vmu_mount_root)) ) - 1 );
     }
 }
 

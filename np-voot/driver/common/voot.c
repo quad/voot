@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: voot.c,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -9,7 +9,9 @@ DESCRIPTION
 */
 
 #include "vars.h"
+#include "biudp.h"
 #include "util.h"
+#include "malloc.h"
 #include "printf.h"
 
 #include "voot.h"
@@ -31,7 +33,7 @@ bool voot_packet_handle_default (voot_packet *packet)
 
                 malloc_stat (&freesize, &max_freesize);
 
-                voot_debug ("Netplay VOOT Extensions, DEBUG [%u/%u]", freesize, max_freesize);
+                __voot_debug ("Netplay VOOT Extensions, DEBUG [%u/%u]", freesize, max_freesize);
             }
 
             break;
@@ -64,11 +66,14 @@ bool voot_handle_packet (ether_info_packet_t *frame, udp_header_t *udp, uint16 u
 
     packet = (voot_packet *) ((uint8 *) udp + sizeof (udp_header_t));
 
-    /* TODO: Add voot packet paranoia here. */
-
     /* STAGE: Fix the size byte order. */
 
     packet->header.size = ntohs (packet->header.size);
+
+    /* STAGE: Ensure the packet size is correct (or at least manageable.) */
+
+    if ((udp_data_length < sizeof (packet->header)) || (udp_data_length < (sizeof (packet->header) + packet->header.size)))
+        return FALSE;
 
     /* STAGE: Pass on to the first packet handler. */
 

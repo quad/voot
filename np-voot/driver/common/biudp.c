@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: biudp.c,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -11,6 +11,7 @@ DESCRIPTION
 #include "vars.h"
 #include "rtl8139c.h"
 #include "util.h"
+#include "malloc.h"
 #include "video.h"
 
 #include "biudp.h"
@@ -21,7 +22,7 @@ void biudp_init (const biudp_control_t *in_control)
 {
     /* STAGE: Copy the input control into global control structure. */
 
-    memcpy (&control, in_control, sizeof(biudp_control_t));
+    memcpy (&control, in_control, sizeof (biudp_control_t));
 
     control.initialized = 1;
 }

@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: system.h,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 */
 
@@ -22,6 +22,9 @@
 #define EXP_CODE_UBC        0x1E0
 #define EXP_CODE_RXI        0x720
 #define EXP_CODE_BAD        0xFFF
+
+#define SYS_MEM_START       0x8C010000
+#define SYS_MEM_END         0x8CFFFFFF
 
 typedef struct
 {

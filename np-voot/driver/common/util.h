@@ -1,6 +1,6 @@
 /*  util.h
 
-    $Id: util.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: util.h,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 */
 
@@ -8,10 +8,6 @@
 #define __COMMON_UTIL_H__
 
 #include "vars.h"
-
-#define SYS_MEM_START       ((uint8 *) 0x8C010000)
-#define GAME_MEM_START      ((uint8 *) 0x8C270000)
-#define SYS_MEM_END         ((uint8 *) 0x8CFFFFFF)
 
 #define MALLOC_MALLOC_INDEX 0x84
 #define MALLOC_FREE_INDEX   0x152
@@ -42,16 +38,9 @@ uint32  strlen  (const char *s);
 int     strcmp  (const char *s1, const char *s2);
 char *  strncpy (char *dest, const char *src, uint32 n);
 
-/* NOTE: Our prototypes. */
+/* NOTE: Module prototypes. */
 
 void  * memmove             (void *dest, const void *src, uint32 count);
-uint8 * search_sysmem       (const uint8 *key, uint32 key_size);
-uint8 * search_sysmem_at    (const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
-void    grep_memory         (const uint8 *key, uint32 key_size);
-void    malloc_init         (void);
-void    malloc_stat         (uint32 *freesize, uint32 *max_freesize);
-void *  malloc              (uint32 size);
-void    free                (void *data);
 void *  sq_cpy              (void *dest, const uint32 *src, uint32 n);
 uint32  time                (void);
 

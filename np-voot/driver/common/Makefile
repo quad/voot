@@ -1,12 +1,8 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.2 2002/06/12 09:33:51 quad Exp $
+# $Id: Makefile,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DRIVER_TARGET = libdriver-common
-
-ifdef DEBUG
-	DRIVER_DEFS += -DDEBUG=1
-endif
 
 # FIRST - Base interrupt and exception logic.
 DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o
@@ -14,8 +10,8 @@ DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o
 # SECOND - Driver initializer.
 DRIVER_OBJS += init.o
 
-# Required utility functions.
-DRIVER_OBJS += util.o printf.o
+# Utility functions.
+DRIVER_OBJS += util.o printf.o searchmem.o video.o serial.o
 
 # Biosfont access and assertion.
 DRIVER_OBJS += biosfont.o assert.o
@@ -29,18 +25,12 @@ DRIVER_OBJS += gamedata.o
 # TA VSync Heartbeat
 DRIVER_OBJS += heartbeat.o
 
+# VOOT internal accessors
+DRIVER_OBJS += malloc.o controller.o vmu.o
+
 # SCIF Emulation layer, v2.
-DRIVER_OBJS += scif_emu.o serial.o 
+DRIVER_OBJS += scif_emu.o
 
-# Controller access.
-DRIVER_OBJS += controller.o
-
-# VMU access.
-DRIVER_OBJS += vmu.o
-
-# Framebuffer & PVR access.
-DRIVER_OBJS += video.o
-
-all: clean $(DRIVER_TARGET).a
+all: $(DRIVER_TARGET).a
 
 include Makefile.driver

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.1 2002/06/11 23:31:40 quad Exp $
+    $Id: net.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -21,6 +21,7 @@ TODO
 #include "vars.h"
 #include "rtl8139c.h"
 #include "util.h"
+#include "malloc.h"
 #include "bswap.h"
 #include "biudp.h"
 #include "voot.h"
@@ -39,8 +40,8 @@ bool net_transmit (ether_info_packet_t *frame_in)
 
     /* STAGE: malloc() appropriate sized buffer. */
 
-    frame_out_length    = sizeof(ether_ii_header_t) + frame_in->length;
-    frame_out           = malloc(frame_out_length);
+    frame_out_length    = sizeof (ether_ii_header_t) + frame_in->length;
+    frame_out           = malloc (frame_out_length);
 
     if (!frame_out)
         return FALSE;
@@ -96,8 +97,8 @@ static ether_info_packet_t eth_discover_frame (uint8 *frame_data, uint32 frame_s
     {
         /* STAGE: 802.3 SNAP provides backwards compatibility to Ethernet II. */
 
-        memcpy (frame.dest, frame_8023->dest, sizeof(frame.dest));
-        memcpy (frame.source, frame_8023->source, sizeof(frame.source));
+        memcpy (frame.dest, frame_8023->dest, sizeof (frame.dest));
+        memcpy (frame.source, frame_8023->source, sizeof (frame.source));
 
         frame.ethertype = ntohs (frame_8023->ethertype);
 

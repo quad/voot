@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: init.c,v 1.3 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -19,9 +19,10 @@ DESCRIPTION
 #include "exception.h"
 #include "exception-lowlevel.h"
 #include "video.h"
-#include "assert.h"
-#include "biosfont.h"
 #include "util.h"
+#include "assert.h"
+#include "malloc.h"
+#include "biosfont.h"
 
 #include "init.h"
 

@@ -1,6 +1,6 @@
 /*  gamedata.h
 
-    $Id: gamedata.h,v 1.1 2002/06/11 23:50:23 quad Exp $
+    $Id: gamedata.h,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 TODO
 
@@ -92,6 +92,8 @@ Total Guesstimated System Memory:
 0x9f1a seems important.
 
 */
+
+#define GAME_MEM_START      0x8C270000
 
 #define VOOT_MEM_START      0x8CCF0000
 #define VOOT_MEM_END        0x8CCFFFFF

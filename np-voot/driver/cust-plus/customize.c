@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.2 2002/06/12 04:41:33 quad Exp $
+    $Id: customize.c,v 1.3 2002/06/12 10:29:03 quad Exp $
 
 DESCRIPTION
 
@@ -26,6 +26,8 @@ TODO
 #include <vars.h>
 #include <exception.h>
 #include <util.h>
+#include <malloc.h>
+#include <searchmem.h>
 #include <gamedata.h>
 #include <printf.h>
 #include <controller.h>
@@ -243,7 +245,7 @@ static void maybe_do_load_customize (void)
 
         for (retval = 1; file_number < 100; file_number++)
         {
-            snprintf (filename, sizeof(filename), "VOORATAN.C%02u", file_number);
+            snprintf (filename, sizeof (filename), "VOORATAN.C%02u", file_number);
 
             retval = vmu_exists_file (*data_port, filename);
 
@@ -325,7 +327,7 @@ static void maybe_do_load_customize (void)
             temp_head = file_buffer[CUSTOMIZE_VMU_HEAD_IDX];
 
             free (file_buffer);
-            colors[player][vr] = malloc (sizeof(customize_data));
+            colors[player][vr] = malloc (sizeof (customize_data));
 
             /* STAGE: Make sure we actually obtained the memory for the customization. */
 
@@ -366,7 +368,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
 
             /* STAGE: Try to locate one of the customization functions. */
 
-            custom_func = (uint32) search_sysmem_at (custom_func_key, sizeof (custom_func_key), GAME_MEM_START, SYS_MEM_END);
+            custom_func = (uint32) search_sysmem_at (custom_func_key, sizeof (custom_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: Place the breakpoint on the customization function, if we found it. */
 
@@ -446,7 +448,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
             /* STAGE: Locate the OSD vector. */
 
             if (!osd_vector)
-                osd_vector = (uint32) search_sysmem_at (osd_func_key, sizeof (osd_func_key), GAME_MEM_START, SYS_MEM_END);
+                osd_vector = (uint32) search_sysmem_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: If we found it, display the health OSD. */
 
@@ -458,7 +460,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
                 snprintf (cbuffer, sizeof (cbuffer), "V.A 1 [%u > %u]", *p1_varmour_base, *p1_varmour_mod);
                 (*(void (*)()) osd_vector) (5, 355, cbuffer);
 
-                snprintf (cbuffer, sizeof(cbuffer), "Dam 2 [%u > %u | %d]", *p2_health_real, *p2_health_stat, p2_health_save[1]);
+                snprintf (cbuffer, sizeof (cbuffer), "Dam 2 [%u > %u | %d]", *p2_health_real, *p2_health_stat, p2_health_save[1]);
                 (*(void (*)()) osd_vector) (5, 400, cbuffer);
 
                 snprintf (cbuffer, sizeof (cbuffer), "V.A 2 [%u > %u]", *p2_varmour_base, *p2_varmour_mod);

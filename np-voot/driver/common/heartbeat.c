@@ -1,6 +1,6 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.1 2002/06/11 23:17:07 quad Exp $
+    $Id: heartbeat.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -10,9 +10,6 @@ TODO
 
     This causes random crashs. The delay on the pageflip seems to be
     harmful. I need to find a better pageflip vector.
-
-    Allow heartbeat_init to be called multiple times and only have a single
-    hook be performed.
 
 */
 

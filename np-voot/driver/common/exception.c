@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.1 2002/06/11 23:31:20 quad Exp $
+    $Id: exception.c,v 1.2 2002/06/12 10:29:01 quad Exp $
 
 DESCRIPTION
 
@@ -12,6 +12,10 @@ TODO
 
     Consider combining the exception and ASIC interrupt handling code
     together.
+
+    Ensure duplicate table entries cannot be added.
+
+    Reinitialize the ASIC when reinitializing the VBR table.
 
 */
 
