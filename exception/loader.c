@@ -1,9 +1,18 @@
 /*  loader.c
 
+DESCRIPTION
+
     The first stage loader of low-memory driver:
+
     1) Load a game's 1ST_READ.BIN
     2) Load the low-memory driver into memory
     3) Execute the low-memory driver
+
+TODO
+
+    Parse the IP.BIN and load the appropriate game binary instead of hard
+    coding '1ST_READ.BIN'
+
 */
 
 #include <stdio.h>
@@ -14,11 +23,26 @@
 
 #define FIRST_LOAD_POINT    0x8C300000
 #define FIRST_RUN_POINT     0x8C010000
+
 #define FIRST_LOAD_FILE     "/1st_read.bin"
 
-static char *stage_buffer = (char *) 0xAC004000;
+static char *stage_buffer = (char *) 0x8C004000;
 static char *first_load_buffer = (char *) FIRST_LOAD_POINT;
 static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
+
+static char startup_msg[] = {
+    "Netplay VOOT Extensions (np-voot-slave) - BETA\n"
+    "(C) 2001-2002, Scott Robinson. All Rights Reserved.\n"
+    "http://voot.sourceforge.net/ for more information.\n"
+    "\n"
+    "This program is distributed in the hope that it\n"
+    "will be useful, but WITHOUT ANY WARRANTY; without\n"
+    "even the implied warranty of MERCHANTABILITY or\n"
+    "FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n"
+    "General Public License for more details.\n"
+    "\n"
+    "(loader built at " __TIME__" on " __DATE__ ")"
+};
 
 #define COLOR_FIRST_WAIT    0, 0, 0
 #define COLOR_BOOT_INIT     0, 0, 100
@@ -35,10 +59,6 @@ static void boot_loader(unsigned char *bootstrap_name)
     cdrom_reinit();
     iso_init();
 
-    /* Attempt to load the media. If it's a GD-ROM, the bootstrap and second
-       stage are loaded into memory and plain executed. If the media is a
-       CD, however, we need to descramble the 1ST_READ.BIN in order to use
-       it. */
     vc_puts("Accessing ...");
     do_warez = open_gd_or_cd(&fd, bootstrap_name);
     
@@ -68,25 +88,15 @@ static void boot_loader(unsigned char *bootstrap_name)
 
 void dc_main(void)
 {
+    /* STAGE: Restart the video system and give us a workable screen. */
     vid_init(vid_check_cable(), DM_640x480, PM_RGB565);
-
     vc_clear(COLOR_FIRST_WAIT);
 
+    /* STAGE: Initialize the CD-ROM system. We do this again later for paranoia sake. */
     cdrom_init();
 
-    /* actual character limit 
-    vc_puts("--------------------------------------------------");  */
-    vc_puts("Netplay VOOT Extensions (np-voot-slave) - BETA");
-    vc_puts("(C) 2001-2002, Scott Robinson. All Rights Reserved.");
-    vc_puts("http://voot.sourceforge.net/ for more information.");
-    vc_puts("");
-    vc_puts("This program is distributed in the hope that it");
-    vc_puts("will be useful, but WITHOUT ANY WARRANTY; without");
-    vc_puts("even the implied warranty of MERCHANTABILITY or");
-    vc_puts("FITNESS FOR A PARTICULAR PURPOSE.  See the GNU");
-    vc_puts("General Public License for more details.");
-    vc_puts("");
-    vc_puts("(loader built at " __TIME__" on " __DATE__ ")");
+    /* STAGE: Display our welcome and copyright text. */ 
+    vc_puts(startup_msg);
     vc_puts(stage_two_build_time);
     vc_puts("");
 

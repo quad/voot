@@ -1,7 +1,14 @@
 /*  vconsole.c
 
+DESCRIPTION
+
     A really cheesy virtual console for myself. I'm tired of pre-calculating
     distances.
+
+TODO
+
+    Add in cose for the console to loop over on itself.
+
 */
 
 #include <stdio.h>
@@ -17,22 +24,37 @@ unsigned short vc_line;
 #define LINE_SPACING        24
 #define VCON_FIRST_PIXEL    10
 
-/* !!! Add in code for the console to loop back over on itself */
+/* TODO: Add in code for the console to loop back over on itself */
 void vc_puts(char *in_str)
 {
     unsigned short *vram_index;
 
+    /* Assumes 640x - but then, so does bfont */
     vram_index = vram_s;
     vram_index += INDENT_BYTES;
-
-    /* Assumes 640x - but then, so does bfont */
     vram_index += (VCON_FIRST_PIXEL + (vc_line * LINE_SPACING)) * 640;
-    
-    bfont_draw_str(vram_index, 640, in_str);
+
+    /* Make sure we handle '\n's. */
+    while (*in_str)
+    {
+        if (*in_str == '\n')
+        {
+            vc_line++;
+            in_str++;
+
+            vram_index = vram_s;
+            vram_index += INDENT_BYTES;
+            vram_index += (VCON_FIRST_PIXEL + (vc_line * LINE_SPACING)) * 640;
+
+            continue;
+        }
+
+        bfont_draw(vram_index += 12, 640, *in_str++);
+    }
+
     vc_line++;
 }
 
-/* Printf functionality */
 int vc_printf(char *fmt, ...)
 {
 	va_list args;
