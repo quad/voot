@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.8 2002/08/04 05:48:05 quad Exp $
+    $Id: module.c,v 1.9 2002/10/18 19:52:20 quad Exp $
 
 DESCRIPTION
 
@@ -16,7 +16,7 @@ DESCRIPTION
 #include <anim.h>
 #include <dumpio.h>
 
-#include <assert.h>
+#include <gamedata.h>
 
 #include "scixb_emu.h"
 #include "module.h"
@@ -25,7 +25,7 @@ static anim_render_chain_f  old_anim_chain;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active.");
+    anim_printf_debug (0.0, 0.0, "Test module active. [%x]", GAMEDATA_OPT->unknown_a);
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);

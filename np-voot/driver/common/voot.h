@@ -1,6 +1,6 @@
 /*  voot.h
 
-    $Id: voot.h,v 1.3 2002/06/20 10:20:05 quad Exp $
+    $Id: voot.h,v 1.4 2002/10/18 19:52:19 quad Exp $
 
 */ 
 
@@ -51,7 +51,7 @@ typedef bool (* voot_packet_handler_f)  (voot_packet *);
 /* NOTE: Module definitions. */
 
 #ifdef DEBUG
-    #define voot_debug(args...)     __voot_debug(args)
+    #define voot_debug(args...)     voot_printf(VOOT_PACKET_TYPE_DEBUG , ## args)
 #else
     #define voot_debug(args...)     ;
 #endif

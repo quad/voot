@@ -2,7 +2,7 @@
 #
 # NOTE: Path is within a loader source directory.
 #
-# $Id: Makefile.loader,v 1.1 2002/06/08 09:13:49 quad Exp $
+# $Id: Makefile.loader,v 1.2 2002/10/18 19:52:20 quad Exp $
 
 include ../../Makefile.config
 
@@ -12,7 +12,7 @@ endif
 
 DRIVER_OBJS = $(LOADER_WORK)/$(DRIVER).o
 
-all: clean run
+all: clean-driver run
 
 $(LOADER_WORK)/$(DRIVER).o:
 	make -C $(LOADER_WORK) -f Makefile.driverfs DRIVER=$(DRIVER) LOADER_TARGET=$(LOADER_TARGET) LOADER_FILES=$(LOADER_FILES)
@@ -26,9 +26,11 @@ $(LOADER_TARGET).elf: $(LOADER_OBJS) $(DRIVER_OBJS)
 %.o: %.s
 	$(DC_CC) $(KOS_INCS) -c $< -o $@
 
-clean:
+clean: clean-driver
+	@$(DC_RM) $(LOADER_TARGET).elf $(CLEAN_COMMON)
+
+clean-driver:
 	make -C $(LOADER_WORK) -f Makefile.driverfs clean DRIVER=$(DRIVER) LOADER_TARGET=$(LOADER_TARGET) LOADER_FILES=$(LOADER_FILES)
-	rm -f $(LOADER_TARGET).elf $(CLEAN_COMMON)
 
 run: $(LOADER_TARGET).elf
 	dc-tool -x $(LOADER_TARGET).elf

@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.6 2002/08/04 05:48:05 quad Exp $
+    $Id: customize.c,v 1.7 2002/10/18 19:52:20 quad Exp $
 
 DESCRIPTION
 
@@ -200,8 +200,6 @@ static void maybe_start_load_customize (void)
 
         /*
             STAGE: Let them know we're loading the data.
-
-            TODO: The border won't always show up clear on a TV.
         */
 
         if (side)
@@ -245,8 +243,6 @@ static void maybe_start_load_customize (void)
 
         /*
             STAGE: Let them know we're loading the data.
-
-            TODO: The border won't always show up clear on a TV.
         */
 
         vmu_mount(GAMEDATA_OPT->data_port);

@@ -51,7 +51,7 @@ static void gl_configure (void)
 
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity ();
-    glOrtho (0.0f, 640.0f, 480.0f, 0.0f, 1.0f, -1.0f);
+    glOrtho (0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f);
 
     /* STAGE: Reset for drawing. */
 
@@ -65,7 +65,7 @@ static void gl_configure (void)
     /* STAGE: Configure the Z Buffer. */
 
     glEnable (GL_DEPTH_TEST);
-    glDepthFunc (GL_GEQUAL);
+    glDepthFunc (GL_LEQUAL);
 }
 
 void anim_init (void)

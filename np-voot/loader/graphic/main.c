@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: main.c,v 1.1 2002/06/06 19:57:09 quad Exp $
+    $Id: main.c,v 1.2 2002/10/18 19:52:20 quad Exp $
 
 DESCRIPTION
 
@@ -46,15 +46,17 @@ static void graphic_render (void)
 
         glColor3f (0.0f, 1.0f, 0.0f);
 
-        glVertex3f (0.0f, 1.0f, 0.5f);
+        glVertex3f (0.0f, 1.0f, 0.0f);
 
-        glVertex3f (1.0f, 1.0f, 0.5f);
+        glVertex3f (1.0f, 1.0f, 0.0f);
 
-        glVertex3f (0.0f, 0.0f, -0.5f);
+        glVertex3f (0.0f, 0.0f, 0.0f);
 
-        glVertex3f (1.0f, 0.0f, -0.5f);
+        glVertex3f (1.0f, 0.0f, 0.0f);
 
     glEnd ();
+
+    glTranslatef (0.0f, 0.5f, 0.0f);
 
     glEnable (GL_TEXTURE_2D);
 

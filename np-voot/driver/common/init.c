@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.8 2002/08/04 05:48:04 quad Exp $
+    $Id: init.c,v 1.9 2002/10/18 19:52:19 quad Exp $
 
 DESCRIPTION
 
@@ -23,8 +23,6 @@ DESCRIPTION
 #include "biosfont.h"
 #include "malloc.h"
 
-#include "assert.h"
-
 #include "init.h"
 
 static exception_handler_f  old_init_handler;
@@ -41,8 +39,6 @@ static uint32 handle_bios_vector (uint32 arg_a, uint32 arg_b, uint32 arg_c, uint
         STAGE: Give the module configuration core a chance to do something
         wonky.
     */
-
-    assert (0);
 
     return (*(uint32 (*)()) old_bios_vector) (arg_a, arg_b, arg_c, arg_d);
 }

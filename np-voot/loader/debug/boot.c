@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.3 2002/06/29 13:06:32 quad Exp $
+    $Id: boot.c,v 1.4 2002/10/18 19:52:20 quad Exp $
 
 DESCRIPTION
 
@@ -52,5 +52,5 @@ void boot_loader (void)
 
     /* STAGE: Tell KOS to load up the driver. */
 
-    arch_exec_select (driver_buffer, fs_total (in_driver), (uint32) stage_buffer);
+    arch_exec_at (driver_buffer, fs_total (in_driver), (uint32) stage_buffer);
 }

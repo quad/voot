@@ -1,8 +1,10 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.8 2002/06/29 12:57:04 quad Exp $
+# $Id: Makefile,v 1.9 2002/10/18 19:52:19 quad Exp $
 
 DRIVER_TARGET = libdriver-common
+DRIVER_CLEAN = lwip.a-clean
+LIBS = -llwip
 
 # FIRST - Base interrupt and exception logic.
 DRIVER_OBJS += exception.o exception-lowlevel.o system.o asic.o ubc.o
@@ -22,15 +24,22 @@ DRIVER_OBJS += net.o ether.o rtl8139c.o biudp.o voot.o dumpio.o
 # Gamedata interaction logic.
 DRIVER_OBJS += gamedata.o
 
-# TA VSync Heartbeat
+# TA VSync Heartbeat.
 DRIVER_OBJS += heartbeat.o
 
-# VOOT internal accessors
+# VOOT internal accessors.
 DRIVER_OBJS += malloc.o controller.o vmu.o
 
-# VOOT animation/render cycle patch
+# VOOT animation/render cycle patch.
 DRIVER_OBJS += anim.o
 
-all: $(DRIVER_TARGET).a
+all: $(DRIVER_TARGET).a lwip.a
+
+# lwIP TCP/IP stack.
+lwip.a:
+	make -f Makefile.lwip
+
+lwip.a-clean:
+	make -f Makefile.lwip clean
 
 include Makefile.driver

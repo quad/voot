@@ -1,6 +1,6 @@
 # Generic Makefile for a netplay driver.
 #
-# $Id: Makefile.driver,v 1.4 2002/08/04 05:48:04 quad Exp $
+# $Id: Makefile.driver,v 1.5 2002/10/18 19:52:19 quad Exp $
 #
 # NOTE: Path is within a driver source directory.
 
@@ -20,12 +20,19 @@ $(DRIVER_TARGET).elf: $(DRIVER_OBJS)
 $(DRIVER_TARGET).bin: $(DRIVER_TARGET).elf
 	$(DC_OBJCOPY) -O binary $(DRIVER_TARGET).elf $(DRIVER_TARGET).bin
 
+$(DRIVER_TARGET).desc:
+	echo Nothing yet for description files!
+	touch $(DRIVER_TARGET).desc
+
 %.o: %.c
 	$(DC_CC) $(INCS) $(DEFS) -c $< -o $@
 
 %.o: %.s
 	$(DC_CC) $(INCS) $(DEFS) -c $< -o $@
 
-clean:
-	rm -f $(DRIVER_TARGET).elf $(DRIVER_TARGET).bin $(DRIVER_TARGET).a
-	rm -f $(CLEAN_COMMON)
+%.o-clean:
+	@$(DC_RM) $*.o
+
+clean: $(addsuffix -clean, $(DRIVER_OBJS)) $(DRIVER_CLEAN)
+	@$(DC_RM) $(DRIVER_TARGET).elf $(DRIVER_TARGET).bin $(DRIVER_TARGET).a
+	@$(DC_RM) $(CLEAN_COMMON)

@@ -1,6 +1,6 @@
 /*  gamedata.h
 
-    $Id: gamedata.h,v 1.5 2002/08/04 05:48:04 quad Exp $
+    $Id: gamedata.h,v 1.6 2002/10/18 19:52:19 quad Exp $
 
 TODO
 
@@ -104,11 +104,6 @@ typedef struct
     uint8 mode_52           __attribute__ ((packed));   /* 0x47: 0 is 5.2. 1 is 5.45. */
     uint8 survival          __attribute__ ((packed));   /* 0x48: 0 is off. 1 is on. */
 
-#if 0
-    uint8 emb_p1            __attribute__ ((packed));   /* 0x49: 0 is off. 1 is on. */
-    uint8 emb_p2            __attribute__ ((packed));   /* 0x4A: 0 is off. 1 is on. */
-#endif
-
     union
     {
         uint8   index[2]    __attribute__ ((packed));
@@ -130,11 +125,6 @@ typedef struct
             uint8   p2      __attribute__ ((packed));   /* 0x4C: 0 is off. 1 is Gold. 2 is Silver. */
         } player;
     } cust_head             __attribute__ ((packed));
-
-#if 0
-    uint8 com_p1            __attribute__ ((packed));
-    uint8 com_p2            __attribute__ ((packed));
-#endif
 
     uint8 unknown_d         __attribute__ ((packed));   /* 0x4D: UNKNOWN */
 

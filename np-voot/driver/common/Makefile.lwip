@@ -1,0 +1,21 @@
+# Makefile for the lwip library
+#
+# $Id: Makefile.lwip,v 1.1 2002/10/18 19:52:19 quad Exp $
+
+LWIP_PATH = ./lwip/lwip/src
+
+DRIVER_TARGET = liblwip
+DRIVER_INCS = -I./lwip -I$(LWIP_PATH)/include -I$(LWIP_PATH)/include/ipv4 -I./
+
+# lwIP core modules
+DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, inet.o mem.o memp.o netif.o pbuf.o stats.o sys.o udp.o)
+
+# lwIP TCP modules
+DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/, tcp.o tcp_input.o tcp_output.o)
+
+# lwIP IPv4 modules
+DRIVER_OBJS += $(addprefix $(LWIP_PATH)/core/ipv4/, ip.o icmp.o ip_addr.o)
+
+all: $(DRIVER_TARGET).a
+
+include Makefile.driver

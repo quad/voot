@@ -1,6 +1,6 @@
 /*  vmu.c
 
-    $Id: vmu.c,v 1.3 2002/06/29 12:57:04 quad Exp $
+    $Id: vmu.c,v 1.4 2002/10/18 19:52:19 quad Exp $
 
 DESCRIPTION
 
@@ -49,7 +49,8 @@ void vmu_init (void)
             It's a hack, but it works in both US and JP versions of DC-VOOT. 
         */
 
-        vmu_mount_buffer = *( ( (uint32 *) search_gamemem ((uint8 *) &vmu_mount_root, sizeof (vmu_mount_root)) ) - 1 );
+        if (vmu_mount_root)
+            vmu_mount_buffer = *( ( (uint32 *) search_gamemem ((uint8 *) &vmu_mount_root, sizeof (vmu_mount_root)) ) - 1 );
     }
 }
 
@@ -79,7 +80,7 @@ uint32 vmu_exists_file (vmu_port port, char *filename)
 
 uint32 vmu_mount (vmu_port port)
 {
-    if (vmu_mount_root)
+    if (vmu_mount_root && vmu_mount_buffer)
         return (*(uint32 (*)()) vmu_mount_root) (port, vmu_mount_buffer, VMU_BUFFER_SIZE);
     else
         return VMU_ERR_GENERIC;
