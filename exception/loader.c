@@ -75,14 +75,17 @@ void dc_main(void)
 
     cdrom_init();
 
-    vc_puts("Welcome to Netplay VOOT Extensions (np-voot-slave) - BETA");
-    vc_puts("Copyright (C) 2001, 2002, Scott Robinson. All Rights Reserved.");
-    vc_puts("Access http://voot.sourceforge.net/ for more information.");
+    /* actual character limit 
+    vc_puts("--------------------------------------------------");  */
+    vc_puts("Netplay VOOT Extensions (np-voot-slave) - BETA");
+    vc_puts("(C) 2001-2002, Scott Robinson. All Rights Reserved.");
+    vc_puts("http://voot.sourceforge.net/ for more information.");
     vc_puts("");
-    vc_puts("This program is distributed in the hope that it will be useful,");
-    vc_puts("but WITHOUT ANY WARRANTY; without even the implied warranty of");
-    vc_puts("MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the");
-    vc_puts("GNU General Public License for more details.");
+    vc_puts("This program is distributed in the hope that it");
+    vc_puts("will be useful, but WITHOUT ANY WARRANTY; without");
+    vc_puts("even the implied warranty of MERCHANTABILITY or");
+    vc_puts("FITNESS FOR A PARTICULAR PURPOSE.  See the GNU");
+    vc_puts("General Public License for more details.");
     vc_puts("");
     vc_puts("(loader built at " __TIME__" on " __DATE__ ")");
     vc_puts(stage_two_build_time);

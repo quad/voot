@@ -14,7 +14,7 @@ char printf_buf[1024];
 unsigned short vc_line;
 
 #define INDENT_BYTES        20
-#define LINE_SPACING        22
+#define LINE_SPACING        24
 #define VCON_FIRST_PIXEL    10
 
 /* !!! Add in code for the console to loop back over on itself */
