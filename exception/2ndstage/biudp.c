@@ -114,7 +114,7 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
         biudp_write_segment((in_data + in_data_length) - remain, remain);
 }
 
-void biudp_write(const uint8 in)
+void biudp_write(uint8 in)
 {
     biudp_write_buffer(&in, sizeof(uint8));
 }

@@ -47,14 +47,14 @@ uint8* search_sysmem(const uint8 *key, uint32 key_size)
     return search_sysmem_at(key, key_size, SYS_MEM_START, SYS_MEM_END);
 }
 
-uint8* search_sysmem_at(const uint8 *key, uint32 key_size, uint8 *start_loc, uint8 *end_loc)
+uint8* search_sysmem_at(const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc)
 {
-    uint8 *cur_loc;
+    const uint8 *cur_loc;
 
     for (cur_loc = start_loc; cur_loc < end_loc; cur_loc++)
         if (*cur_loc == key[0])
             if(!memcmp((const uint8 *) cur_loc, key, key_size))
-                return cur_loc;     /* So we have a match. Report it. */
+                return (uint8 *) cur_loc;     /* So we have a match. Report it. */
 
     return NULL;
 }

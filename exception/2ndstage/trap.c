@@ -51,7 +51,7 @@ void init_ubc_b_serial(void)
     add_exception_handler(&new);
 } 
 
-uint32 trap_inject_data(uint8 *data, uint32 size)
+uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
     uint32 data_index, timeout_count;
 

@@ -17,7 +17,7 @@ typedef union unikey
 void* memmove(void *dest, const void *src, uint32 count);
 void vid_waitvbl(void);
 uint8* search_sysmem(const uint8 *key, uint32 key_size);
-uint8* search_sysmem_at(const uint8 *key, uint32 key_size, uint8 *start_loc, uint8 *end_loc);
+uint8* search_sysmem_at(const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
 void grep_memory(const char *key, uint32 key_size);
 void malloc_init(void);
 void* malloc(uint32 size);

@@ -12,6 +12,7 @@ typedef struct
 extern my_pageflip pageflip_info;
 
 void init_heartbeat(void);
-void* heartbeat(register_stack *stack, void *current_vector);
+void* pageflip_handler(register_stack *stack, void *current_vector);
+void* ta_handler(void *passer, register_stack *stack, void *current_vector);
 
 #endif

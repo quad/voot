@@ -44,6 +44,8 @@ typedef struct
     uint32  mask0, mask1;
     uint32  irq;
 
+    bool    clear_irq;
+
     void    *(*handler)(void *, register_stack *, void *);
 } asic_lookup_table_entry;
 
@@ -55,7 +57,7 @@ typedef struct
 
 extern asic_lookup_table asic_table;
 
-uint32 add_asic_handler(asic_lookup_table_entry new_entry);
+uint32 add_asic_handler(const asic_lookup_table_entry *new_entry);
 void* handle_asic_exception(register_stack *stack, void *current_vector);
 
 #endif

@@ -10,7 +10,7 @@
 
 asic_lookup_table asic_table;
 
-uint32 add_asic_handler(asic_lookup_table_entry new_entry)
+uint32 add_asic_handler(const asic_lookup_table_entry *new_entry)
 {
     uint32  index;
 
@@ -20,7 +20,7 @@ uint32 add_asic_handler(asic_lookup_table_entry new_entry)
         {
             volatile uint32 *mask_base;
 
-            switch (new_entry.irq)
+            switch (new_entry->irq)
             {
                 case EXP_CODE_INT9:
                     mask_base = ASIC_IRQ9_MASK;
@@ -39,10 +39,10 @@ uint32 add_asic_handler(asic_lookup_table_entry new_entry)
                     break;
             }
 
-            mask_base[0] |= new_entry.mask0;
-            mask_base[1] |= new_entry.mask1;
+            mask_base[0] |= new_entry->mask0;
+            mask_base[1] |= new_entry->mask1;
 
-            asic_table.table[index] = new_entry;
+            memcpy(&asic_table.table[index], new_entry, sizeof(asic_lookup_table_entry));
             return index + 1;
         }
     }
@@ -66,19 +66,23 @@ void* handle_asic_exception(register_stack *stack, void *current_vector)
 
         /* Technically, this can cause matchs on exceptions in cases where
             the SH4 combines them and/or the exceptions have been placed in
-            a queue. However, this doesn't both me too much. */
+            a queue. However, this doesn't bother me too much. */
 
         passer.mask0 = ASIC_IRQ_STATUS[0] & asic_table.table[index].mask0;
         passer.mask1 = ASIC_IRQ_STATUS[1] & asic_table.table[index].mask1;
         passer.irq = code;
+        passer.clear_irq = TRUE;
 
         if ((passer.mask0 || passer.mask1) && (asic_table.table[index].irq == passer.irq))
         {
             new_vector = asic_table.table[index].handler(&passer, stack, current_vector);
 
-            /* clear the ASIC interrupt */
-            ASIC_IRQ_STATUS[0] = passer.mask0;
-            ASIC_IRQ_STATUS[1] = passer.mask1;
+            /* STAGE: Clear the IRQ by default - but the option is controllable. */
+            if (passer.clear_irq)
+            {
+                ASIC_IRQ_STATUS[0] = passer.mask0;
+                ASIC_IRQ_STATUS[1] = passer.mask1;
+            }
         }
     }
 

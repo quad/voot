@@ -105,7 +105,7 @@ static ether_info_packet_t eth_discover_frame(uint8 *frame_data, uint32 frame_si
  *
  */
 
-static uint16 ip_checksum_add(uint16 *buf, uint16 count_short, uint32 sum)
+static uint16 ip_checksum_add(const uint16 *buf, uint16 count_short, uint32 sum)
 {
     while (count_short--)
     {

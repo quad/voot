@@ -218,7 +218,7 @@ bool rtl_init(void)
         entry.handler = rtl_handler;
 
         /* STAGE: Add hook to interrupt table */
-        rtl_info.hdl_tbl_index = add_asic_handler(entry);
+        rtl_info.hdl_tbl_index = add_asic_handler(&entry);
         if (!rtl_info.hdl_tbl_index)    /* We couldn't attach an exception handler - weird, huh? */
         {
             rtl_stop();
@@ -253,7 +253,7 @@ bool rtl_init(void)
 }
 
 /* Copy straight from the DMA if possible, otherwise wrap around the end */
-static uint8* rtl_copy_packet(uint8 *src, uint32 size)
+static uint8* rtl_copy_packet(const uint8 *src, uint32 size)
 {
     uint8 *dest;
     uint8 *dma_buffer_end;
