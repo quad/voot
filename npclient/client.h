@@ -1,10 +1,24 @@
+/*  client.h
+
+DESCRIPTION
+
+    The console netplay client header file.
+
+CHANGELOG
+
+    Tue Jan 22 17:51:26 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added this changelog. The file has actually been around for quite
+        some time.
+
+*/
+
 #ifndef __NPCLIENT_H__
 #define __NPCLIENT_H__
 
 #include "vars.h"
 
 /*
- *  Various texts.
+ *  Various frontend texts.
  */
 
 char banner_text[] = {
@@ -32,7 +46,7 @@ char exit_text[] = {
 };
 
 /*
- *  Prototypes
+ *  Frontend Prototypes
  */
 
 void display_start_banner(void);

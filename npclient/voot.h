@@ -1,3 +1,17 @@
+/*  voot.h
+
+DESCRIPTION
+
+    The VOOT Netplay protocol parser header file.
+
+CHANGELOG
+
+    Tue Jan 22 17:52:46 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added this changelog entry. The header file has actually been around
+        for quite some time.
+
+*/
+
 #ifndef __VOOT_H__
 #define __VOOT_H__
 

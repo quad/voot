@@ -43,10 +43,6 @@ CHANGELOG
         Dropped the port configuration events and wrapped them into the
         connection and listening events.
 
-TODO
-
-    Remove console system assumptions. All IO logic should be handled by the client itself.
-
 */
 
 #include <stdlib.h>

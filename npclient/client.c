@@ -2,9 +2,9 @@
 
 DESCRIPTION
 
-    Console netplay client.
+    Console netplay client front-end.
 
-CHANGELOG:
+CHANGELOG
 
     Sun Sep  9 22:46:15 PDT 2001    Scott Robinson <scott_np@dsn.itgo.com>
         Started the code base. Specifically the banner and options handling code.

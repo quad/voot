@@ -1,3 +1,17 @@
+/*  npc.h
+
+DESCRIPTION
+
+    NetPlayCommand system header file.
+
+CHANGELOG
+
+    Tue Jan 22 17:54:03 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Just added this changelog entry. The file has actually existed for
+        quite some time.
+
+*/
+
 #ifndef __NPC_H__
 #define __NPC_H__
 
@@ -87,6 +101,18 @@ typedef struct
     volatile int32  *socket;
     npc_command     type;
 } npc_io_check_t;
+
+typedef enum    /* This is all a rather blatant ripoff from syslog - but they've been using it for years, so I see no reason to improve. */
+{
+    LOG_EMERG,      /* system is unusable */
+    LOG_ALERT,      /* action must be taken immediately */
+    LOG_CRIT,       /* critical conditions */
+    LOG_ERR,        /* error conditions */
+    LOG_WARNING,    /* warning conditions */
+    LOG_NOTICE,     /* normal, but significant, condition */
+    LOG_INFO,       /* informational message */
+    LOG_DEBUG       /* debug-level message */
+} npc_log_level;
 
 int32 handle_npc_command(npc_command_t *command);
 bool npc_add_event_queue(npc_command_t *command);
