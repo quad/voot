@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.19 2002/12/17 12:01:29 quad Exp $
+    $Id: module.c,v 1.20 2003/01/20 21:11:54 quad Exp $
 
 DESCRIPTION
 
@@ -26,7 +26,9 @@ NOTES
 #include <vars.h>
 #include <anim.h>
 
-#include <dumpio.h>
+#include <exception.h>
+#include <ubc.h>
+#include <gamedata.h>
 
 #include <lwip/net.h>
 #include <lwip/voot.h>
@@ -35,15 +37,32 @@ NOTES
 #include "module.h"
 
 static anim_render_chain_f      old_anim_chain;
-static uint32                   reconf_count;
+static exception_handler_f      old_exception_handler;
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
-    anim_printf_debug (0.0, 0.0, "Test module active. [reconf %u]", reconf_count);
+    anim_printf_debug (0.0, 0.0, "Test module active.");
 
     if (old_anim_chain)
         return old_anim_chain (anim_code_a, anim_code_b);
 }
+
+static void* my_exception_handler (register_stack *stack, void *current_vector)
+{
+    /* STAGE: In the case of the customize function (channel B) exception. */
+
+    if (ubc_is_channel_break (UBC_CHANNEL_B))
+    {
+        //voot_printf (VOOT_PACKET_TYPE_DEBUG, "Write at %x from %x [new value is %x]", stack->spc, stack->pr, GAMEDATA_OPT->cust_emb.player.p1);
+        voot_printf (VOOT_PACKET_TYPE_DEBUG, "r0 [%x]", stack->r0);
+    }
+
+    if (old_exception_handler)
+        return old_exception_handler (stack, current_vector);
+    else
+        return current_vector;
+}
+
 
 /*
     NOTE: Module callback functions.
@@ -65,24 +84,31 @@ void module_configure (void)
 
     anim_add_render_chain (my_anim_chain, &old_anim_chain);
 
-    /* STAGE: Initialize the networking drivers. */
-
     net_init ();
     voot_init ();
 
     /* STAGE: Initialize the SCIXB emulation layer. */
 
     //scixb_init ();
+
+    {
+        exception_table_entry   entry;
+
+        entry.type      = EXP_TYPE_GEN;
+        entry.code      = EXP_CODE_UBC;
+        entry.handler   = my_exception_handler;
+
+        exception_add_handler (&entry, &old_exception_handler);
+
+        //ubc_configure_channel (UBC_CHANNEL_B, (uint32) &(GAMEDATA_OPT->cust_emb.player.p1), UBC_BBR_WRITE | UBC_BBR_OPERAND);
+        ubc_configure_channel (UBC_CHANNEL_B, (uint32) 0x8c39e57e, UBC_BBR_READ | UBC_BBR_INSTRUCT);
+    }
 }
 
 void module_reconfigure (void)
 {
-    /* STAGE: Reinitialize the networking drivers. */
-
     net_init ();
     voot_init ();
-
-    reconf_count++;
 }
 
 void module_bios_vector (void)

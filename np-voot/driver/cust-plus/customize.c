@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.10 2002/12/16 07:51:00 quad Exp $
+    $Id: customize.c,v 1.11 2003/01/20 21:11:54 quad Exp $
 
 DESCRIPTION
 
@@ -17,6 +17,8 @@ TODO
 
     Finish documenting the player gamedata structure and switch it its
     usage.
+
+    Add in mode change patches for emblem and name display.
 
 */
 

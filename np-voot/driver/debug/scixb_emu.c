@@ -1,6 +1,6 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.6 2002/12/17 12:01:29 quad Exp $
+    $Id: scixb_emu.c,v 1.7 2003/01/20 21:11:54 quad Exp $
 
 DESCRIPTION
 
@@ -295,7 +295,8 @@ void scixb_init (void)
 
         /* STAGE: Add ourselves to the VOOT packet handling chain. */
 
-        old_voot_packet_handler = voot_add_packet_chain (my_voot_packet_handler);
+        if (!old_voot_packet_handler)
+            old_voot_packet_handler = voot_add_packet_chain (my_voot_packet_handler);
 
         /* STAGE: (Re-)Initialize the delay FIFO. */
 

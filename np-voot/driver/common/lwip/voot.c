@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.5 2002/12/17 11:55:01 quad Exp $
+    $Id: voot.c,v 1.6 2003/01/20 21:11:54 quad Exp $
 
 DESCRIPTION
 
@@ -43,7 +43,7 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
         return;
     }
 
-    /* STAGE: Fix the size byte order. */
+    /* STAGE: Fix the size's byte order. */
 
     packet->header.size = ntohs (packet->header.size);
 
@@ -51,8 +51,35 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     if (p->len < (sizeof (packet->header) + packet->header.size))
     {
+        struct pbuf    *new;
+        struct pbuf    *q;
+        uint32          index;
+
+        /* STAGE: Try to allocate a new pbuf, exclusively for the packet. */
+
+        new = pbuf_alloc (PBUF_RAW, p->tot_len, PBUF_RAM);
+
+        if (!new)
+        {
+            pbuf_free (p);
+            return;
+        }
+
+        /* STAGE: Copy over the contents from the old pbuf to the new one. */
+
+        index = 0;
+
+        for (q = p; q != NULL; q = q->next)
+        {
+            memcpy (((uint8 *) new->payload) + index, q->payload, q->len);
+            index += q->len;
+        }
+
+        /* STAGE: Free the original pbuf and switch the new one out for it. */
+
         pbuf_free (p);
-        return;
+        p = new;
+        packet = p->payload;
     }
 
     /* STAGE: Connect the UDP endpoint to whoever sent to us. */

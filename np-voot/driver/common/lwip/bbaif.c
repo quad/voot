@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.7 2002/12/16 07:51:00 quad Exp $
+    $Id: bbaif.c,v 1.8 2003/01/20 21:11:53 quad Exp $
 
 DESCRIPTION
 
@@ -56,7 +56,7 @@ static struct pbuf* low_level_input ()
 
     /* STAGE: We allocate a pbuf chain of pbufs from the pool. */
 
-    p = pbuf_alloc (PBUF_LINK, len, PBUF_POOL);
+    p = pbuf_alloc (PBUF_RAW, len, PBUF_POOL);
 
     if (p)
     {
@@ -79,8 +79,8 @@ static struct pbuf* low_level_input ()
                 p = NULL;
 
 #ifdef LINK_STATS
-                stats.link.lenerr++;
-                stats.link.drop++;
+                lwip_stats.link.lenerr++;
+                lwip_stats.link.drop++;
 #endif /* LINK_STATS */      
 
                 break;
@@ -88,7 +88,7 @@ static struct pbuf* low_level_input ()
         }
 
 #ifdef LINK_STATS
-        stats.link.recv++;
+        lwip_stats.link.recv++;
 #endif /* LINK_STATS */      
     }
     else
@@ -101,8 +101,8 @@ static struct pbuf* low_level_input ()
         p = NULL;
 
 #ifdef LINK_STATS
-        stats.link.memerr++;
-        stats.link.drop++;
+        lwip_stats.link.memerr++;
+        lwip_stats.link.drop++;
 #endif /* LINK_STATS */      
     }
 
@@ -137,7 +137,7 @@ static err_t low_level_output (struct netif *netif, struct pbuf *p)
     }
   
 #ifdef LINK_STATS
-    stats.link.xmit++;
+    lwip_stats.link.xmit++;
 #endif /* LINK_STATS */      
 
     return ERR_OK;
@@ -152,19 +152,11 @@ err_t bbaif_output (struct netif *netif, struct pbuf *p, struct ip_addr *ipaddr)
     p = etharp_output (netif, ipaddr, p);
 
     if (p)
-    {
         retval = low_level_output (netif, p);
-
-        /* STAGE: Clean any ARP left-overs. */
-
-        etharp_output_sent (p);
-    }
     else
-    {
 #ifdef LINK_STATS
-        stats.link.err++;
+        lwip_stats.link.err++;
 #endif /* LINK_STATS */      
-    }
 
     return retval;
 }
@@ -205,7 +197,7 @@ bool bbaif_input (struct netif *netif)
 
             default :
 #ifdef LINK_STATS
-                stats.link.proterr++;
+                lwip_stats.link.proterr++;
 #endif /* LINK_STATS */
 
                 pbuf_free (p);

@@ -1,15 +1,12 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.12 2002/12/17 11:55:00 quad Exp $
+    $Id: dumpio.c,v 1.13 2003/01/20 21:11:47 quad Exp $
 
 DESCRIPTION
 
     Dump IO protocol handling logic.
 
 TODO
-
-    Move screenshot code into real-mode via the anim module. This will
-    reduce the probability of crashes.
 
     Once airhook layer is implemented, remove the video_vsync () calls which
     add delay.
@@ -68,20 +65,12 @@ static bool dump_packet_handler (voot_packet *packet, void *ref)
             switch (packet->buffer[0])
             {
                 case VOOT_COMMAND_TYPE_DUMPON :
-                {
                     dump_start (option);
-
                     break;
-                }
 
                 case VOOT_COMMAND_TYPE_DUMPOFF :
-                {
-                    uint32  bytes;
-
-                    bytes = dump_stop ();
-
+                    dump_stop ();
                     break;
-                }
 
                 /*
                     NOTE: After taking a certain number of screenshots, it appears

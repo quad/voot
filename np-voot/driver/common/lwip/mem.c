@@ -1,6 +1,6 @@
 /*  mem.c
 
-    $Id: mem.c,v 1.4 2002/12/17 11:55:01 quad Exp $
+    $Id: mem.c,v 1.5 2003/01/20 21:11:54 quad Exp $
 
 DESCRIPTION
 
@@ -24,7 +24,7 @@ void mem_init (void)
     malloc_init ();
 
 #ifdef MEM_STATS
-    malloc_stat (&stats.mem.max, &stats.mem.avail);
+    malloc_stat (&lwip_stats.mem.max, &lwip_stats.mem.avail);
 #endif /* MEM_STATS */
 }
 
