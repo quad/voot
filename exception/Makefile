@@ -56,7 +56,7 @@ IP.BIN: makeip
 
 np-voot-slave.iso: 1ST_READ.BIN IP.BIN
 	mkisofs -l -V NPVOOTSLAVE -C 0,11702 -o temp.iso 1ST_READ.BIN IP.BIN
-	( cat IP.BIN ; dd if=tmp.iso bs=2048 skip=16 ) > $@
+	( cat IP.BIN ; dd if=temp.iso bs=2048 skip=16 ) > $@
 
 scramble:
 	gcc -o scramble tools/scramble/scramble.c
@@ -71,6 +71,7 @@ clean:
 	make -C 2ndstage clean
 	-rm -f 2ndstage.c
 	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
+	-rm -f temp.iso
 	-rm -f 1ST_READ.BIN IP.BIN np-voot-slave.iso
 
 mrproper: clean
