@@ -21,13 +21,12 @@ void handle_bios_vector(void)
     assert(dbr() == exception_handler_lowlevel);
 }
 
-int32 dc_main(void)
+void dc_main(void)
 {
     /* STAGE: Initialize the UBC. */
     *UBC_R_BBRA = *UBC_R_BBRB = 0;
     *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
     dbr_set(exception_handler_lowlevel);
-    vbr_set(vbr_buffer);
 
     /* STAGE: Initialize both UBC channels. */
     init_ubc_a_exception();

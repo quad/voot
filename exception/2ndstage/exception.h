@@ -9,7 +9,7 @@
 #define VBR_INT(tab)    ((void *) ((unsigned int) tab) + 0x600)
 
 #define VO_VBR_SIZE     0x660
-#define EXP_TABLE_SIZE  6
+#define EXP_TABLE_SIZE  10
 
 typedef struct
 {
@@ -33,8 +33,6 @@ typedef struct
     /* Private status information */
     bool        vbr_switched;
 } exception_table;
-
-extern uint8 vbr_buffer[VO_VBR_SIZE];
 
 void init_ubc_a_exception(void);
 void clear_ubc_a_exception(void);

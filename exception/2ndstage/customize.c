@@ -25,6 +25,8 @@ TODO
 #include "controller.h"
 #include "vmu.h"
 
+#include "voot.h"
+
 #include "customize.h"
 
 static char module_save[VMU_MAX_FILENAME];
@@ -311,6 +313,9 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
             ubc_wait();
         }
 
+        /* DEBUG: Notify of animation mode changeovers. */
+        voot_debug("A [%x] B [%x]", *anim_mode_a, *anim_mode_b);
+
         /* STAGE: If we move back to the main menu, clear all the information. */
         if (*anim_mode_a == 0x2 && !(*anim_mode_b == 0x9 || *anim_mode_b == 0xa))
         {
@@ -324,9 +329,10 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
     }
 
     /* STAGE: See if we need to load customization information. */
-    if ((*anim_mode_a == 0x0 && *anim_mode_b == 0x2) ||     /* Training Mode select. */
-        (*anim_mode_a == 0x0 && *anim_mode_b == 0x5) ||     /* Single Player 3d select. */
-        (*anim_mode_a == 0x2 && *anim_mode_b == 0x9) ||     /* Single Player quick select. */
+    if ((*anim_mode_a == 0x0 && *anim_mode_b == 0x2)  ||    /* Training Mode select. */
+        (*anim_mode_a == 0x0 && *anim_mode_b == 0x5)  ||    /* Single Player 3d select. */
+        (*anim_mode_a == 0x2 && *anim_mode_b == 0x9)  ||    /* Single Player quick select. */
+        (*anim_mode_a == 0x3 && *anim_mode_b == 0x29) ||    /* Single Player quick continue. */
         (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
     {
         maybe_start_load_customize();

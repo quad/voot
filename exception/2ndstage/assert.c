@@ -74,12 +74,9 @@ static void assert_puts(const char *in_str)
     vc_line++;
 }
 
-void __assert(const char *module, int32 line, const char *expr, const char *func)
+void __assert(const char *module, int32 line, const char *expr, const char *func, uint32 extra)
 {
     char line_msg[20];
-
-    memset(line_msg, NULL, sizeof(line_msg));
-    number(line_msg, line, 10, sizeof(line_msg), 0, N_LEFT);
 
     assert_puts("*** ASSERTION FAILURE ***");
 
@@ -89,11 +86,23 @@ void __assert(const char *module, int32 line, const char *expr, const char *func
     assert_puts("Function:");
     assert_puts(func);
 
+    memset(line_msg, NULL, sizeof(line_msg));
+    number(line_msg, line, 10, sizeof(line_msg), 0, N_LEFT);
+
     assert_puts("Line Number:");
     assert_puts(line_msg);
 
     assert_puts("Expression:");
     assert_puts(expr);
+
+    if (extra)
+    {
+        memset(line_msg, NULL, sizeof(line_msg));
+        number(line_msg, extra, 16, sizeof(line_msg), 0, N_LEFT);
+
+        assert_puts("Extra:");
+        assert_puts(line_msg);
+    }
 
     /* STAGE: Lock the system. */
     for(;;);

@@ -80,7 +80,7 @@ void* handle_asic_exception(register_stack *stack, void *current_vector)
 
         if ((passer.mask0 || passer.mask1) && (asic_table.table[index].irq == passer.irq))
         {
-            new_vector = asic_table.table[index].handler(&passer, stack, current_vector);
+            new_vector = asic_table.table[index].handler(&passer, stack, new_vector);
 
             /* STAGE: Clear the IRQ by default - but the option is controllable. */
             if (passer.clear_irq)
@@ -101,12 +101,12 @@ void init_asic_handler(void)
     new_entry.type = EXP_TYPE_INT;
     new_entry.handler = handle_asic_exception;
 
-    new_entry.code = EXP_CODE_INT9;
+    new_entry.code = EXP_CODE_INT13;
     add_exception_handler(&new_entry);
 
     new_entry.code = EXP_CODE_INT11;
     add_exception_handler(&new_entry);
 
-    new_entry.code = EXP_CODE_INT13;
+    new_entry.code = EXP_CODE_INT9;
     add_exception_handler(&new_entry);
 }

@@ -7,6 +7,7 @@ DESCRIPTION
 TODO
 
     Install handlers for the other exception types OR remove the alternative exception type handlers.
+
     Find out why we can't have clear_ubc_b_exception code.
 
 */
@@ -29,7 +30,7 @@ TODO
 static exception_table exp_table;
 
 /* The VBR Buffer - we better find out how large VO's actually is */
-uint8 vbr_buffer[VO_VBR_SIZE];
+static uint8 *vbr_buffer;
 static uint8 *vbr_buffer_katana;
 
 void init_ubc_a_exception(void)
@@ -110,6 +111,8 @@ void* exception_handler(register_stack *stack)
     void *back_vector;
     bool do_vbr_switch;
 
+    vbr_buffer = vbr();
+
     /* STAGE: Increase our counters and set the proper back_vectors */
     switch (stack->exception_type)
     {
@@ -150,6 +153,9 @@ void* exception_handler(register_stack *stack)
     if (do_vbr_switch && !exp_table.vbr_switched)
     {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
+        /* STAGE: Pre-cache the biosfont address. */
+        bfont_init(); 
+
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
@@ -179,9 +185,6 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();
 #endif
-
-        /* STAGE: Pre-cache the biosfont address. */
-        bfont_init(); 
 
         /* STAGE: Initialize the customization break logic. */
         customize_init();

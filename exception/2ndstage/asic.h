@@ -37,7 +37,7 @@
 #define ASIC_MASK1_MODEM            0x04    /* Modem ? */
 #define ASIC_MASK1_PCI              0x08    /* Expansion port (PCI Bridge) */
 
-#define ASIC_TABLE_SIZE  3
+#define ASIC_TABLE_SIZE  5
 
 typedef struct
 {
