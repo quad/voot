@@ -1,6 +1,6 @@
 /*  debug.c
 
-    $Id: debug.c,v 1.1 2002/06/12 00:38:56 quad Exp $
+    $Id: debug.c,v 1.2 2002/10/25 20:56:29 quad Exp $
 
 DESCRIPTION
 
@@ -37,8 +37,24 @@ extern uint8    romdisk[];
 
 KOS_INIT_ROMDISK (romdisk);
 
+void wait_for_user (void)
+{
+    cont_cond_t cond;
+
+    /* STAGE: Clear out the buttons so our first evalution is true... */
+
+    cond.buttons = 0;
+
+    /* STAGE: Wait until any button is pressed... */
+
+    while (!cond.buttons)
+        cont_get_cond (maple_first_controller (), &cond);
+}
+
 int main (void)
 {
+    FILE   *in_desc;
+
     /* STAGE: If the START button is pressed, exit out of the loader completely. */
 
     cont_btn_callback (maple_first_controller (), CONT_START, (cont_btn_callback_t) arch_exit);
@@ -47,10 +63,44 @@ int main (void)
 
     pvr_init_defaults ();
     conio_init (CONIO_TTY_PVR, CONIO_INPUT_LINE);   /* TODO: Change this to CONIO_INPUT_NONE once KOS supports it. */
+    conio_set_theme (CONIO_THEME_C64);
 
     /* STAGE: Display our welcome and copyright text. */ 
 
     conio_putstr (startup_msg);
+    conio_putstr (next_page_msg);
+    wait_for_user ();
+    conio_clear ();
+
+    /* STAGE: Open the description file. Parse and display it. */
+
+    in_desc = fopen ("/rd/driver.desc", "r");
+
+    if (in_desc)
+    {
+        char    line[80];
+
+        while (fgets (line, sizeof (line), in_desc))
+        {
+            if (!stricmp ("<hr>", line))
+            {
+                conio_putstr (next_page_msg);
+                wait_for_user ();
+                conio_clear ();
+            }
+            else
+                conio_putstr (line);
+        }
+
+        fclose (in_desc);
+    }
+    else
+    {
+        conio_putstr (no_desc_msg);
+        wait_for_user ();
+        conio_clear ();
+    }
+        
 
     /* STAGE: Keep us looping until a valid disc is inserted. */
 
