@@ -10,7 +10,7 @@
 #define ASIC_IRQ11_MASK     (REGISTER(uint32) (ASIC_BASE + 0x20))
 #define ASIC_IRQ9_MASK      (REGISTER(uint32) (ASIC_BASE + 0x30))
 
-/* Masks taken from an e-mail from Marcus Comstedt on dcdev */
+/* Masks taken from an e-mail by Marcus Comstedt on dcdev. */
 
 #define ASIC_MASK0_TADONE           0x04    /* Rendering complete */
 #define ASIC_MASK0_RASTER_BOTTOM    0x08    /* Bottom raster event */

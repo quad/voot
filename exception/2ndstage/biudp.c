@@ -4,11 +4,6 @@ DESCRIPTION
 
     Bi-directional UDP communications code.
 
-CHANGELOG
-
-    Sat Mar  9 05:10:55 PST 2002     Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 */
 
 #include "vars.h"

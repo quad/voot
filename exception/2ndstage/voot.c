@@ -4,10 +4,9 @@ DESCRIPTION
 
     VOOT netplay protocol debug implementation.
 
-CHANGELOG
+TODO
 
-    Sat Mar  9 05:08:07 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
+    Implement safer screenshot logic. See below for rationale.
 
 */
 
@@ -54,6 +53,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
             buffer_index = &(((uint32 *) packet->buffer)[1]);
             
+            /* The packet is byte-aligned, but the data buffer isn't. */
             SAFE_UINT32_COPY(address, buffer_index);
 
             dump_start(address);

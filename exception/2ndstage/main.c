@@ -5,11 +5,6 @@ DESCRIPTION
     The code first ran by the first stage loader. We quickly abandon this
     shell and hook to various parts of the system.
 
-CHANGELOG
-
-    Sat Feb  9 17:28:04 PST 2002    Scott Robinson <scott_vo@dsn.itgo.com>
-        Added this changelog entry.
-
 */
 
 #include "vars.h"
@@ -27,13 +22,13 @@ int32 dc_main(int32 do_warez)
     unsigned long bin_size;
 
     /* STAGE: Initialize the UBC. */
-    *UBC_R_BRCR = UBC_BRCR_UBDE;
+    *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBB;
     dbr_set(exception_handler_lowlevel);
     vbr_set(vbr_buffer);
 
     /* STAGE: Initialize both UBC channels. */
     init_ubc_a_exception();
-    init_ubc_b_serial();
+    //init_ubc_b_serial();
 
     /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();

@@ -39,6 +39,8 @@
 #define UBC_BBR_RW          (UBC_BBR_WRITE | UBC_BBR_READ)
 #define UBC_BRCR_CMFA       (1<<15)
 #define UBC_BRCR_CMFB       (1<<14)
+#define UBC_BRCR_PCBA       (1<<10)
+#define UBC_BRCR_PCBB       (1<<6)
 #define UBC_BRCR_UBDE       (1)
 
 extern uint8 my_vbr_table[];

@@ -6,11 +6,6 @@ DESCRIPTION
 
     Almost all of this has been ripped verbatim from libdream/KOS.
 
-CHANGELOG
-
-    Sat Feb  9 16:32:19 PST 2002    Scott Robinson <scott_vo@dsn.itgo.com>
-        First added this changelog.
-
 */
 
 #include "vars.h"

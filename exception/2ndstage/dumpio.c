@@ -4,12 +4,6 @@ DESCRIPTION
 
     Dump IO protocol handling logic.
 
-CHANGELOG
-
-    Sun Feb 24 16:26:15 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this module and began coding the protocol handling
-        routines.
-
 */
 
 #include "vars.h"

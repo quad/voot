@@ -4,11 +4,6 @@ DESCRIPTION
 
     Every pageflip we receive a call here. It's a great timer.
 
-CHANGELOG
-
-    Sat Mar  9 05:10:14 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 */
 
 #include "vars.h"
@@ -32,14 +27,14 @@ void init_heartbeat(void)
     new_exception.code = EXP_CODE_UBC;
     new_exception.handler = pageflip_handler;
 
-    add_exception_handler(&new_exception);
+    //add_exception_handler(&new_exception);
 
     /* STAGE: Catch on TA_DONE ASIC interrupts. */
-    new_irq.irq = EXP_CODE_INT13;
-    new_irq.mask0 = ASIC_MASK0_TADONE;
+    new_irq.irq = EXP_CODE_INT9;
+    new_irq.mask0 = ASIC_MASK0_VSYNC;
     new_irq.handler = ta_handler;
 
-    //add_asic_handler(&new_irq);
+    add_asic_handler(&new_irq);
 }
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
@@ -49,8 +44,6 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
     /* STAGE: Run this section of code only once. */
     if (!done_once)
     {
-        /* STAGE: !!! Check the timer chip. See if VOOT is using it. */
-
         /* STAGE: Enable the various codes. */
         gamedata_enable_debug();
 
@@ -79,9 +72,7 @@ void* pageflip_handler(register_stack *stack, void *current_vector)
 
 void* ta_handler(void *passer, register_stack *stack, void *current_vector)
 {
-    ((asic_lookup_table_entry *) passer)->clear_irq = TRUE;
-
-    return current_vector;
+    ((asic_lookup_table_entry *) passer)->clear_irq = FALSE;
 
     return my_heartbeat(stack, current_vector);
 }

@@ -4,12 +4,6 @@ DESCRIPTION
 
     Yeah, everyone needs a utility module.
 
-CHANGELOG
-
-    Sat Feb  9 17:16:49 PST 2002     Scott Robinson <scott_vo@dsn.itgo.com>
-        First added this changelog. Fixed some variable types and added some
-        "CREDIT" type comments.
-
 */
 
 #include "vars.h"

@@ -2,14 +2,9 @@
 
 DESCRIPTION
 
-    A accessor module for the BIOS font functions.
-
-CHANGELOG
-
-    Sat Mar  9 05:05:38 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry. This code is an almost exact
-        duplicate from Dan Potter's libdream's biosfont.c - except this
-        version of the source checks the BIOS mutex.
+    A accessor module for the BIOS font functions. This code is an almost
+    exact duplicate from Dan Potter's libdream's biosfont.c - except this
+    version of the source checks the BIOS mutex.
 
 */
 

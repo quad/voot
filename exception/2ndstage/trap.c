@@ -4,11 +4,6 @@ DESCRIPTION
 
     Serial trapping, tapping, and injection logic.
 
-CHANGELOG
-
-    Sat Mar  9 05:08:30 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 */
 
 #include "vars.h"

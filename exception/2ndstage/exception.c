@@ -4,11 +4,6 @@ DESCRIPTION
 
     Handle incoming exceptions in readable C-code.
 
-CHANGELOG
-
-    Sat Mar  9 05:10:34 PST 2002     Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 */
 
 #include "vars.h"

@@ -5,11 +5,6 @@ DESCRIPTION
     An implementation of printf. I stole it from somewhere. I can't remember
     where though. Sorry!
 
-CHANGELOG
-
-    Sat Feb  9 16:33:17 PST 2002     Scott Robinson <scott_vo@dsn.itgo.com>
-        First added this changelog.
-
 */
 
 #include "vars.h"

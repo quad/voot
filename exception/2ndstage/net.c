@@ -10,11 +10,6 @@ DESCRIPTION
         * VOOT      - The Netplay VOOT protocol.
     * ICMP          - Pings, primarily.
 
-CHANGELOG
-
-    Sat Mar  9 05:09:33 PST 2002     Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 TODO
 
     Implement DHCP.

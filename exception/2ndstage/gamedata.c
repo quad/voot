@@ -4,11 +4,6 @@ DESCRIPTION
 
     Gamedata structure modification code.
 
-CHANGELOG
-
-    Sat Mar  9 05:07:44 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry.
-
 */
 
 #include "vars.h"

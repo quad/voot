@@ -14,12 +14,6 @@ DESCRIPTION
     Andrew has also contributed to this card with great reference code and
     even better personal support in #dcdev@EFNet. Give the guy a damn hand.
 
-CHANGELOG
-
-    Sat Mar  9 05:08:47 PST 2002    Scott Robinson <scott_vo@quadhome.com>
-        First added this changelog entry. There should never be any changes
-        past this one .. except maybe the TX code.
-
 TODO
 
     Rewrite the rtl_tx logic into something I understand.
@@ -369,7 +363,6 @@ bool rtl_tx(const uint8* frame, uint32 length)
 }
 
 #endif
-
 
 void rtl_rx_all(void)
 {
