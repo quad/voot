@@ -39,6 +39,7 @@ $(BIN).elf: $(OBJS)
 
 2ndstage.c: bin2c 2ndstage/2ndstage.bin
 	./bin2c 2ndstage/2ndstage.bin stage_two_bin 2ndstage.c
+	echo "unsigned char stage_two_build_time[] = \"(main build at \" __TIME__ \" on \" __DATE__ \")\";" >> 2ndstage.c
 
 %.o: %.c
 	$(CC) $(INCS) -c $< -o $@

@@ -26,7 +26,7 @@ static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
 static void boot_loader(unsigned char *bootstrap_name)
 {
     int fd, bin_size;
-    int do_descramble;
+    int do_warez;
 
     vc_clear(COLOR_BOOT_INIT);
 
@@ -40,7 +40,7 @@ static void boot_loader(unsigned char *bootstrap_name)
        CD, however, we need to descramble the 1ST_READ.BIN in order to use
        it. */
     vc_puts("Accessing ...");
-    do_descramble = open_gd_or_cd(&fd, bootstrap_name);
+    do_warez = open_gd_or_cd(&fd, bootstrap_name);
     
     if (!fd)
     {
@@ -55,7 +55,7 @@ static void boot_loader(unsigned char *bootstrap_name)
     iso_read(fd, first_load_buffer, bin_size);
     iso_close(fd);
 
-    if (do_descramble)
+    if (do_warez)
         vc_puts("WAREZ_LOAD active! Bad pirate.");
 
     /* Copy the second stage into the IP.BIN area and execute it */
@@ -63,7 +63,7 @@ static void boot_loader(unsigned char *bootstrap_name)
 
     vc_puts("Go!");
     *first_load_size = bin_size;
-    (*(void (*)()) stage_buffer) (do_descramble);    /* If you don't screw with R4. */
+    (*(void (*)()) stage_buffer) (do_warez);    /* If you don't screw with R4. */
 }
 
 void dc_main(void)
@@ -76,6 +76,7 @@ void dc_main(void)
 
     vc_puts("Welcome to Netplay VOOT Extensions - BETA");
     vc_puts("(loader built at " __TIME__" on " __DATE__ ")");
+    vc_puts(stage_two_build_time);
     vc_puts("");
 
     while (1)

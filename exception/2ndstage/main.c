@@ -13,7 +13,7 @@
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
-int dc_main(int do_descramble)
+int dc_main(int do_warez)
 {
     unsigned long bin_size;
 
@@ -30,7 +30,7 @@ int dc_main(int do_descramble)
     ubc_wait();
 
     /* STAGE: Handle the 1ST_READ.BIN */
-    if (do_descramble)
+    if (do_warez)
     {
         disable_cache();
         warez_load(*((unsigned long *) REAL_LOAD_POINT));
