@@ -75,6 +75,10 @@ CHANGELOG
         Made C_CONNECT_SLAVE able to handle already-connected situations
         cleanly.
 
+    Sun Nov 24 20:47:30 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Fix a bug in the new C_CONNECT_SLAVE logic with a comparison on
+        sockets.
+
 */
 
 #include <stdlib.h>
@@ -159,7 +163,7 @@ int32 npc_handle_command(npc_command_t *command)
 
                 event = NULL;
 
-                if (!npc_system.slave_socket)
+                if (npc_system.slave_socket < 0)
                 {
                     event = (npc_command_t *) malloc(sizeof(npc_command_t));
                     event->type = C_LISTEN_SOCKET;
