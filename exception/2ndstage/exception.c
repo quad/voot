@@ -14,7 +14,6 @@ TODO
 #include "vars.h"
 #include "system.h"
 #include "exception-lowlevel.h"
-#include "voot.h"
 
 /* Loaded modules. */
 #include "biosfont.h"

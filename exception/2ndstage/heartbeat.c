@@ -7,11 +7,7 @@ DESCRIPTION
 */
 
 #include "vars.h"
-#include "system.h"
-#include "exception.h"
-#include "exception-lowlevel.h"
 #include "asic.h"
-#include "voot.h"
 #include "gamedata.h"
 #include "customize.h"
 
@@ -42,7 +38,9 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
         (*anim_mode_a == 0x0 && *anim_mode_b == 0x5) ||     /* Single Player 3d select. */
         (*anim_mode_a == 0x2 && *anim_mode_b == 0x9) ||     /* Single Player quick select. */
         (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
+    {
         maybe_load_customize();
+    }
 
     return current_vector;
 }

@@ -9,7 +9,7 @@
 #define VBR_INT(tab)    ((void *) ((unsigned int) tab) + 0x600)
 
 #define VO_VBR_SIZE     0x660
-#define EXP_TABLE_SIZE  10
+#define EXP_TABLE_SIZE  6
 
 typedef struct
 {

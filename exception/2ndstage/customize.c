@@ -10,7 +10,6 @@ DESCRIPTION
 #include "exception.h"
 #include "exception-lowlevel.h"
 #include "util.h"
-#include "voot.h"
 #include "gamedata.h"
 #include "printf.h"
 #include "controller.h"
