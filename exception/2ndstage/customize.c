@@ -21,6 +21,7 @@ TODO
 #include "customize.h"
 
 static const uint8 custom_func_key[] = { 0xe6, 0x2f, 0x53, 0x6e, 0xd6, 0x2f, 0xef, 0x63, 0xc6, 0x2f, 0x38, 0x23 };
+static const uint8 osd_func_key[] = { 0xe6, 0x2f, 0xd6, 0x2f, 0xc6, 0x2f, 0xb6, 0x2f, 0xa6, 0x2f, 0x96, 0x2f, 0x86, 0x2f, 0xfb, 0xff, 0x22, 0x4f, 0xfc, 0x7f, 0x43, 0x6d, 0x00, 0xe4, 0x43, 0x6b };
 static uint32 custom_func;
 static char gamebin_c[20];
 static customize_check_mode custom_status;
@@ -167,19 +168,39 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
 
             uint16 *p2_varmour_mod = (uint16 *) 0x8CCF7568;
             uint16 *p2_varmour_base = (uint16 *) 0x8CCF756a;
+            
+            uint16 *p2_stun = (uint16 *) 0x8CCF66D6;
             char cbuffer[40];
 
-            snprintf(cbuffer, sizeof(cbuffer), "Health 1 [%u -> %u]", *p1_health_b, *p1_health_a);
-            (*(void (*)()) 0x8c39573c)(5, 100, cbuffer);
-
-            snprintf(cbuffer, sizeof(cbuffer), "Health 2 [%u -> %u]", *p2_health_b, *p2_health_a);
-            (*(void (*)()) 0x8c39573c)(100, 100, cbuffer);
-
             play_vector = spc();
+
+            if (!osd_vector)
+                osd_vector = (uint32) search_sysmem_at(osd_func_key, sizeof(osd_func_key), GAME_MEM_START, SYS_MEM_END);
+
+            if (osd_vector)
+            {
+                snprintf(cbuffer, sizeof(cbuffer), "Health 1 [%u -> %u]", *p1_health_b, *p1_health_a);
+                (*(void (*)()) osd_vector)(5, 100, cbuffer);
+
+                snprintf(cbuffer, sizeof(cbuffer), "V.Armour 1 [%u -> %u]", *p1_varmour_base, *p1_varmour_mod);
+                (*(void (*)()) osd_vector)(5, 115, cbuffer);
+
+                snprintf(cbuffer, sizeof(cbuffer), "Health 2 [%u -> %u]", *p2_health_b, *p2_health_a);
+                (*(void (*)()) osd_vector)(5, 200, cbuffer);
+
+                snprintf(cbuffer, sizeof(cbuffer), "V.Armour 2 [%u -> %u]", *p2_varmour_base, *p2_varmour_mod);
+                (*(void (*)()) osd_vector)(5, 215, cbuffer);
+
+                snprintf(cbuffer, sizeof(cbuffer), "Stun 2 [%u]", *p2_stun);
+                (*(void (*)()) osd_vector)(5, 230, cbuffer);
+            }
         }
     }
     else
+    {
         play_vector = 0;
+        osd_vector = 0;
+    }
 
 #ifdef VECTOR_TRACK 
     if (spc() > 0x8c270000 && play_vector != spc())
