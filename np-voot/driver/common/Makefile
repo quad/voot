@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.12 2002/11/12 08:52:32 quad Exp $
+# $Id: Makefile,v 1.13 2002/11/12 18:15:30 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 DRIVER_CLEAN = lwip.a-clean
@@ -18,9 +18,8 @@ DRIVER_OBJS += util.o printf.o searchmem.o video.o serial.o bswap.o
 # Biosfont access and assertion.
 DRIVER_OBJS += biosfont.o biosfont-lowlevel.o assert.o
 
-# Network Layer (drivers and stack).
-#DRIVER_OBJS += rtl8139c.o voot.o dumpio.o
-DRIVER_OBJS += rtl8139c.o
+# Network layer.
+DRIVER_OBJS += rtl8139c.o dumpio.o
 
 # Gamedata interaction logic.
 DRIVER_OBJS += gamedata.o

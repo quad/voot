@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.10 2002/11/12 02:00:50 quad Exp $
+    $Id: rtl8139c.h,v 1.11 2002/11/12 18:15:33 quad Exp $
 
 */
 
@@ -8,7 +8,6 @@
 #define __COMMON_RTL8139C_H__
 
 #include "vars.h"
-#include "ether.h"
 #include "system.h"
 #include "asic.h"
 

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.2 2002/11/12 08:52:35 quad Exp $
+    $Id: net.c,v 1.3 2002/11/12 18:15:41 quad Exp $
 
 DESCRIPTION
 
@@ -41,7 +41,10 @@ TODO
 #include <assert.h>
 
 static anim_render_chain_f  old_anim_chain;
+
+#ifdef DO_DHCP
 static struct dhcp_state   *client;
+#endif
 
 static void net_etharp_timer (void)
 {
@@ -57,6 +60,7 @@ static void net_etharp_timer (void)
         last_tick = time ();
 }
 
+#ifdef DO_DHCP
 static void net_dhcp_coarse_timer (void)
 {
     static uint32   last_tick = 0;
@@ -64,7 +68,6 @@ static void net_dhcp_coarse_timer (void)
     if (last_tick && ((time () - last_tick) >= DHCP_COARSE_TIMER_SECS))
     {
         dhcp_coarse_tmr ();
-        dhcp_fine_tmr ();
 
         last_tick = time ();
     }
@@ -85,13 +88,16 @@ static void net_dhcp_fine_timer (void)
     else
         last_tick = timer_gen_count ();
 }
+#endif
 
 static void my_anim_chain (uint16 anim_code_a, uint16 anim_code_b)
 {
     net_etharp_timer ();
 
+#ifdef DO_DHCP
     net_dhcp_coarse_timer ();
-    //net_dhcp_fine_timer ();
+    net_dhcp_fine_timer ();
+#endif
 
     //net_tcp_timer ();
 
@@ -143,15 +149,17 @@ void net_init (void)
     udp_init ();
     //tcp_init();
 
-    /*
-        STAGE: Static IP configuration.
-    
-        TODO: Replace with DHCP!
-    */
+    /* STAGE: Intial IP configuration. */
 
+#ifdef DO_DHCP
     IP4_ADDR(&gw, 0,0,0,0);
     IP4_ADDR(&ipaddr, 0,0,0,0);
     IP4_ADDR(&netmask, 0,0,0,0);
+#else
+    IP4_ADDR(&gw, 10,1,1,254);
+    IP4_ADDR(&ipaddr, 10,1,1,70);
+    IP4_ADDR(&netmask, 255,0,0,0);
+#endif
 
     /* STAGE: Enable the BBA network interface. */
 
@@ -159,8 +167,10 @@ void net_init (void)
   
     netif_set_default (netif);
 
+#ifdef DO_DHCP
     /* STAGE: Enable address resolution via DHCP. */
 
     dhcp_init ();
     client = dhcp_start (netif);
+#endif
 }
