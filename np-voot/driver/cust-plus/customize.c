@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.4 2002/06/23 03:22:52 quad Exp $
+    $Id: customize.c,v 1.5 2002/06/29 13:10:46 quad Exp $
 
 DESCRIPTION
 
@@ -32,7 +32,11 @@ TODO
 #include <controller.h>
 #include <vmu.h>
 
+#include <voot.h>
+
 #include "customize.h"
+
+static exception_handler_f  old_ubc_handler;
 
 static char         module_save[VMU_MAX_FILENAME];
 static const uint8  osd_func_key[]      = {
@@ -58,7 +62,6 @@ static uint8            file_number = 0;
 static uint8           *file_buffer = NULL;
 static customize_data*  colors[2][VR_SENTINEL]; 
 
-#if 0
 static uint8           *color_buffers[] = {
                                             NULL,           /* NOTE: [0] Dordray. */
                                   (uint8 *) 0x8ce547f0,     /* NOTE: [1] Bal-bados. */
@@ -77,7 +80,6 @@ static uint8           *color_buffers[] = {
                                             NULL,           /* NOTE: [e] Fei-Yen the something. (Bad) */
                                             NULL,           /* NOTE: [f] Maybe Tangram? (Bad) */
                                           };
-#endif
 
 /* NOTE: References into the gamedata structure. */
 
@@ -86,9 +88,11 @@ static uint16          *anim_mode_b     = (uint16 *)    0x8ccf022a;
 
 static uint8           *p1_vr_loc       = (uint8 *)     0x8ccf6236;
 static uint16          *p1_health_real  = (uint16 *)    0x8ccf6284;
+static uint16          *p1_rw_ammo      = (uint16 *)    0x8ccf63b4;
 static uint16          *p1_health_stat  = (uint16 *)    0x8ccf6286;
 static uint16          *p1_varmour_mod  = (uint16 *)    0x8ccf63ec;
 static uint16          *p1_varmour_base = (uint16 *)    0x8ccf63ee;
+static uint16          *p1_infight_time = (uint16 *)    0x8ccf96b0;
 
 static uint8           *p2_vr_loc       = (uint8 *)     0x8ccf73b2;
 static uint16          *p2_health_real  = (uint16 *)    0x8ccf7400;
@@ -98,6 +102,9 @@ static uint16          *p2_varmour_base = (uint16 *)    0x8ccf756a;
 
 static uint8           *game_side       = (uint8 *)     0x8ccf96f8;
 static vmu_port        *data_port       = (vmu_port *)  0x8ccf9f06;
+
+static uint8           *cust_emb        = (uint8 *)     0x8ccf9f15;
+
 static uint8           *cust_head       = (uint8 *)     0x8ccf9f17;
 static uint8           *control_port    = (uint8 *)     0x8ccf9f1a;
 static uint8           *menu_side       = (uint8 *)     0x8ccf9f2e;
@@ -106,15 +113,15 @@ void customize_init (void)
 {
     exception_table_entry   new;
 
-    ubc_configure_channel (UBC_CHANNEL_A, (uint32) anim_mode_b, UBC_BBR_READ | UBC_BBR_OPERAND);
-
-    /* STAGE: Add exception handler for serial access. */
+    /* STAGE: Add exception handler for animation access. */
 
     new.type    = EXP_TYPE_GEN;
     new.code    = EXP_CODE_UBC;
     new.handler = customize_handler;
 
-    exception_add_handler (&new);
+    exception_add_handler (&new, &old_ubc_handler);
+
+    ubc_configure_channel (UBC_CHANNEL_A, (uint32) anim_mode_b, UBC_BBR_READ | UBC_BBR_OPERAND);
 }
 
 static void customize_clear_player (uint32 player, bool do_head)
@@ -153,7 +160,8 @@ static void* my_customize_handler (register_stack *stack, void *current_vector)
         {
             memcpy ((uint8 *) stack->r6, colors[player][vr]->palette, sizeof (customize_data));
 
-            cust_head[player] = colors[player][vr]->head;
+            cust_emb[player]    = TRUE;
+            cust_head[player]   = colors[player][vr]->head;
         }
 
         customize_clear_player (player, FALSE);
@@ -389,7 +397,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
 
             /* STAGE: Try to locate one of the customization functions. */
 
-            custom_func = (uint32) search_sysmem_at (custom_func_key, sizeof (custom_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
+            custom_func = (uint32) search_memory_at (custom_func_key, sizeof (custom_func_key), (const uint8 *) OVERLAY_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: Place the breakpoint on the customization function, if we found it. */
 
@@ -470,7 +478,7 @@ static void* my_anim_handler (register_stack *stack, void *current_vector)
             /* STAGE: Locate the OSD vector. */
 
             if (!osd_vector)
-                osd_vector = search_sysmem_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
+                osd_vector = search_memory_at (osd_func_key, sizeof (osd_func_key), (const uint8 *) OVERLAY_MEM_START, (const uint8 *) SYS_MEM_END);
 
             /* STAGE: If we found it, display the health OSD. */
 
@@ -540,23 +548,14 @@ void* customize_handler (register_stack *stack, void *current_vector)
 {
     /* STAGE: In the case of the secondary animation mode (channel A) exception. */
 
-    if (*UBC_R_BRCR & UBC_BRCR_CMFB)
-    {
-        /* STAGE: Be sure to clear the proper bit. */
-        *UBC_R_BRCR &= ~(UBC_BRCR_CMFB);
-
-        /* STAGE: Pass control to the actual code base. */
+    if (ubc_is_channel_break (UBC_CHANNEL_B))
         current_vector = my_customize_handler (stack, current_vector);
-    }
 
-    if (*UBC_R_BRCR & UBC_BRCR_CMFA)
-    {
-        /* STAGE: Be sure to clear the proper bit. */
-        *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
-
-        /* STAGE: Pass control to the actual code base. */
+    if (ubc_is_channel_break (UBC_CHANNEL_A))
         current_vector = my_anim_handler (stack, current_vector);
-    }
 
-    return current_vector;
+    if (old_ubc_handler)
+        return old_ubc_handler (stack, current_vector);
+    else
+        return current_vector;
 }
