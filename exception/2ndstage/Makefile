@@ -29,6 +29,12 @@ OBJS += scif_emu.o
 # Customization Reverse Helper
 OBJS += customize.o
 
+# Controller Access
+OBJS += controller.o
+
+# VMU Access
+OBJS += vmu.o
+
 all: $(BIN).srec $(BIN).bin
 
 $(BIN).srec: $(BIN).elf

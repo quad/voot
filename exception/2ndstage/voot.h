@@ -41,5 +41,6 @@ bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size);
 bool voot_send_command(uint8 type);
 void voot_dump_buffer(const uint8 *in_data, uint32 in_data_length);
 int32 voot_printf(uint8 type, const char *fmt, ...);
+int32 voot_debug(const char *fmt, ...);
 
 #endif

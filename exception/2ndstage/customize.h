@@ -9,7 +9,12 @@ typedef enum
     RUN
 } customize_check_mode;
 
-extern uint32 do_osd;
+typedef struct
+{
+    uint8 vr_type;
+
+    uint8 data[0x40F];
+} customize_data;
 
 void customize_init(void);
 bool customize_reinit(void);

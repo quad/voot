@@ -72,17 +72,17 @@ void grep_memory(const uint8 *key, uint32 key_size)
 {
     uint8 *mem_loc;
 
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "Grepping memory for '%s' ...", key);
+    voot_debug("Grepping memory for '%s' ...", key);
 
     mem_loc = SYS_MEM_START;
 
     while ((mem_loc = search_sysmem_at(key, key_size, mem_loc, SYS_MEM_END)))
     {
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Match @ %x", mem_loc);
+        voot_debug("Match @ %x", mem_loc);
         mem_loc++;
     }
 
-    voot_printf(VOOT_PACKET_TYPE_DEBUG, "Grep done!");
+    voot_debug("Grep done!");
 }
 
 /* CREDIT: Accessor to Katana syMalloc() */

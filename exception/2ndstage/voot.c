@@ -10,12 +10,13 @@ TODO
 
 */
 
-
 #include "vars.h"
 #include "util.h"
 #include "printf.h"
 #include "dumpio.h"
 #include "gamedata.h"
+
+#include "vmu.h"
 
 #include "voot.h"
 
@@ -25,12 +26,12 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
     {
         case VOOT_COMMAND_TYPE_HEALTH:
         {
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Obsolete due to OSD.");
+            voot_debug("Deprecated with new health OSD.");
             break;
         }
 
         case VOOT_COMMAND_TYPE_TIME:
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+            voot_debug("%u", time());
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
@@ -39,14 +40,16 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
             malloc_stat(&freesize, &max_freesize);
 
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA [%d/%d]", freesize, max_freesize);
+            voot_debug("Netplay VOOT Extensions, BETA [%d/%d]", freesize, max_freesize);
 
             break;
         }
 
         case VOOT_COMMAND_TYPE_PASVON:
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive mode functionality disabled.");
+        {
+            voot_debug("Deprecated with new serial interface.");
             break;
+        }
 
         case VOOT_COMMAND_TYPE_DUMPON:
         {
@@ -60,7 +63,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
             dump_start(address);
 
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Processed DUMPON command. (%x)", address);
+            voot_debug("Processed DUMPON command. (%x)", address);
 
             break;
         }
@@ -71,7 +74,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
             bytes = dump_stop();
 
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Processed DUMPOFF command. (%u)", bytes);
+            voot_debug("Processed DUMPOFF command. (%u)", bytes);
 
             break;
         }
@@ -191,7 +194,7 @@ void voot_dump_buffer(const uint8 *in_data, uint32 in_data_length)
 
         if (!voot_send_packet(VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
         {
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Error sending packet in main dump loop! Abort!");
+            voot_debug("Error sending packet in main dump loop! Abort!");
             break;
         }
 
@@ -228,4 +231,16 @@ int32 voot_printf(uint8 type, const char *fmt, ...)
     free(printf_buffer);
 
 	return i;
+}
+
+int32 voot_debug(const char *fmt, ...)
+{
+    int32 i;
+    va_list args;
+
+    va_start(args, fmt);
+    i = voot_printf(VOOT_PACKET_TYPE_DEBUG, fmt, args);
+    va_end(args);
+
+    return i;
 }

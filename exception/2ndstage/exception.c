@@ -18,6 +18,8 @@ DESCRIPTION
 #include "heartbeat.h"
 #include "scif_emu.h"
 #include "customize.h"
+#include "controller.h"
+#include "vmu.h"
 
 #include "exception.h"
 
@@ -182,6 +184,12 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Initialize the customization break logic. */
         customize_init();
+
+        /* STAGE: Initialize the controller access logic. */
+        controller_init();
+
+        /* STAGE: Initialize the VMU access logic. */
+        vmu_init();
     }
 #ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
@@ -191,7 +199,7 @@ void* exception_handler(register_stack *stack)
         init_vbr_table();
 
         /* DEBUG: Notification. */
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR");
+        voot_debug("Reinitialized VBR");
     }
 #endif
 
