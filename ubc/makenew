@@ -1,7 +1,0 @@
-#!/bin/sh
-
-(cd ubc-2ndstage ; make)
-ls -al ubc-2ndstage/ubc-2ndstage.bin
-make bin2c
-./bin2c ubc-2ndstage/ubc-2ndstage.bin stage_two_bin ubc-2ndstage.h
-rm ubc.o ; make
