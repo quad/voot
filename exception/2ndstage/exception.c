@@ -18,16 +18,6 @@ exception_table exp_table;
 uint8 vbr_buffer[VO_VBR_SIZE];
 uint8 *vbr_buffer_katana;
 
-void init_ubc_a_exception(void)
-{
-    /* STAGE: Configure UBC Channel A for breakpoint on page flip */
-    *UBC_R_BARA = 0xa05f8050;
-    *UBC_R_BAMRA = UBC_BAMR_NOASID;
-    *UBC_R_BBRA = UBC_BBR_WRITE | UBC_BBR_OPERAND;
-
-    ubc_wait();
-}
-
 static void init_vbr_table(void)
 {
     /* STAGE: !!! Install handlers for the other exception types OR remove
@@ -153,6 +143,9 @@ void* exception_handler(register_stack *stack)
     {
         /* STAGE: Initialize the new VBR */
         init_vbr_table();
+
+        /* DEBUG: Notify about reinitialization. */
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR\n");
     }
 
     /* STAGE: Handle exception table */

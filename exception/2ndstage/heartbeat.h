@@ -11,6 +11,7 @@ typedef struct
 
 extern my_pageflip pageflip_info;
 
+void init_ubc_a_exception(void);
 void init_heartbeat(void);
 void* pageflip_handler(register_stack *stack, void *current_vector);
 void* ta_handler(void *passer, register_stack *stack, void *current_vector);

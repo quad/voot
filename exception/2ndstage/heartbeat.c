@@ -14,6 +14,16 @@
 
 my_pageflip pageflip_info;
 
+void init_ubc_a_exception(void)
+{
+    /* STAGE: Configure UBC Channel A for breakpoint on page flip */
+    *UBC_R_BARA = 0xa05f8050;
+    *UBC_R_BAMRA = UBC_BAMR_NOASID;
+    *UBC_R_BBRA = UBC_BBR_WRITE | UBC_BBR_OPERAND;
+
+    ubc_wait();
+}
+
 void init_heartbeat(void)
 {
     exception_table_entry new_exception;
@@ -31,7 +41,7 @@ void init_heartbeat(void)
     new_irq.mask0 = ASIC_MASK0_TADONE;
     new_irq.handler = ta_handler;
 
-    add_asic_handler(&new_irq);
+    //add_asic_handler(&new_irq);
 }
 
 #ifdef COUNT_PAGEFLIP
@@ -94,9 +104,9 @@ void* pageflip_handler(register_stack *stack, void *current_vector)
 
 void* ta_handler(void *passer, register_stack *stack, void *current_vector)
 {
-    ((asic_lookup_table_entry *) passer)->clear_irq = FALSE;
+    ((asic_lookup_table_entry *) passer)->clear_irq = TRUE;
 
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "TA render cycle.\n");
+    return current_vector;
 
     return my_heartbeat(stack, current_vector);
 }

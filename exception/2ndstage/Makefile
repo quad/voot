@@ -45,7 +45,7 @@ $(BIN).elf: $(OBJS)
 	$(CC) $(INCS) -c $< -o $@
 
 clean:
-	-rm -f *.o *.elf 1ST_READ.BIN *.bck $(EXTRA_CLEAN)
+	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
 
 reallyclean: clean
 	-rm -f *.bin *.srec
