@@ -1,5 +1,7 @@
 BIN = 2ndstage
 
+include ../Makefile.config
+
 # FIRST - for proper .bin entry point
 OBJS += crt0.o
 
@@ -13,18 +15,6 @@ OBJS += main.o warez_load.o
 OBJS += util.o serial.o gamedata.o printf.o biosfont.o dumpio.o
 OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o
 OBJS += heartbeat.o trap.o
-
-TARGET=sh-elf
-DCBASE=/home/scott/dcdev
-#CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -m4-single-only -g -Wall
-CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -m4-single-only -Os -Wall
-LD=$(DCBASE)/bin/$(TARGET)-ld
-AS=$(DCBASE)/bin/$(TARGET)-as
-AR=$(DCBASE)/bin/$(TARGET)-ar
-OBJCOPY=$(DCBASE)/bin/$(TARGET)-objcopy
-
-#INCS =
-#LIBS =
 
 all: $(BIN).srec $(BIN).bin
 

@@ -123,22 +123,17 @@
 #define RTL_RX_FRAME_ALIGN      0x00000002      /* Frame alignment error */
 #define RTL_RX_STATUS_OK        0x00000001      /* Status ok: a good packet was received */
 
-/* RTL not-so-statics */
+/*
+* 1024 bytes Max Rx DMA burst
+* 16 byte Rx FIFO threshold
+* 16k + 16 bytes Rx DMA buffer length
+* (16k is the largest we can have because we're restricted to 0x6000
+* bytes by the DMA size.)
+*/
 
-#ifdef RTL_DCLOAD_VERSION
-
-    /*
-     * 1024 bytes Max Rx DMA burst
-     * 16 byte Rx FIFO threshold
-     * 16k + 16 bytes Rx DMA buffer length
-     * (16k is the largest we can have because we're restricted to 0x6000
-     * bytes by the DMA size.)
-     */
-    #define RTL_RXCONFIG_ON         0x00000e00
-    #define RX_BUFFER_LEN           16384
-    #define RX_BUFFER_THRESHOLD     16
-
-#endif
+#define RTL_RXCONFIG_ON         0x00000e00
+#define RX_BUFFER_LEN           16384
+#define RX_BUFFER_THRESHOLD     16
 
 #define RTL_DMA_FRAME_COPYING   0xfff0          /* in the frame status, means the DMA is still working */
 
@@ -152,11 +147,6 @@ typedef struct {
 } rtl_t;
 
 extern rtl_t rtl_info;
-
-#define RTL_TX_COUNT
-#ifdef RTL_TX_COUNT
-extern uint32 rtl_max_wait_count;
-#endif
 
 /* Module Function Definitions */
 

@@ -13,13 +13,10 @@
     even better personal support in #dcdev@EFNet. Give the guy a damn hand.
 */
 
-#define RTL_DCLOAD_VERSION
-
 #include "vars.h"
 #include "system.h"
 #include "asic.h"
 #include "exception-lowlevel.h"
-#include "voot.h"
 #include "util.h"
 
 #include "rtl8139c.h"
@@ -149,7 +146,7 @@ void rtl_start(void)
 bool rtl_init(void)
 {
     /* STAGE: Soft reset the adapter, this keeps us safe from any previous
-               use. */
+        use. */
     rtl_soft_reset();
 
 /*** AUTO-NEGOTIATE MEDIA TYPE ***/
@@ -169,7 +166,7 @@ bool rtl_init(void)
     RTL_IO_BYTE(RTL_CFG9346) = RTL_9346_EEM1 | RTL_9346_EEM0;
 
     /* STAGE: Enable receive and transmit functions - required to set DMA
-               information (according to Linux driver) */
+        information (according to Linux driver) */
     rtl_send_command(RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
 
     RTL_IO_INT(RTL_RXCONFIG) = RTL_RXCONFIG_ON;
@@ -231,7 +228,6 @@ bool rtl_init(void)
             It seems the RTL requires RTL_IMR_LINKCHK to work properly. Oh
             well.
         */
-        //RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_LINKCHG | RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
         RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
     }
 #endif
@@ -240,7 +236,7 @@ bool rtl_init(void)
     RTL_IO_SHORT(RTL_MULTIINTR) = 0;
 
     /* STAGE: Enable receive and transmit functions - required to set DMA
-               information (according to Linux driver) */
+        information (according to Linux driver) */
     rtl_send_command(RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
 
 /*** INITIALIZE INTERNAL DATA STRUCTURE ***/
@@ -254,7 +250,8 @@ bool rtl_init(void)
     return TRUE;
 }
 
-/* Copy straight from the DMA if possible, otherwise wrap around the end */
+/* Copy straight from the DMA if possible, otherwise wrap around the end of
+    the ring. */
 static uint8* rtl_copy_packet(const uint8 *src, uint32 size)
 {
     uint8 *dest;
@@ -336,18 +333,8 @@ bool rtl_tx(const uint8* frame, uint32 length)
         through the descriptors to whichever happens to be open. I want to
         be able to parallelize like that. Why can't I, huh? */
 
-#ifdef RTL_TX_COUNT
-    uint32 rtl_max_wait_count;
-#endif
-
 bool rtl_tx(const uint8* frame, uint32 length)
 {
-#ifdef RTL_TX_COUNT
-    uint32 wait_count;
-#endif
-
-    wait_count = 0;
-
     /* STAGE: Limit us to the size of the  */
     length &= RTL_TX_SIZE_MASK;
 
@@ -355,18 +342,7 @@ bool rtl_tx(const uint8* frame, uint32 length)
     {
         if (RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_ABORTED)
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) |= 1;
-
-#ifdef RTL_TX_COUNT
-        wait_count++;
-#endif
     }
-
-#ifdef RTL_TX_COUNT
-    if (wait_count > rtl_max_wait_count)
-    {
-        rtl_max_wait_count = wait_count;
-    }
-#endif
 
     memcpy(rtl_tx_descs[rtl_info.cur_tx], frame, length);
 
@@ -387,7 +363,6 @@ void rtl_rx_all(void)
     /* STAGE: Keep receiving packets until they're all gone, or we run into
        a packet still being read by the hardware, or of the network layer
        tells us to stop receiving. */
-
     while(!(RTL_IO_BYTE(RTL_CHIPCMD) & RTL_CMD_RX_BUF_EMPTY))
     {
         uint32 rx_status, rx_size;
@@ -463,8 +438,6 @@ void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
         RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_info.cur_rx - RX_BUFFER_THRESHOLD;
 
         rtl_start();
-
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!");
     }
 
     /* STAGE: Return from the handler */

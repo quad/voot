@@ -2,7 +2,6 @@
 
     Networking sub-system. I intend on handling the following protocols:
 
-
     * UDP           - Our primary data transfer protocol.
         * DHCP      - We want to be able to resolve our IP address in
                        foreign environments.
@@ -123,7 +122,7 @@ static uint16 ip_checksum_add(const uint16 *buf, uint16 count_short, uint32 sum)
     return sum;
 }
 
-bool ip_packet_ok(ether_info_packet_t *frame, uint16 ip_header_length, uint16 ip_data_length)
+static bool ip_packet_ok(ether_info_packet_t *frame, uint16 ip_header_length, uint16 ip_data_length)
 {
     ip_header_t *ip;
 
@@ -238,12 +237,6 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     IP_ADDR_COPY(ip->source, ip->dest);
     IP_ADDR_COPY(ip->dest, temp_ipaddr);
 
-/*
-    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
-    memcpy(&ip->source, &ip->dest, sizeof(uint32));
-    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
-*/
-
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
 
@@ -303,10 +296,7 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     /* STAGE: Construct the UDP psuedo-header. */
     IP_ADDR_COPY(udp_top.source_ip, ip->source);
     IP_ADDR_COPY(udp_top.dest_ip, ip->dest);
-/*
-    memcpy(&udp_top.source_ip, &ip->source, sizeof(uint32));
-    memcpy(&udp_top.dest_ip, &ip->dest, sizeof(uint32));
-*/
+
     udp_top.zero = 0;
     udp_top.protocol = ip->protocol;
     udp_top.length = udp->length;
@@ -348,12 +338,6 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     IP_ADDR_COPY(temp_ipaddr, ip->source);
     IP_ADDR_COPY(ip->source, ip->dest);
     IP_ADDR_COPY(ip->dest, temp_ipaddr);
-
-/*
-    memcpy(&temp_ipaddr, &ip->source, sizeof(uint32));
-    memcpy(&ip->source, &ip->dest, sizeof(uint32));
-    memcpy(&ip->dest, &temp_ipaddr, sizeof(uint32));
-*/
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, ip_header_size);

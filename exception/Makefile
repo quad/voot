@@ -1,6 +1,6 @@
-LIBDREAM_BASE = ./libdream/
-
 BIN = loader
+
+include Makefile.config
 
 # THIS MUST BE FIRST FOR PROPER .BIN LOADING
 OBJS = crt0.o
@@ -12,14 +12,7 @@ OBJS += vconsole.o gdrom.o
 # LAST for easy debugging
 OBJS += 2ndstage.o
 
-TARGET=sh-elf
-DCBASE=/home/scott/dcdev
-CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -O -m4-single-only -Wall
-LD=$(DCBASE)/bin/$(TARGET)-ld
-AS=$(DCBASE)/bin/$(TARGET)-as
-AR=$(DCBASE)/bin/$(TARGET)-ar
-OBJCOPY=$(DCBASE)/bin/$(TARGET)-objcopy
-
+LIBDREAM_BASE = ./libdream/
 INCS = -I$(LIBDREAM_BASE)/include
 LIBS = -L$(LIBDREAM_BASE)/lib -ldream
 
