@@ -9,11 +9,13 @@ DESCRIPTION
 #include "vars.h"
 #include "system.h"
 #include "exception-lowlevel.h"
+#include "voot.h"
+
+/* Loaded modules. */
+#include "biosfont.h"
 #include "util.h"
 #include "rtl8139c.h"
-#include "voot.h"
 #include "heartbeat.h"
-#include "biosfont.h"
 
 #include "exception.h"
 
@@ -144,6 +146,9 @@ void* exception_handler(register_stack *stack)
     if (do_vbr_switch && !exp_table.vbr_switched)
     {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
+        /* STAGE: Pre-cache the biosfont address. */
+        bfont_init(); 
+
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
@@ -169,9 +174,6 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();
-
-        /* STAGE: Pre-cache the biosfont address. */
-        bfont_init(); 
     }
 #ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
