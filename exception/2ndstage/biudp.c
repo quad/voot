@@ -13,7 +13,6 @@
 #include "biudp.h"
 
 biudp_control_t control;
-voot_packet netout;
 
 void biudp_init(const biudp_control_t *in_control)
 {
@@ -130,16 +129,23 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 {
 	va_list args;
 	int32 i;
+	voot_packet *netout;
 
-    netout.type = type;
+    netout = malloc(sizeof(voot_packet));
+    if (!netout)
+        return 0;   /* We didn't print any data. */
+
+    netout->type = type;
 
 	va_start(args, fmt);
-	i = vsnprintf(netout.buffer, sizeof(netout.buffer), fmt, args);
+	i = vsnprintf(netout->buffer, sizeof(netout->buffer), fmt, args);
 	va_end(args);
 
-    netout.size = htons(i);
+    netout->size = htons(i);
 
-    biudp_write_buffer((uint8 *) &netout, VOOT_PACKET_HEADER_SIZE + i);
+    biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + i);
+
+    free(netout);
 
 	return i;
 }

@@ -6,6 +6,8 @@
 #ifndef __VARS_H__
 #define __VARS_H__
 
+#define NULL            0x0
+
 #define REGISTER(x)     (volatile x *)
 
 typedef signed char int8;

@@ -56,7 +56,7 @@ uint8* search_sysmem_at(const uint8 *key, uint32 key_size, uint8 *start_loc, uin
             if(!memcmp((const uint8 *) cur_loc, key, key_size))
                 return cur_loc;     /* So we have a match. Report it. */
 
-    return 0x0;     // I really should define NULL
+    return NULL;
 }
 
 void grep_memory(const char *string)
@@ -90,7 +90,7 @@ void* malloc(uint32 size)
     if (malloc_root)
         return (*(void* (*)()) malloc_root)(size);
     else
-        return 0x0;
+        return NULL;
 }
 
 void free(void *data)

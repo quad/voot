@@ -19,6 +19,7 @@
 #include "system.h"
 #include "asic.h"
 #include "net.h"
+#include "util.h"
 #include "rtl8139c.h"
 
 /* *
@@ -252,16 +253,19 @@ bool rtl_init(void)
 }
 
 /* Copy straight from the DMA if possible, otherwise wrap around the end */
-static void rtl_copy_packet(uint8 *dest, uint8 *src, uint32 size)
+static uint8* rtl_copy_packet(uint8 *src, uint32 size)
 {
+    uint8 *dest;
     uint8 *dma_buffer_end;
 
     /* Precompute a bunch of values - the compiler should be smart about
         this, but we've turned off optimization for the moment. */
     dma_buffer_end = (uint8 *) RTL_DMA_BYTE + RX_BUFFER_LEN;
 
-    if (size > sizeof(rtl_info.frame_in_buffer))   /* Final paranoia. */ 
-        return;
+    /* malloc() a buffer of the proper size. */
+    dest = malloc(size);
+    if (!dest)
+        return NULL;
 
     if ((uint32) (src + size) < (uint32) dma_buffer_end) /* maybe this wants to be <= */
         memcpy(dest, src, size);
@@ -276,6 +280,8 @@ static void rtl_copy_packet(uint8 *dest, uint8 *src, uint32 size)
                (uint8 *) RTL_DMA_BYTE,
                (uint32) (size - (dma_buffer_end - src)));
     }
+
+    return dest;
 }
 
 #ifdef TX_SCOTT_IMPL
@@ -361,8 +367,10 @@ void rtl_rx_all(void)
     while(!(RTL_IO_BYTE(RTL_CHIPCMD) & RTL_CMD_RX_BUF_EMPTY))
     {
         uint32 rx_status, rx_size;
-        uint8 *packet_data;
+        uint8 *packet_data, *frame_in;
         uint32 packet_size;
+
+        frame_in = NULL;
 
         /* STAGE: Get pointers to frame size and status */
         rx_status = RTL_DMA_SHORT[rtl_info.cur_rx/2];
@@ -383,7 +391,7 @@ void rtl_rx_all(void)
             /* + 4 to skip the header. */
             packet_data = (uint8 *) ((((uint32) RTL_DMA_BYTE) + rtl_info.cur_rx) + 4);
 
-            rtl_copy_packet(rtl_info.frame_in_buffer, packet_data, packet_size);
+            frame_in = rtl_copy_packet(packet_data, packet_size);
         }
 
         /* Align the next packet on a 32-bit boundray.
@@ -395,8 +403,11 @@ void rtl_rx_all(void)
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
         /* STAGE: Only handle if the frame is complete. */
-        if (rx_status & 1)
-            net_handle_frame(rtl_info.frame_in_buffer, packet_size);
+        if (frame_in)
+            net_handle_frame(frame_in, packet_size);
+
+        /* STAGE: free() it, no matter what. */
+        free(frame_in);
     }
 }
 

@@ -148,8 +148,6 @@ typedef struct {
     uint16      cur_tx;
     uint8       mac[ETHER_MAC_SIZE];    /* Mac address */
 
-    uint8       frame_in_buffer[NET_MAX_PACKET];
-
     uint32      hdl_tbl_index;  /* Exception handler table index */
 } rtl_t;
 

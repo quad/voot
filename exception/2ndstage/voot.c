@@ -91,7 +91,7 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
             ba = malloc(NET_MAX_PACKET);
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x", ba);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x\n", ba);
 
             free(ba);
         }
