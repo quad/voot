@@ -35,7 +35,6 @@ void dump_framebuffer(void)
 
     /* STAGE: Format into strips that fit under the 1k packet limit. */
     #define MAP_NUM_PIXELS  (640 * 480)
-    /* #define STRIP_SIZE      300 */
     #define STRIP_SIZE      (VOOT_PACKET_BUFFER_SIZE / 3)
 
     /* STAGE: Release the data back in sectioned strips. */
