@@ -1,3 +1,12 @@
+!   system.s
+!
+!   $Id: system.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!
+! DESCRIPTION
+!
+!   Various processor level functions.
+!
+
     .section .text
     .global _vbr
     .global _vbr_set

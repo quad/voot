@@ -1,5 +1,7 @@
 !   crt0.s
 !
+!   $Id: crt0.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!
 ! DESCRIPTION
 !
 !   Bootstrap for np-voot drivers.

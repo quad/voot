@@ -1,3 +1,14 @@
+!   bswap.s
+!
+!   $Id: bswap.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!
+! DESCRIPTION
+!
+!   Byte swapping functions.
+!
+!   Since the SH4 has them in hardware, why not use it?
+!
+
 	.globl _bswap16, _bswap32
 
 	.text

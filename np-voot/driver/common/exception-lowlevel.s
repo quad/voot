@@ -1,3 +1,14 @@
+!   exception-lowlevel.s
+!
+!   $Id: exception-lowlevel.s,v 1.2 2002/06/12 00:59:42 quad Exp $
+!
+! DESCRIPTION
+!
+!   Exception handling core.
+!
+!   This passes off to the main "exception" module as quickly as possible.
+!
+
     .section .text
 
     .global _exception_handler_lowlevel
