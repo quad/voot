@@ -43,6 +43,11 @@ bool voot_send_command(uint8 type);
 void voot_dump_buffer(const uint8 *in_data, uint32 in_data_length);
 int32 voot_aprintf(uint8 type, const char *fmt, va_list args);
 int32 voot_printf(uint8 type, const char *fmt, ...);
+
+#ifdef NETWORK_SUPPORT
 int32 voot_debug(const char *fmt, ...);
+#else
+#define voot_debug(...) ;
+#endif
 
 #endif

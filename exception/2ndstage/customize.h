@@ -39,6 +39,10 @@ typedef struct
     uint8 palette[0x200];
 } customize_data;
 
+#define CUSTOMIZE_VMU_SIZE          10
+#define CUSTOMIZE_VMU_VR_IDX        0x2A0
+#define CUSTOMIZE_VMU_COLOR_IDX     0x2B0
+
 void customize_init(void);
 bool customize_reinit(void);
 void customize_clear_player(uint32 side);

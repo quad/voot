@@ -4,10 +4,6 @@ DESCRIPTION
 
     Customization reverse engineering helper code.
 
-TODO
-
-    VMU Loading.
-
 */
 
 #include "vars.h"
@@ -35,10 +31,8 @@ void customize_init(void)
 
     /* STAGE: Break on the secondary animation vector. */
     *UBC_R_BARA = 0x8ccf022a;
-    //*UBC_R_BARA = 0x8c30cd1e;
     *UBC_R_BAMRA = UBC_BAMR_NOASID;
     *UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_OPERAND;
-    //*UBC_R_BBRA = UBC_BBR_READ | UBC_BBR_INSTRUCT;
 
     ubc_wait();
 
@@ -56,8 +50,11 @@ void customize_clear_player(uint32 side)
 
     for (vr = 0; vr < 13 ; vr++)
     {
-        free(colors[side][vr]);
-        colors[side][vr] = NULL;
+        if (colors[side][vr])
+        {
+            free(colors[side][vr]);
+            colors[side][vr] = NULL;
+        }
     }
 }
 
@@ -73,8 +70,10 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
 
 static void* my_anim_handler(register_stack *stack, void *current_vector)
 {
+#ifdef HEALTH_OSD
     static uint32 play_vector = 0;
     static uint32 osd_vector = 0;
+#endif
     static uint16 save_mode_a = 0;
     static uint16 save_mode_b = 0;
     uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
@@ -114,6 +113,7 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         save_mode_b = *anim_mode_b;
     }
 
+#ifdef HEALTH_OSD
     /* STAGE: Health OSD segment - only triggers in game mode. */
     if (*anim_mode_b == 0xf && *anim_mode_a == 0x3)
     {
@@ -162,6 +162,7 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         play_vector = 0;
         osd_vector = 0;
     }
+#endif
 
     return current_vector;
 }
@@ -180,7 +181,7 @@ void maybe_load_customize()
     /* NOTE: This is a rather complex piece of IPC. If it works, I'll be suprised. */
 
     /* STAGE: [Step 1-P1] First player requests customization load. */
-    if ((check_controller_press(CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y) && !ipc)
+    if (!ipc && (check_controller_press(CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y))
     {
         uint8 *control_port = (uint8 *) 0x8ccf9f1a;
         uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
@@ -208,7 +209,7 @@ void maybe_load_customize()
         vmu_mount(*data_port);
     }
     /* STAGE: [Step 1-P2] Second player requests customization load. */
-    else if ((check_controller_press(CONTROLLER_PORT_B0) & CONTROLLER_MASK_BUTTON_Y) && !ipc)
+    else if (!ipc && (check_controller_press(CONTROLLER_PORT_B0) & CONTROLLER_MASK_BUTTON_Y))
     {
         uint8 *control_port = (uint8 *) 0x8ccf9f1a;
         uint8 *menu_side = (uint8 *) 0x8ccf9f2e;
@@ -216,7 +217,7 @@ void maybe_load_customize()
 
         /* STAGE: If the control port is 0 (A), our side is equal to the reverse of the DNA/RNA select.
                   If the control port is 1 (B), our side is equal to DNA/RNA select.
-                  Our player is the controlling port.
+                  Our player is the reverse of the controlling port.
         */
                  
         if (!(*control_port))
@@ -256,19 +257,17 @@ void maybe_load_customize()
         if (!retval)
         {
             /* STAGE: Give us a 10 block temporary file buffer. */
-            file_buffer = malloc(512 * 10);
+            file_buffer = malloc(512 * CUSTOMIZE_VMU_SIZE);
 
             /* STAGE: Make sure we actually obtained the file buffer. */
             if (file_buffer)
             {
-                vmu_load_file(*data_port, filename, file_buffer, 10);
+                vmu_load_file(*data_port, filename, file_buffer, CUSTOMIZE_VMU_SIZE);
 
                 ipc = C_IPC_LOAD;
             }
             else
-            {
                 ipc = C_IPC_START;
-            }
 
         }
         /* STAGE: Didn't find a customization file on this VMU, so check the next port. */
@@ -294,7 +293,7 @@ void maybe_load_customize()
     {
         voot_vr_id vr;
 
-        vr = file_buffer[0x2A0];
+        vr = file_buffer[CUSTOMIZE_VMU_VR_IDX];
 
         /* STAGE: If it is one of the VR types we're storing, copy the data over. */
         if (vr < 13 && !colors[side][vr])
@@ -304,7 +303,7 @@ void maybe_load_customize()
             /* STAGE: This whole trick is to keep memory from becoming very
                 fragmented. With only 64k, it's good to keep this in mind. */
 
-            memcpy(&temp, file_buffer + 0x2b0 + (side * 0x200), sizeof(customize_data));
+            memcpy(&temp, file_buffer + CUSTOMIZE_VMU_COLOR_IDX + (side * 0x200), sizeof(customize_data));
 
             free(file_buffer);
             colors[player][vr] = malloc(sizeof(customize_data));

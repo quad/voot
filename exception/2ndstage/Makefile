@@ -14,8 +14,9 @@ OBJS += main.o warez_load.o
 # All the others...
 OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
 
-# Network Layer
-OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
+# Hardware Network Layer
+#OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
+#CC += -DNETWORK_SUPPORT
 
 # TA Heartbeat
 OBJS += heartbeat.o
