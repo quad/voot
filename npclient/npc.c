@@ -220,7 +220,7 @@ int32 npc_handle_command(npc_command_t *command)
 
                 case VOOT_PACKET_TYPE_DATA:
                 {
-                    NPC_LOG(npc_system, LOG_DEBUG, "DATA(slave): '%s'", command->packet->buffer);
+                    NPC_LOG(npc_system, LOG_INFO, "DATA(slave): '%s'", command->packet->buffer);
 
                     voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
@@ -255,7 +255,7 @@ int32 npc_handle_command(npc_command_t *command)
 
                 case VOOT_PACKET_TYPE_COMMAND:
                 {
-                    NPC_LOG(npc_system, LOG_DEBUG, "COMMAND(server): %c", command->packet->buffer[0]);
+                    NPC_LOG(npc_system, LOG_INFO, "COMMAND(server): %c", command->packet->buffer[0]);
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
                 }
@@ -263,6 +263,7 @@ int32 npc_handle_command(npc_command_t *command)
                 case VOOT_PACKET_TYPE_DATA:
                 {
                     NPC_LOG(npc_system, LOG_DEBUG, "DATA(server): '%s'", command->packet->buffer);
+
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
                 }

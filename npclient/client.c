@@ -315,9 +315,19 @@ void input_handler(char *line)
         /* Now parse simple commands. */
         if (!strcmp(line, "c-inject"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
+        else if (!strcmp(line, "c-malloc"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_MALLOCTST);
+        else if (!strcmp(line, "c-netstat"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_NETSTAT);
+        else if (!strcmp(line, "c-health"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_HEALTH);
+        else if (!strcmp(line, "c-time"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_TIME);
+        else if (!strcmp(line, "c-version"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_VERSION);
         else if (!strcmp(line, "inject"))
         {
-            char data[] = "12345678912345";
+            char data[] = "123456789012345678901234567890123456789012345678901234567890";
 
             voot_send_data(system->slave_socket, VOOT_PACKET_TYPE_DATA, data, sizeof(data));
         }
@@ -342,9 +352,6 @@ void input_handler(char *line)
 void logger_callback(npc_log_level severity, const char *format, ...)
 {
     va_list args;
-
-    if (severity > LOG_NOTICE)
-        return;
 
     printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity]); 
 
