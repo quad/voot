@@ -2,10 +2,6 @@
 
     Serial trapping, tapping, and injection logic.
 
-TODO
-
-    In the case of an overflow, the serial and FIFO rings should be flushed and re-syncronized. */
-
 */
 
 #include "vars.h"
@@ -24,7 +20,25 @@ TODO
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
 */
 
-scif_fifo_t fifo;
+struct
+{
+    struct
+    {
+        uint8   data;
+        dir_e   direction;
+    } data[16];
+
+    uint32      start;
+    uint32      size;
+} phy_fifo;
+
+struct
+{
+    char        data[64];
+
+    uint32      start;
+    uint32      end;    
+} net_fifo;
 
 void init_ubc_b_serial(void)
 {
@@ -51,97 +65,70 @@ void init_ubc_b_serial(void)
 
     add_exception_handler(&new);
 } 
+
+static void phy_sync(void)
+{
+    /* TODO: Flush all OUT marked data in the physical fifo. */
+    /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
+}
+
+static uint32 phy_fifo_add(uint8 in_data, dir_e dir)
+{
+    /* TODO: Add the byte to the end of the physical fifo. */
+
+    /* DEBUG: Interim for stubbing. */
+    return 1;
+}
+
+static uint32 phy_fifo_del(uint8 check_data)
+{
+    /* TODO: Check if the first byte in the ring equals the passed byte. (check_data) */
+    /* TODO: Remove the first byte in the ring. */
+
+    /* DEBUG: Interim for stubbing. */
+    return 1;
+}
+
+static uint32 phy_size(void)
+{
+    /* STAGE: Return with number of bytes within physical fifo. */
+    return phy_fifo.size;
+}
  
-static uint32 fifo_add(const uint8 *data, uint32 size, dir_e direction)
-{
-    /* STAGE: Check if the FIFO is full. */
-    if (fifo->size >= 16)
-        return 0;
-
-    
-}
-
-static dir_e fifo_get(uint8 *data)
-{
-}
-
 uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
-    uint32 serial_index, timeout_count;
-    uint32 ring_index;
+#ifndef STUB
+    return 0;
+#else
 
-    /* STAGE: Add incoming data to serial ring. */
-    serial_index = 0;
-    while((serial_index < size) && (*SCIF_R_FS & SCIF_FS_TDFE))
-    {
-        *SCIF_R_FTG = data[serial_index];
+    uint32 data_processed;
 
-        serial_index++;
+    /* STAGE: Add incoming data to net fifo. */
+    data_processed = net_fifo_add(data, size);
 
-        *SCIF_R_FS &= ~(SCIF_FS_TDFE | SCIF_FS_TEND);
-    }
+    /* STAGE: Resynchronize net and physical fifos. */
+    phy_sync();
 
-    timeout_count = 0;
-    while((timeout_count < SCIF_TIMEOUT) && !(*SCIF_R_FS & SCIF_FS_TEND))
-        timeout_count++;
-
-    if (timeout_count == SCIF_TIMEOUT)
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF timeout during injection.\n");
-
-    /* STAGE: Add injected data to FIFO ring with IN designation. */
-    ring_index = fifo_add(data, size, IN);
-    if (ring_index < serial_index)
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "FIFO ring overflow! %u characters dropped.\n", serial_index - ring_index);
-    else if (serial_index < ring_index)
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Serial ring overflow! %u characters dropped.\n", ring_index - serial_index);
-
-    return data_index;
+    return data_processed;
+#endif
 }
 
 void* rxi_handler(register_stack *stack, void *current_vector)
 {
-    uint8 fifo_data, serial_data;
-    dir_e dir;
-    bool pass_data;
     void *return_vector;
 
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
 
-    /* STAGE: Drop all OUT data, pass along the first IN. If no data, drop
-        the whole interrupt on the floor. */
-    pass_data = FALSE;
-    while (!pass_data)
-    {
-        /* STAGE: Obtain the data from each FIFO ring. */
-        dir = fifo_get(&fifo_data);
-        serial_data = *SCIF_R_FRD;
+    /* DEBUG: RXI notification. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "RXI\n");
 
-        /* STAGE: Ring syncronization check. */
-        if (fifo_data != serial_data)
-        {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "FIFO and serial ring desyncronization!\n");
-            break;
-        }
+    /* STAGE: Synchronize the physical fifo. */
+    phy_sync();
 
-        /* STAGE: If the ring data is not "IN", then drop it on the floor. */
-        switch (dir)
-        {
-            /* STAGE: IN data is what we want to pass along. Change the
-                vector so that VOOT receives the interrupt and go! */
-            case IN:
-                return_vector = current_vector;
-                pass_data = TRUE;
-                break;
-
-            /* STAGE: Otherwise, flush the data from the SCIF and process
-                the next piece of data. */
-            case OUT:
-            default:
-                *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
-                break;
-        }
-    }
+    /* STAGE: If there is any remaining data in the physical fifo, pass on the interrupt. */
+    if (phy_size())
+        return_vector = current_vector;
 
     return return_vector;
 }
@@ -157,20 +144,26 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
     {
         /* STAGE: Trapped transmission. */
         case 0x8c0397f4:
-            /* DEBUG: Immediate mode dumping of serial data. */
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, ">%c", stack->r2);
+            /* DEBUG: Immediate mode dumping of outgoing serial data. */
+            biudp_printf(VOOT_PACKET_TYPE_DATA, "%c", stack->r2);
 
-            /* TODO: Add outgoing data to per-frame dump buffer. */
+            /* TODO (future): Add outgoing data to per-frame dump buffer. */
 
-            /* STAGE: Add outgoing data to FIFO ring with OUT designation. */
-            if(!fifo_add(&(stack->r2), sizeof(stack->r2), OUT))
-                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "FIFO ring overflow in transmission!\n");
+            /* STAGE: Add outgoing data to physical fifo. */
+            if(!phy_fifo_add(stack->r2, OUT))
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in transmission!\n");
 
             break;        
 
         /* STAGE: Trapped reception. */
         case 0x8c039b58:
+            /* DEBUG: Immediate mode dumping of incoming serial data. */
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\n", stack->r3);
+
+            /* STAGE: Remove incoming data from physical fifo. */
+            if(!phy_fifo_del(stack->r3))
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in reception!\n");
+
             break;
     }
 
