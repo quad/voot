@@ -12,6 +12,7 @@ typedef struct
     uint32  source_ip;
     uint32  dest_ip;
     uint32  port;
+    bool    initialized;
 } biudp_control_t;
 
 void biudp_init(const biudp_control_t *in_control);

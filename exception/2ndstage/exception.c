@@ -105,12 +105,24 @@ void* exception_handler(register_stack *stack)
 
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
         /* STAGE: Initialize the BBA. */
+#ifdef DEBUG
+        ubc_serial_write_str("[UBC] BBA Init:");
+#endif
         if (pci_detect())
         {
+#ifdef DEBUG
+            ubc_serial_write_str(" found");
+#endif
             if (pci_bb_init())
             {
+#ifdef DEBUG
+                ubc_serial_write_str(" pci_bb");
+#endif
                 if(rtl_init())
                 {
+#ifdef DEBUG
+                    ubc_serial_write_str(" rtl");
+#endif
                     /* STAGE: Handle ASIC exceptions */
                     init_asic_handler();
                 }

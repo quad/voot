@@ -16,6 +16,8 @@ void biudp_init(const biudp_control_t *in_control)
     /* STAGE: Copy the input control into global control structure. */
     memcpy(&control, in_control, sizeof(biudp_control_t));
 
+    control.initialized = 1;
+
     /* TODO (!!!): I really need to write some sort of function which will
         search the 192.? reserved IP area for an open IP. Use a ping scan or
         something. */
@@ -89,6 +91,9 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 {
     uint32 index, remain;
 
+    if (!control.initialized)
+        return;
+
     for (index = 0; index < (in_data_length / BIUDP_SEGMENT_SIZE); index++)
     {
         const uint8 *in_data_segment;
@@ -96,6 +101,8 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
         in_data_segment = in_data + (BIUDP_SEGMENT_SIZE * index);
 
         biudp_write_segment(in_data_segment, BIUDP_SEGMENT_SIZE);
+
+        vid_waitvbl();
     }
 
     remain = in_data_length % BIUDP_SEGMENT_SIZE;

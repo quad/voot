@@ -11,7 +11,7 @@
 
 asic_lookup_table asic_table;
 
-#ifdef DEBUG
+#ifdef DEBUG_EXTRA_FUNCTIONS
 
 static void dump_asic_segment(volatile uint32 *mask_base)
 {
@@ -186,7 +186,7 @@ void init_asic_handler(void)
 
     new_entry.code = EXP_CODE_INT11;
     add_exception_handler(new_entry);
-#ifdef
+#ifdef DEBUG
     ubc_serial_write_str(" 11");
 #endif
 

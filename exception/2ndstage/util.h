@@ -4,5 +4,6 @@
 #include "vars.h"
 
 void uint_to_string(uint32 foo, uint8 *bar);
+void vid_waitvbl(void);
 
 #endif

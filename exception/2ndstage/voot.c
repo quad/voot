@@ -21,7 +21,6 @@ static void dump_framebuffer_udp(void)
     #define GREEN_565_TO_INT(color) UPSCALE_6_STYLE(((color) >> 5) & 0x3F)
     #define BLUE_565_TO_INT(color)  UPSCALE_5_STYLE(((color) >> 11) & 0x1F)
 
-    biudp_write_str("[UBC] Dumping screenshot.\r\n#");
     vram_start = (uint16 *) (0xa5000000 + *((volatile unsigned int *)0xa05f8050));    /* Buffer start ? */
 
     #define MAP_NUM_PIXELS  (640 * 480)
@@ -38,8 +37,6 @@ static void dump_framebuffer_udp(void)
         if ((index % STRIP_SIZE) == STRIP_SIZE - 1)
             biudp_write_buffer((uint8 *) strip, sizeof(strip));
     }
-
-    biudp_write_str("#\r\n[UBC] Done with screenshot.\r\n");
 }
 
 

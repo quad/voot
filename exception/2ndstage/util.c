@@ -18,3 +18,14 @@ void uint_to_string(uint32 foo, uint8 *bar)
 
     bar[8] = 0;
 }
+
+/* Borrowed from libdream. */
+void vid_waitvbl(void)
+{
+	volatile uint32 *vbl = ((volatile uint32 *) 0xa05f8000) + 0x010c / sizeof(uint32);
+
+	while (!(*vbl & 0x01ff))
+		;
+	while (*vbl & 0x01ff)
+		;
+}

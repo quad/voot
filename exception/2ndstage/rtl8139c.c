@@ -55,7 +55,7 @@ bool pci_bb_init(void)
     uint32  count;
 
     /* Initialize the "GAPS" PCI glue controller */
-    G2_INT(0x1418) = 0x5a14a50;
+    G2_INT(0x1418) = 0x5a14a501;
 
     count = 10000;
     while (!(G2_INT(0x1418) & 1) && count > 0)

@@ -7,10 +7,15 @@
 
 #include "vars.h"
 #include "exception.h"
+#include "exception-lowlevel.h"
 #include "system.h"
-#include "serial.h"
 #include "asic.h"
+#include "biudp.h"
 #include "heartbeat.h"
+
+#ifdef DEBUG
+    #include "serial.h"
+#endif
 
 void init_heartbeat(void)
 {
@@ -32,6 +37,13 @@ void init_heartbeat(void)
 
 void* heartbeat(register_stack *stack, void *current_vector)
 {
+/*
+    volatile uint8 *enemy_shoot = (volatile uint8 *) (0x8CCF9ECC + 0x31);
+    volatile uint16 *proto_on = (volatile uint16 *) (0x8CCF9ECC + 0x6A);
+*/
+    volatile uint16 *arcade = (volatile uint16 *) (0x8CCF9ECC + 0x1A);
+    volatile uint16 *proto_ok = (volatile uint16 *) (0x8CCF9ECC + 0x86);
+    volatile uint16 *menus = (volatile uint16 *) (0x8CCF9ECC + 0x8C);
     static bool done_once = FALSE;
 
     if (!done_once)
@@ -40,6 +52,10 @@ void* heartbeat(register_stack *stack, void *current_vector)
 
         done_once = TRUE;
     }
+
+    *arcade = 0xFFFF;
+    *proto_ok = 0x0101;
+    *menus = 0x0101;
 
     return current_vector;
 }
