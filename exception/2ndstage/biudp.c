@@ -93,8 +93,8 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
     if (!control.initialized)
         return;
 
-    /* STAGE: Split the incoming into BIUDP_SEGMENT_SIZE byte chunks and
-        feed those out. */
+    /* STAGE: Split the incoming data into BIUDP_SEGMENT_SIZE byte chunks
+        and feed those out. */
     for (index = 0; index < (in_data_length / BIUDP_SEGMENT_SIZE); index++)
     {
         const uint8 *in_data_segment;
