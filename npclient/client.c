@@ -191,15 +191,11 @@ static void frontend_printf(const char *format, ...)
 {
     va_list args;
 
-    rl_crlf();
-
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
 
-    rl_crlf();
-    rl_on_new_line();
-    rl_redisplay();
+    printf("\n");
 }
 
 static void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command type, const char *vis_type)
@@ -499,17 +495,13 @@ void logger_callback(npc_log_level severity, const char *format, ...)
 {
     va_list args;
 
-    rl_crlf();
-
     printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity]); 
 
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
 
-    rl_crlf();
-    rl_on_new_line();
-    rl_redisplay();
+    printf("\n");
 }
 
 bool packet_callback(uint8 type, const voot_packet *packet)
