@@ -15,10 +15,12 @@
 /*
     SCIF Write:
         WRITE on 0xFFE8000C in R2   (PC: 8c0397f4)
+                               R1   (PC: 8c0398c0)
         Each write occurs within a single pageflip.
 
     SCIF Read:
         READ  on 0xFFE80014 in R3   (PC: 8c039b58)
+                               R0   (PC: 8c039bfe)
 */
 
 /* TODO: Determine why the physical FIFO size is 13. It's a damn odd number.
@@ -26,7 +28,7 @@
     and that each in/out FIFO can only support 14 bytes. Bullshit? I agree.
     We'll figure this one out sometime in the future. */
 
-#define PHY_FIFO_SIZE   13
+#define PHY_FIFO_SIZE   14
 #define NET_FIFO_SIZE   64
 #define PF_FIFO_SIZE    (PHY_FIFO_SIZE + NET_FIFO_SIZE)
 
@@ -44,7 +46,7 @@ struct
 
 struct
 {
-    char        data[NET_FIFO_SIZE];
+    uint8       data[NET_FIFO_SIZE];
 
     uint32      start;
     uint32      size; 
@@ -52,10 +54,12 @@ struct
 
 struct
 {
-    char        data[PF_FIFO_SIZE + 1];
+    uint8       data[PF_FIFO_SIZE + 1];
 
     uint32      size;
 } pf_fifo;
+
+static bool trap_passive_monitor = FALSE;
 
 /*
  *  Module Initialization Functions
@@ -91,12 +95,12 @@ void init_ubc_b_serial(void)
  *  Per-Frame FIFO Interface Wrapper
  */
 
-uint32 pf_size(void)
+static uint32 pf_size(void)
 {
     return pf_fifo.size;
 }
 
-void pf_fifo_add(char in)
+static void pf_fifo_add(uint8 in)
 {
     if (pf_fifo.size >= PF_FIFO_SIZE)
         return;
@@ -105,7 +109,7 @@ void pf_fifo_add(char in)
     pf_fifo.size++;
 }
 
-void pf_dump(void)
+static void pf_dump(void)
 {
     voot_send_packet(VOOT_PACKET_TYPE_DATA, pf_fifo.data, pf_fifo.size);
 
@@ -119,6 +123,11 @@ void pf_dump(void)
 static uint32 net_size(void)
 {
     return net_fifo.size;
+}
+
+static void net_flush_fifo(void)
+{
+    net_fifo.size = net_fifo.start = 0;
 }
 
 static int32 net_fifo_del(void)
@@ -215,14 +224,33 @@ static int32 phy_fifo_del(uint8 check_data, bool touch_serial)
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
     }
 
+    /* STAGE: Ensure the data in the fifo is syncronized with the actual
+        physical layer. */
     if (phy_fifo.data[phy_fifo.start].data != check_data)
         return -2;
+
+    /* DEBUG: Just a little thing I like to call paranoia. */
+    if (phy_fifo.data[phy_fifo.start].direction != IN)
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "phy_fifo_del() a non-IN byte!");
 
     /* STAGE: Flush the current byte in the physical fifo. */
     phy_fifo.start = ++phy_fifo.start % PHY_FIFO_SIZE;
     phy_fifo.size--;
 
     return check_data;
+}
+
+static dir_e phy_fifo_next(uint8 *data)
+{
+    /* STAGE: Do we even have data in the physical fifo? */
+    if (!phy_fifo.size)
+        return -1;
+
+    /* STAGE: Give them the next byte in the fifo. */
+    if (data)
+        *data = phy_fifo.data[phy_fifo.start].data;
+
+    return phy_fifo.data[phy_fifo.start].direction;
 }
 
 static uint32 phy_size(void)
@@ -233,27 +261,8 @@ static uint32 phy_size(void)
 
 static uint32 phy_flush_fifo(uint8 *temp_buffer)
 {
-    uint32 work_index, temp_index;
+    uint32 temp_index;
     uint32 flush_count;
-
-    /* STAGE: Flush all data not marked IN in the physical fifo meanwhile
-        saving the remaining data in the temp_buffer */
-    temp_index = 0;
-    for (work_index = 0; work_index < phy_fifo.size; work_index++)
-    {
-        uint32 fifo_index;
-
-        fifo_index = (phy_fifo.start + work_index) % PHY_FIFO_SIZE;
-
-        if (phy_fifo.data[fifo_index].direction == IN)
-        {
-            temp_buffer[temp_index] = phy_fifo.data[fifo_index].data;
-            temp_index++;
-        }
-    }
-    
-    /* STAGE: Reset the physical fifo. */
-    phy_fifo.start = phy_fifo.size = 0;
 
     /* STAGE: Flush/syncronize the SCIF fifo. */ 
     flush_count = 0;
@@ -269,6 +278,30 @@ static uint32 phy_flush_fifo(uint8 *temp_buffer)
 
         flush_count++;
     }
+
+    /* STAGE: Flush all data not marked IN in the physical fifo meanwhile
+        saving the remaining data in the temp_buffer */
+    temp_index = 0;
+    if (temp_buffer)
+    {
+        uint32 work_index;
+
+        for (work_index = 0; work_index < phy_fifo.size; work_index++)
+        {
+            uint32 fifo_index;
+
+            fifo_index = (phy_fifo.start + work_index) % PHY_FIFO_SIZE;
+
+            if (phy_fifo.data[fifo_index].direction == IN)
+            {
+                temp_buffer[temp_index] = phy_fifo.data[fifo_index].data;
+                temp_index++;
+            }
+        }
+    }
+    
+    /* STAGE: Reset the physical fifo. */
+    phy_fifo.start = phy_fifo.size = 0;
 
     return temp_index;
 }
@@ -294,6 +327,7 @@ static void phy_sync(void)
     }
 
     /* STAGE: Transfer data from the net fifo to the physical fifo - marker IN */
+    work_index = 0;
     while (phy_size() < PHY_FIFO_SIZE && net_size())
     {
         int32 net_in_data;
@@ -302,9 +336,16 @@ static void phy_sync(void)
 
         if (net_in_data >= 0x0 && !phy_fifo_add(net_in_data, IN, TRUE))
         {
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in net injection!");
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in net injection! %u bytes injected.", work_index);
             break;
         }
+        /* DEBUG: This should be an assert. */
+        else if (net_in_data < 0)
+        {
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "net_fifo_del() returned an error when it shouldn't have!");
+        }
+
+        work_index++;
     }
 }
 
@@ -315,6 +356,13 @@ static void phy_sync(void)
 uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
     uint32 data_index;
+
+    /* STAGE: If we're passively monitoring, drop it on the floor. */
+    if (trap_passive_monitor)
+    {
+        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Dropped injection due to passive.");
+        return 0;
+    }
 
     /* STAGE: Add incoming data to net fifo. */
     for (data_index = 0; data_index < size; data_index++)
@@ -342,6 +390,31 @@ void trap_ping_perframe(void)
         pf_dump();
 }
 
+void trap_set_passive(bool do_passive)
+{
+    if (do_passive == trap_passive_monitor)
+        return;
+
+    trap_passive_monitor = do_passive;
+
+    if (do_passive)
+    {
+        phy_flush_fifo(NULL);
+        net_flush_fifo();
+
+        *SCIF_R_FC &= ~(SCIF_FC_LOOP);
+    }
+}
+
+void trap_reset(void)
+{
+    trap_passive_monitor = FALSE;
+
+    phy_flush_fifo(NULL);
+    net_flush_fifo();
+    pf_fifo.size = 0;   /* this one is so simple, I'm not going to write an accessor function. */
+}
+
 /*
  *  Exception and Interrupt Handlers
  */
@@ -350,16 +423,16 @@ void* rxi_handler(register_stack *stack, void *current_vector)
 {
     void *return_vector;
 
+    /* STAGE: Passive listening intead of active code. */
+    if (trap_passive_monitor)
+        return current_vector;
+
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
 
-    /* TODO: In the future, instead of resynchronizing the whole physical
-        system on every RXI we can just wait until a non IN bytes comes
-        through. Only when that occurs do we actually resyncronize. I
-        imagine that would reduce a bit of lag. */
-
     /* STAGE: Synchronize the physical fifo. */
-    phy_sync();
+    if (phy_fifo_next(NULL) != IN)
+        phy_sync();
 
     /* STAGE: If there is any remaining data in the physical fifo, pass on the interrupt. */
     if (phy_size())
@@ -370,37 +443,105 @@ void* rxi_handler(register_stack *stack, void *current_vector)
 
 static void* my_serial_handler(register_stack *stack, void *current_vector)
 {
+    uint8 serial_data;
+    enum { TX, RX, NONE } serial_type;
+
     /* STAGE: Reconfigure serial port for testing. */
     serial_set_baudrate(57600);
-    *SCIF_R_FC |= SCIF_FC_LOOP;
 
-    /* STAGE: SPC based trap checker. */
+    /* STAGE: Only do loopback if we're actually processing the data. */
+    if (trap_passive_monitor)
+        *SCIF_R_FC &= ~(SCIF_FC_LOOP);
+    else
+        *SCIF_R_FC |= SCIF_FC_LOOP;
+
+    /* STAGE: SPC based trap checked. */
+    serial_data = 0x0;
+    serial_type = NONE;
     switch (spc())
     {
         /* STAGE: Trapped transmission. */
         case 0x8c0397f4:
         {
-            /* STAGE: Add outgoing data to per-frame dump buffer. */
-            pf_fifo_add(stack->r2);
+            serial_data = stack->r2;
+            serial_type = TX;
 
-            /* STAGE: Add outgoing data to physical fifo. */
-            if (!phy_fifo_add(stack->r2, OUT, FALSE))
-                voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in TX!");
+            break;
+        }
 
-            break;        
+        /* STAGE: Trapped transmission. */
+        case 0x8c0398c0:
+        {
+            serial_data = stack->r1;
+            serial_type = TX;
+
+            break;
         }
 
         /* STAGE: Trapped reception. */
         case 0x8c039b58:
         {
-            /* DEBUG: Immediate mode dumping of incoming serial data. */
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "<%c", stack->r3);
-
-            /* STAGE: Remove incoming data from physical fifo. */
-            if (phy_fifo_del(stack->r3, FALSE) < 0)
-                voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!");
+            serial_data = stack->r3;
+            serial_type = RX;
 
             break;
+        }
+
+        /* STAGE: Trapped reception. */
+        case 0x8c039bfe:
+        {
+            serial_data = stack->r0;
+            serial_type = RX;
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Alt. RX used!");
+
+            break;
+        }
+    }
+
+    if (serial_type == TX)
+    {
+#define DO_BITBANG
+#ifdef DO_BITBANG
+        /* STAGE: Immediate mode dumping of outgoing data. */
+        voot_send_packet(VOOT_PACKET_TYPE_DATA, (uint8 *) &(serial_data), sizeof(serial_data));
+#else
+        /* STAGE: Add outgoing data to per-frame dump buffer. */
+        pf_fifo_add(serial_data);
+#endif
+
+        if (!trap_passive_monitor)
+        {
+            /* STAGE: Add outgoing data to physical fifo. */
+            if (!phy_fifo_add(serial_data, OUT, FALSE))
+            {
+                voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in TX!");
+                trap_reset();
+            }
+        }
+    }
+    else if (serial_type == RX)
+    {
+        int32 error_code;
+
+        if (trap_passive_monitor)
+        {
+            /* STAGE: Immediate mode dumping of incoming serial data. */
+            if (serial_data)
+                voot_printf(VOOT_PACKET_TYPE_DEBUG, "R '%c' [%x]", serial_data, serial_data);
+            else
+                voot_printf(VOOT_PACKET_TYPE_DEBUG, "R NULL");
+        }
+        else
+        {
+            /* STAGE: Remove incoming data from physical fifo. */
+            error_code = phy_fifo_del(serial_data, FALSE);
+            if (error_code < 0)
+                voot_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX! [%d]", error_code);
+
+            /* STAGE: Synchronize the physical fifo. */
+            if (phy_fifo_next(NULL) != IN)
+                phy_sync();
         }
     }
 

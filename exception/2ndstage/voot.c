@@ -47,7 +47,7 @@ static void dump_framebuffer_udp(void)
 
 #endif
 
-static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_data_length)
+static void maybe_handle_command(uint8 command)
 {
     switch(command)
     {
@@ -81,6 +81,16 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             trap_inject_data(test_string, sizeof(test_string));
         }
             break;
+
+        case VOOT_COMMAND_TYPE_PRINTFTST:
+        {
+            char test_string[] = "SuperJoe";
+            int32 i;
+
+            i = voot_printf(VOOT_PACKET_TYPE_DEBUG, "%s", test_string);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "i = %d", i);
+            break;
+        }
 
         case VOOT_COMMAND_TYPE_MALLOCTST:
         {
@@ -123,6 +133,11 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
             break;
 
+        case VOOT_COMMAND_TYPE_PASVON:
+            trap_set_passive(TRUE);
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Passive monitoring ON!");
+            break;
+
         case VOOT_COMMAND_TYPE_VERSION:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
             break;
@@ -140,7 +155,7 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
     switch (packet->header.type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
-            maybe_handle_command(packet->buffer[0], udp, udp_data_length);
+            maybe_handle_command(packet->buffer[0]);
             break;
 
         case VOOT_PACKET_TYPE_DATA:

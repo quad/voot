@@ -3,8 +3,8 @@
 
 #include "vars.h"
 
-#define SYS_MEM_START   ((uint8 *) 0x8C010000)
-#define SYS_MEM_END     ((uint8 *) 0x8CFFFFFF)
+#define SYS_MEM_START       ((uint8 *) 0x8C010000)
+#define SYS_MEM_END         ((uint8 *) 0x8CFFFFFF)
 
 #define MALLOC_FREE_INDEX   0xCE
 
@@ -27,11 +27,11 @@ void* memmove(void *dest, const void *src, uint32 count);
 void vid_waitvbl(void);
 uint8* search_sysmem(const uint8 *key, uint32 key_size);
 uint8* search_sysmem_at(const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
-void grep_memory(const char *key, uint32 key_size);
+void grep_memory(const uint8 *key, uint32 key_size);
 void malloc_init(void);
 void* malloc(uint32 size);
 void free(void *data);
-void* sq_cpy(void *dest, const uint32 *src, int n);
+void* sq_cpy(void *dest, const uint32 *src, uint32 n);
 uint32 time(void);
 uint32 strtoul(const char *cp, char **endp, uint32 base);
 

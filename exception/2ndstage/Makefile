@@ -45,13 +45,10 @@ $(BIN).elf: $(OBJS)
 	$(CC) $(INCS) -c $< -o $@
 
 clean:
-	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
+	-rm -f *.o *.elf *.bin *.bck $(EXTRA_CLEAN)
 
 mrproper: clean
-	-rm -f *.bin *.srec
-
-run: $(BIN).bin
-	dc-tool -p -x $(BIN).elf
+	-rm -f *.srec
 
 force:
 	-rm -f $(BIN).elf

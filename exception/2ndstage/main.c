@@ -1,9 +1,18 @@
 /*  main.c
 
+DESCRIPTION
+
     The code first ran by the first stage loader. We quickly abandon this
     shell and hook to various parts of the system.
+
+CHANGELOG
+
+    Sat Feb  9 17:28:04 PST 2002    Scott Robinson <scott_vo@dsn.itgo.com>
+        Added this changelog entry.
+
 */
 
+#include "vars.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "trap.h"
@@ -13,7 +22,7 @@
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
-int dc_main(int do_warez)
+int32 dc_main(int32 do_warez)
 {
     unsigned long bin_size;
 
@@ -39,13 +48,13 @@ int dc_main(int do_warez)
     {
         /* STAGE: Relocate the 1st_read.bin */
         bin_size = *((unsigned long *) REAL_LOAD_POINT);
-        memmove((unsigned char *) REAL_LOAD_POINT, (unsigned char *) LOADED_POINT, bin_size);
+        memmove((uint8 *) REAL_LOAD_POINT, (uint8 *) LOADED_POINT, bin_size);
 
         /* STAGE: Execute the 1ST_READ.BIN */
         disable_cache();
         (*(void (*)()) REAL_LOAD_POINT) ();
     }
 
-    /* Freeze the system. */
+    /* STAGE: Freeze the system on crash. */
     while(1);
 }

@@ -1,6 +1,15 @@
 /*  util.c
 
+DESCRIPTION
+
     Yeah, everyone needs a utility module.
+
+CHANGELOG
+
+    Sat Feb  9 17:16:49 PST 2002     Scott Robinson <scott_vo@dsn.itgo.com>
+        First added this changelog. Fixed some variable types and added some
+        "CREDIT" type comments.
+
 */
 
 #include "vars.h"
@@ -8,23 +17,23 @@
 
 #include "util.h"
 
-/* Borrowed from Dan's libc */
+/* CREDIT: Borrowed from Dan Potter's libc */
 void* memmove(void *dest, const void *src, uint32 count)
 {
-    char *tmp, *s;
+    uint8 *tmp, *s;
 
     if (dest <= src)
     {
-        tmp = (char *) dest;
-        s = (char *) src;
+        tmp = (uint8 *) dest;
+        s = (uint8 *) src;
 
         while (count--)
             *tmp++ = *s++;
     }
     else
     {
-        tmp = (char *) dest + count;
-        s = (char *) src + count;
+        tmp = (uint8 *) dest + count;
+        s = (uint8 *) src + count;
 
         while (count--)
             *--tmp = *--s;
@@ -33,7 +42,7 @@ void* memmove(void *dest, const void *src, uint32 count)
     return dest;
 }
 
-/* Borrowed from libdream. */
+/* CREDIT: Borrowed from Dan Potter's libdream. */
 void vid_waitvbl(void)
 {
     volatile uint32 *vbl = ((volatile uint32 *) 0xa05f8000) + 0x010c / sizeof(uint32);
@@ -42,7 +51,6 @@ void vid_waitvbl(void)
     while (*vbl & 0x01ff);
 }
 
-/* Moved from the original search module. */
 uint8* search_sysmem(const uint8 *key, uint32 key_size)
 {
     return search_sysmem_at(key, key_size, SYS_MEM_START, SYS_MEM_END);
@@ -60,7 +68,7 @@ uint8* search_sysmem_at(const uint8 *key, uint32 key_size, const uint8 *start_lo
     return NULL;
 }
 
-void grep_memory(const char *key, uint32 key_size)
+void grep_memory(const uint8 *key, uint32 key_size)
 {
     uint8 *mem_loc;
 
@@ -77,7 +85,7 @@ void grep_memory(const char *key, uint32 key_size)
     voot_printf(VOOT_PACKET_TYPE_DEBUG, "Grep done!");
 }
 
-/* Stolen from VOOT! Accessor to syMalloc() */
+/* CREDIT: Accessor to Katana syMalloc() */
 uint8 *malloc_root;
 uint32 malloc_fail_count;
 const uint8 malloc_key[] = { 0xE6, 0x2F, 0xFC, 0x7F, 0x02, 0x00 };
@@ -109,15 +117,15 @@ void free(void *data)
         return (*(void (*)()) (malloc_root + MALLOC_FREE_INDEX))(data);
 }
 
-/* thanks to AndrewK - store queue accessor */
+/* CREDIT: thanks to AndrewK - store queue accessor */
 
 #define QACR0 (*(volatile uint32 *) 0xff000038)
 #define QACR1 (*(volatile uint32 *) 0xff00003c)
 
 /* copies n bytes from src to dest, dest must be 32-byte aligned */
-void* sq_cpy(void *dest, const uint32 *src, int n)
+void* sq_cpy(void *dest, const uint32 *src, uint32 n)
 {
-    uint32 *d = (unsigned int *) (0xe0000000 | (((unsigned long) dest) & 0x03ffffc0));
+    uint32 *d = (uint32 *) (0xe0000000 | (((uint32) dest) & 0x03ffffc0));
     
     /* Set store queue memory area as desired */
     QACR0 = ((((uint32) dest) >> 26) << 2) & 0x1c;
