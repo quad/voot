@@ -13,7 +13,7 @@ OBJS += main.o warez_load.o
 OBJS += util.o
 OBJS += rtl8139c.o net.o bswap.o
 OBJS += heartbeat.o
-#OBJS += serial.o
+OBJS += serial.o
 
 # Old modules
 #OBJS += search.o
@@ -25,9 +25,6 @@ LD=$(DCBASE)/bin/$(TARGET)-ld
 AS=$(DCBASE)/bin/$(TARGET)-as
 AR=$(DCBASE)/bin/$(TARGET)-ar
 OBJCOPY=$(DCBASE)/bin/$(TARGET)-objcopy
-
-INCS = -I$(LIBDREAM_BASE)/include
-LIBS = -L$(LIBDREAM_BASE)/lib
 
 #INCS =
 #LIBS =

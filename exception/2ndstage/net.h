@@ -19,7 +19,6 @@
 #define ICMP_TYPE_ECHO_REQUEST  8
 #define ICMP_TYPE_ECHO_REPLY    0
 
-
 #define ntohl bswap32
 #define htonl bswap32
 #define ntohs bswap16
@@ -30,7 +29,7 @@ typedef struct
     uint8 dest[ETHER_MAC_SIZE];
     uint8 source[ETHER_MAC_SIZE];
     uint16 ethertype;
-} ether_ii_header_t;
+} ether_ii_header_t __attribute__ ((packed));
 
 typedef struct
 {
@@ -42,7 +41,7 @@ typedef struct
     uint8   control;
     uint8   vendor_code[3];
     uint16  ethertype;
-} ether_8023_header_t;
+} ether_8023_header_t __attribute__ ((packed));
 
 typedef struct
 {
@@ -53,34 +52,48 @@ typedef struct
     uint32  length;
     uint8   *data;
     uint16  crc;
-} ether_info_packet_t;
+} ether_info_packet_t __attribute__ ((packed));
 
 typedef struct
 {
-    uint8   version_ihl __attribute__ ((packed));
-    uint8   tos __attribute__ ((packed));
-    uint16  length __attribute__ ((packed));
-    uint16  packet_id __attribute__ ((packed));
-    uint16  flags_frag_offset __attribute__ ((packed));
-    uint8   ttl __attribute__ ((packed));
-    uint8   protocol __attribute__ ((packed));
-    uint16  checksum __attribute__ ((packed));
-    uint32  source __attribute__ ((packed));
-    uint32  dest __attribute__ ((packed));
-} ip_header_t;
+    uint8   version_ihl;
+    uint8   tos;
+    uint16  length;
+    uint16  packet_id;
+    uint16  flags_frag_offset;
+    uint8   ttl;
+    uint8   protocol;
+    uint16  checksum;
+    uint32  source;
+    uint32  dest;
+} ip_header_t __attribute__ ((packed));
 
 typedef struct
 {
-    uint8   type __attribute__ ((packed));
-    uint8   code __attribute__ ((packed));
-    uint16  checksum __attribute__ ((packed));
-    uint32  misc __attribute__ ((packed));
-} icmp_header_t;
+    uint8   type;
+    uint8   code;
+    uint16  checksum;
+    uint32  misc;
+} icmp_header_t __attribute__ ((packed));
 
-extern uint8 frame_out_buffer[NET_MAX_PACKET];
+typedef struct {
+    uint16  src;
+    uint16  dest;
+    uint16  length;
+    uint16  checksum;
+} udp_header_t __attribute__ ((packed));
+
+typedef struct {
+    uint32  source_ip;
+    uint32  dest_ip;
+    uint8   zero;
+    uint8   protocol;
+    uint16  length;
+} udp_pseudo_header_t __attribute__ ((packed));
 
 void ip_handle_packet(ether_info_packet_t *frame);
 void net_handle_frame(uint8 *frame_data, uint32 frame_size);
+void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length);
 void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length);
 
 #endif

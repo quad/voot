@@ -23,13 +23,20 @@ void init_heartbeat(void)
 
     rcode = add_exception_handler(new);
 
-#ifdef DEBUG_HEARTBEAT
     if (!rcode)
         ubc_serial_write_str("[UBC] Unable to hook heartbeat handler.\r\n");
-#endif
 }
 
 void* heartbeat(register_stack *stack, void *current_vector)
 {
+    static bool done_once = FALSE;
+
+    if (!done_once)
+    {
+        /* STAGE: !!! Check the timer chip. See if VOOT is using it. */
+
+        done_once = TRUE;
+    }
+
     return current_vector;
 }

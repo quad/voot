@@ -345,14 +345,14 @@ bool rtl_tx(const uint8* frame, uint32 length)
     length &= RTL_TX_SIZE_MASK;
 
     while (!(RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_HOST_OWNS))
+    {
         if (RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_ABORTED)
         {
-#ifdef DEBUG_RTL8139C
             ubc_serial_write_str("[UBC] Tx magic!\r\n");
-#endif
 
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) |= 1;
         }
+    }
 
     memcpy(rtl_tx_descs[rtl_info.cur_tx], frame, length);
 
@@ -431,19 +431,15 @@ void* rtl_handler(void *passed, register_stack *stack, void *current_vector)
 
     /* STAGE: These are handled by the chip because I told it too. I'll warn
         myself anyway, though. */
-#ifdef DEBUG_RTL8139C
     if (intr & RTL_INT_RXFIFO_OVERFLOW)
         ubc_serial_write_str("[UBC] RTL8193c FIFO overflow!\r\n");
-#endif
 
     /* STAGE: Handle overflows relatively harshly. I'm taking this solution
         from the BSD guys, though. I'm willing to bet they have a little
         experience in this. */
     if (intr & RTL_INT_RXBUF_OVERFLOW)
     {
-#ifdef DEBUG_RTL8139C
         ubc_serial_write_str("[UBC] RTL8139c DMA overflow ...");
-#endif
 
 #ifdef RTL_OVERFLOW_BSD
         rtl_init();     /* I'm taking a page out of the BSD book... */
@@ -460,7 +456,3 @@ void* rtl_handler(void *passed, register_stack *stack, void *current_vector)
     /* STAGE: Return from the handler */
     return my_exception_finish;
 }
-
-#ifdef OLD_CODE_IMPORT
-
-#endif
