@@ -5,11 +5,13 @@
 */
 
 #include "vars.h"
-#include "biudp.h"
 #include "exception.h"
 #include "trap.h"
 #include "biudp.h"
+#include "printf.h"
 #include "voot.h"
+
+#ifdef DEPRECATED_VOOT_NET
 
 static void dump_framebuffer_udp(void)
 {
@@ -42,12 +44,10 @@ static void dump_framebuffer_udp(void)
     }
 }
 
+#endif
+
 static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_data_length)
 {
-    biudp_write_str("[UBC] command = '");
-    biudp_write(command);
-    biudp_write_str("'\r\n");
-
     switch(command)
     {
 #ifdef DEPRECATED_VOOT_NET
@@ -63,14 +63,6 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             biudp_write_str("[UBC] Uploaded game data.\r\n");
             break;
 
-        /* STAGE: Serial injection test case. It's amazing how SuperJoe is, so conveniently, 8 bytes. */
-        case 'i':
-        {
-            char xstr[] = "SuperJoe";
-            trap_inject_data(xstr, strlen(xstr));
-        }
-            break;
-
         /* STAGE: Do we take a screenshot? */
         case 's':
             dump_framebuffer_udp();
@@ -84,8 +76,7 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 #endif
 
         case 'v':
-            biudp_write_str("[UBC] Handling version.\r\n");
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "[UBC] Netplay VOOT Extensions, BETA\r\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\r\n");
             break;
 
         default:
@@ -98,8 +89,11 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
     switch (packet->type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
-            biudp_write_str("[UBC] Handling VOOT_PACKET_TYPE_COMMAND.\r\n");
             maybe_handle_command(packet->buffer[0], udp, udp_data_length);
+            break;
+
+        case VOOT_PACKET_TYPE_DATA:
+            trap_inject_data(packet->buffer, sizeof(uint8));
             break;
 
         default:
@@ -111,8 +105,9 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 {
     voot_packet *packet;
 
-    /* STAGE: Use the information from the ICMP echo to fill out our
-        biudp information. */
+#ifndef HARDCODE_IP
+    /* STAGE: Use the information from the UDP packet to fill out our biudp
+        information. */
     {
         biudp_control_t control;
         ip_header_t *ip;
@@ -125,6 +120,7 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 
         biudp_init(&control);
     }
+#endif
 
     packet = (voot_packet *) ((uint8 *) udp + sizeof(udp_header_t));
     maybe_handle_voot(packet, udp, udp_data_length);

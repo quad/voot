@@ -4,7 +4,7 @@
 */
 
 #include "vars.h"
-#include "biudp.h"
+#include "voot.h"
 #include "exception-lowlevel.h"
 #include "exception.h"
 #include "serial.h"
@@ -55,29 +55,23 @@ uint32 trap_inject_data(uint8 *data, uint32 size)
 {
     uint32 data_index, timeout_count;
 
-    biudp_write_str("i>");
-
     /* STAGE: Write the bytes to the FIFO, if possible. */
     data_index = 0;
     while((data_index < size) && (*SCIF_R_FS & SCIF_FS_TDFE))
     {
         *SCIF_R_FTG = data[data_index];
 
-        biudp_write(data[data_index]);
-
         data_index++;
 
         *SCIF_R_FS &= ~(SCIF_FS_TDFE | SCIF_FS_TEND);
     }
-
-    biudp_write_str("#\r\n");
 
     timeout_count = 0;
     while((timeout_count < SCIF_TIMEOUT) && !(*SCIF_R_FS & SCIF_FS_TEND))
         timeout_count++;
 
     if (timeout_count == SCIF_TIMEOUT)
-        biudp_write_str("[UBC] SCIF timeout during injection.\r\n");
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF timeout during injection.\r\n");
 
     return data_index;
 }
@@ -110,9 +104,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
     {
         /* STAGE: Trapped transmission. */
         case 0x8c0397f4:
-            biudp_write('>');
-            biudp_write(stack->r2);
-            biudp_write_str("\r\n");
+            biudp_printf(VOOT_PACKET_TYPE_DATA, "%c\r\n", stack->r2);
 
             /* STAGE: Notify our RXI handler that we should drop the loopbacked data. */
             scif_fifo_status.data_in_fifo = TRUE;
@@ -122,9 +114,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 
         /* STAGE: Trapped reception. */
         case 0x8c039b58:
-            biudp_write('<');
-            biudp_write(stack->r3);
-            biudp_write_str("\r\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\r\n", stack->r3);
             break;
     }
 

@@ -6,6 +6,8 @@
 
 #define BIUDP_SEGMENT_SIZE  1025
 
+/* #define HARDCODE_IP         1 */
+
 typedef struct
 {
     uint8   dest_mac[ETHER_MAC_SIZE];
