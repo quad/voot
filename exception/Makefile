@@ -74,7 +74,8 @@ clean:
 	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
 	-rm -f 1ST_READ.BIN IP.BIN np-voot-slave.iso
 
-reallyclean: clean
+mrproper: clean
+	make -C 2ndstage mrproper
 	-rm -f *.bin *.srec
 	-rm -f *~
 	-rm -f scramble makeip bin2c

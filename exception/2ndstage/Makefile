@@ -47,7 +47,7 @@ $(BIN).elf: $(OBJS)
 clean:
 	-rm -f *.o *.elf *.bck $(EXTRA_CLEAN)
 
-reallyclean: clean
+mrproper: clean
 	-rm -f *.bin *.srec
 
 run: $(BIN).bin
