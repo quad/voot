@@ -12,11 +12,17 @@ OBJS += exception.o exception-lowlevel.o system.o asic.o
 OBJS += main.o warez_load.o
 
 # All the others...
-OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
+OBJS += util.o printf.o
+
+# Biosfont and assert.
+OBJS += biosfont.o assert.o
 
 # Hardware Network Layer
 #OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
 #CC += -DNETWORK_SUPPORT
+
+# Gamedata interaction.
+#OBJS += gamedata.o
 
 # TA Heartbeat
 #OBJS += heartbeat.o
@@ -30,7 +36,7 @@ OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
 #OBJS += adx_tlk2.obj adx_tlk2_patch.o sj_mem.obj
 
 # SCIF Emulation layer v2
-#OBJS += scif_emu.o
+#OBJS += scif_emu.o serial.o 
 
 # Customization Handler
 OBJS += customize.o
