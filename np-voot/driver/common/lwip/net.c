@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.5 2002/11/14 20:56:08 quad Exp $
+    $Id: net.c,v 1.6 2002/11/20 00:02:19 quad Exp $
 
 DESCRIPTION
 
@@ -149,6 +149,7 @@ void net_init (void)
     IP4_ADDR(&ipaddr, 0,0,0,0);
     IP4_ADDR(&netmask, 0,0,0,0);
 #else
+//#define KIRK
 #ifdef KIRK
     IP4_ADDR(&gw, 192,168,0,1);
     IP4_ADDR(&ipaddr, 192,168,0,11);
