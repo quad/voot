@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.6 2002/06/23 23:48:52 quad Exp $
+    $Id: biudp.c,v 1.7 2002/06/24 00:19:17 quad Exp $
 
 DESCRIPTION
 
@@ -56,7 +56,7 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
     memcpy (frame_out.source, ether_mac (), ETHER_MAC_SIZE);
     memcpy (frame_out.dest, control.dest_mac, ETHER_MAC_SIZE);
 
-    frame_out.ethertype = 0x0800;
+    frame_out.ethertype = ETHER_TYPE_IP;
     frame_out.length    = ip_length;
     frame_out.data      = (uint8 *) ip;
 

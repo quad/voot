@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.7 2002/06/23 23:18:05 quad Exp $
+    $Id: rtl8139c.c,v 1.8 2002/06/24 00:19:17 quad Exp $
 
 DESCRIPTION
 
@@ -137,7 +137,7 @@ static void rtl_send_command (uint8 command)
 
 static void rtl_stop (void)
 {
-    /* STAGE: Disable packet reception. */
+    /* STAGE: Disable frame reception. */
 
     RTL_IO_INT(RTL_RXCONFIG) &= ~(RTL_RX_TOALL | RTL_RX_TOUS);
 
@@ -152,7 +152,7 @@ static void rtl_start (void)
 
     rtl_send_command (RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
 
-    /* STAGE: Enable broadcast and physical match packets. */
+    /* STAGE: Enable broadcast and physical match frames. */
 
     RTL_IO_INT(RTL_RXCONFIG) |= RTL_RX_TOALL | RTL_RX_TOUS;
 }
@@ -223,7 +223,7 @@ static bool rtl_int_configure (void)
 
     RTL_IO_SHORT(RTL_INTRMASK) = RTL_INT_RX_OK | RTL_INT_RXFIFO_OVERFLOW | RTL_INT_RXBUF_OVERFLOW | RTL_INT_LINKCHG;
 
-    /* STAGE: Disable all multi-interrupts - don't tell us about weird packets. */
+    /* STAGE: Disable all multi-interrupts - don't tell us about weird frames. */
 
     RTL_IO_SHORT(RTL_MULTIINTR) = 0;
 
@@ -331,7 +331,6 @@ static bool rtl_init_real (void)
     rtl_cache_mac ();
 
     rtl_info.cur_rx = rtl_info.cur_tx = 0;
-    rtl_info.last_action = time();
 
     return TRUE;
 }
@@ -342,14 +341,14 @@ static bool rtl_init_real (void)
     TODO: This code hasn't been cleaned up yet for sake of compatibility.
 */
 
-static uint8* rtl_copy_packet (const uint8 *src, uint32 size)
+static uint8* rtl_copy_frame (const uint8 *src, uint32 size)
 {
     uint8  *dest;
     uint8  *dma_buffer_end;
 
     dma_buffer_end = (uint8 *) RTL_DMA_BYTE + RX_BUFFER_LEN;
 
-    /* STAGE: Make sure we have a buffer large enough to hold the packet. */
+    /* STAGE: Make sure we have a buffer large enough to hold the frame. */
 
     dest = malloc (size);
 
@@ -373,7 +372,7 @@ static uint8* rtl_copy_packet (const uint8 *src, uint32 size)
 
         /*
             STAGE: Then copy from the beginning of the DMA buffer to the
-            remaining end of the packet.
+            remaining end of the frame.
         */
         memcpy (dest + (dma_buffer_end - src),
                 (uint8 *) RTL_DMA_BYTE,
@@ -387,9 +386,9 @@ static uint8* rtl_copy_packet (const uint8 *src, uint32 size)
 static void rtl_rx_all (void)
 {
     /*
-        STAGE: Keep receiving packets until they're all gone...
+        STAGE: Keep receiving frames until they're all gone...
         
-        or we run into a packet still being read by the hardware...
+        or we run into a frame still being read by the hardware...
         
         or of the network layer tells us to stop receiving.
     */
@@ -399,8 +398,8 @@ static void rtl_rx_all (void)
         uint8  *frame_in;
         uint32  rx_status;
         uint32  rx_size;
-        uint32  packet_size;
-        uint8  *packet_data;
+        uint32  frame_size;
+        uint8  *frame_data;
 
         frame_in = NULL;
 
@@ -410,7 +409,7 @@ static void rtl_rx_all (void)
         rx_size = RTL_DMA_SHORT[rtl_info.cur_rx/2 + 1];
 
         /*
-            STAGE: Check if the RTL is still copying packets - if so, try
+            STAGE: Check if the RTL is still copying frames - if so, try
             again.
             
             NOTE: This should never happen because we're driven by
@@ -420,21 +419,21 @@ static void rtl_rx_all (void)
         if (rx_size == RTL_DMA_FRAME_COPYING)
             break;
 
-        packet_size = rx_size - 4;
+        frame_size = rx_size - 4;
 
-        /* STAGE: Handle that GOOD packet, baby! */
+        /* STAGE: Handle that GOOD frame, baby! */
 
         if (rx_status & 1)  /* NOTE: .. if it's done? */
         {
             /* NOTE: + 4 to skip the header. */
 
-            packet_data = (uint8 *) ((((uint32) RTL_DMA_BYTE) + rtl_info.cur_rx) + 4);
+            frame_data = (uint8 *) ((((uint32) RTL_DMA_BYTE) + rtl_info.cur_rx) + 4);
 
-            frame_in = rtl_copy_packet (packet_data, packet_size);
+            frame_in = rtl_copy_frame (frame_data, frame_size);
         }
 
         /*
-            STAGE: Align the next packet on a 32-bit boundray...
+            STAGE: Align the next frame on a 32-bit boundray...
 
             NOTE: + 4 (Rx header)
                   + 3 (so no collision)
@@ -448,10 +447,10 @@ static void rtl_rx_all (void)
 
         /* STAGE: Stop processing if network layer instructs us too... */
 
-        if (frame_in && ether_handle_frame (frame_in, packet_size))
+        if (frame_in && ether_handle_frame (frame_in, frame_size))
             break;
 
-        /* STAGE: free() the packet, no matter what. */
+        /* STAGE: free() the frame, no matter what. */
 
         free (frame_in);
     }
@@ -475,20 +474,16 @@ bool rtl_init (void)
     return FALSE;
 }
 
-bool rtl_tx (const uint8 *frame, uint32 length)
+bool rtl_tx (const uint8 *header, uint32 header_length, const uint8 *data, uint32 data_length)
 {
-    /* STAGE: Perform a rate limit check. */
+    uint32 frame_length;
 
-    if ((time () - rtl_info.last_action) < 5)
-    {
-        video_waitvbl ();
+    /* STAGE: Limit the frame to a certain size. */
 
-        rtl_info.last_action = time ();
-    }
+    frame_length = header_length + data_length;
 
-    /* STAGE: Limit the packet to a certain size. */
-
-    length &= RTL_TX_SIZE_MASK;
+    if (frame_length > RTL_TX_SIZE_MASK)
+        return FALSE;
 
     /* STAGE: Wait/force the descriptor to open up. */
 
@@ -498,19 +493,20 @@ bool rtl_tx (const uint8 *frame, uint32 length)
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) |= 1;
     }
 
-    /* STAGE: Copy the packet into the descriptor. */
+    /* STAGE: Copy the complete frame into the descriptor. */
 
-    memcpy (rtl_tx_descs[rtl_info.cur_tx], frame, length);
-
+    memcpy (rtl_tx_descs[rtl_info.cur_tx], header, header_length);
+    memcpy (rtl_tx_descs[rtl_info.cur_tx] + header_length, data, data_length);
+    
     /*
-        STAGE: Inform the chip the packet has landed and the 'proper' size of it.
+        STAGE: Inform the chip the frame has landed and the 'proper' size of it.
 
         NOTE: The 8139c doesn't pad its frames.
     */
 
-    length = (length < 60) ? 60 : length;
+    frame_length = (frame_length < 60) ? 60 : frame_length;
 
-    RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) = length;
+    RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) = frame_length;
 
     /* STAGE: And use the next descriptor on the next TX. */
 
@@ -572,7 +568,7 @@ void* rtl_irq_handler (void *passer, register_stack *stack, void *current_vector
             link_stable = TRUE;
         }
     }
-    /* STAGE: Check if we received packets. */
+    /* STAGE: Check if we received frames. */
     else if (intr & RTL_INT_RX_OK)
     {
         rtl_rx_all ();

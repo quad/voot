@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.4 2002/06/23 23:18:05 quad Exp $
+    $Id: rtl8139c.h,v 1.5 2002/06/24 00:19:17 quad Exp $
 
 */
 
@@ -174,7 +174,6 @@ typedef struct
     uint16  cur_rx;                             /* Current Rx DMA buffer tail index */
     uint16  cur_tx;
     uint8   mac[ETHER_MAC_SIZE];                /* Mac address */
-    uint32  last_action;
 
     uint32  hdl_tbl_index;                      /* Exception handler table index */
 } rtl_t;
@@ -182,7 +181,7 @@ typedef struct
 /* NOTE: Module definitions. */
 
 bool    rtl_init        (void);
-bool    rtl_tx          (const uint8 *frame, uint32 length);
+bool    rtl_tx          (const uint8 *header, uint32 header_length, const uint8 *data, uint32 data_length);
 uint8 * rtl_mac         (void);
 void *  rtl_irq_handler (void *passer, register_stack *stack, void *current_vector);
 

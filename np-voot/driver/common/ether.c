@@ -1,6 +1,6 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.2 2002/06/23 23:48:52 quad Exp $
+    $Id: ether.c,v 1.3 2002/06/24 00:19:17 quad Exp $
 
 DESCRIPTION
 
@@ -20,11 +20,11 @@ DESCRIPTION
 
 /* NOTE: Miscellaneous utility functions. No logic occurs within these. */
 
-static bool ether_tx (const uint8 *frame, uint32 frame_size)
+static bool ether_tx (const uint8 *header, uint32 header_size, const uint8 *data, uint32 data_size)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx (frame, frame_size);
+    return rtl_tx (header, header_size, data, data_size);
 }
 
 /*
@@ -93,9 +93,8 @@ bool ether_init (void)
 
 bool ether_transmit (ether_info_packet_t *frame_in)
 {
-    ether_ii_header_t  *frame_out;
+    ether_ii_header_t   frame_out;
     uint32              frame_out_length;
-    bool                retval;
 
     /* STAGE: Ensure the packet isn't oversize. */
 
@@ -104,32 +103,15 @@ bool ether_transmit (ether_info_packet_t *frame_in)
     if (frame_out_length > NET_MAX_PACKET)
         return FALSE;
 
-    /* STAGE: malloc() appropriate sized buffer. */
-
-    frame_out = malloc (frame_out_length);
-
-    if (!frame_out)
-        return FALSE;
-
     /* STAGE: Setup the packet. */
 
-    memcpy (frame_out->source, frame_in->source, ETHER_MAC_SIZE);
-    memcpy (frame_out->dest, frame_in->dest, ETHER_MAC_SIZE);
-    frame_out->ethertype = htons (frame_in->ethertype);
-
-    /* STAGE: Copy the remaining buffer. */
-
-    memcpy ((uint8 *) frame_out + sizeof (ether_ii_header_t), frame_in->data, frame_in->length);
+    memcpy (frame_out.source, frame_in->source, ETHER_MAC_SIZE);
+    memcpy (frame_out.dest, frame_in->dest, ETHER_MAC_SIZE);
+    frame_out.ethertype = htons (frame_in->ethertype);
 
     /* STAGE: Transmit the packet. */
 
-    retval = ether_tx ((uint8 *) frame_out, frame_out_length);
-
-    /* STAGE: Free output buffer. */
-
-    free (frame_out);
-
-    return retval;
+    return ether_tx ((const uint8 *) &frame_out, sizeof (ether_ii_header_t), frame_in->data, frame_in->length);
 }
 
 uint8* ether_mac (void)
@@ -161,7 +143,7 @@ bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
     {
         /* STAGE: Handle IP ethertype frames. */
 
-        case 0x0800 :
+        case ETHER_TYPE_IP :
             return ip_handle_packet (&frame);
 
         default :

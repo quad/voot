@@ -1,6 +1,6 @@
 /*  ether.h
 
-    $Id: ether.h,v 1.2 2002/06/23 23:48:52 quad Exp $
+    $Id: ether.h,v 1.3 2002/06/24 00:19:17 quad Exp $
 
 */
 
@@ -8,6 +8,7 @@
 #define __COMMON_ETHER_H__
 
 #define ETHER_MAC_SIZE          6
+#define ETHER_TYPE_IP           0x0800
 
 typedef struct
 {
