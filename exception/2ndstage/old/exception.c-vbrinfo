@@ -1,0 +1,57 @@
+/*  exception.c
+
+    Initialize the UBC for breakpointing and the 1st_read.bin in memory.
+*/
+
+#include "system.h"
+#include "serial.h"
+#include "util.h"
+#include "exception.h"
+#include "exception-lowlevel.h"
+
+/* The VBR Buffer - we better find out how large VO's actually is */
+unsigned char vbr_buffer[3072];
+
+int calcCRC(const unsigned char *buf, int size)
+{
+    int i, c, n = 0xffff;
+    for (i = 0; i < size; i++)
+    {
+        n ^= (buf[i]<<8);
+        for (c = 0; c < 8; c++)
+        {
+            if (n & 0x8000)
+                n = (n << 1) ^ 4129;
+            else
+                n = (n << 1);
+        }
+    }
+    return n & 0xffff;
+}
+
+void* exception_handler(register_stack *stack)
+{
+    static unsigned int flip_count = 0;
+
+    /* STAGE: Check every second */
+    if (!(flip_count % 60))
+    {
+        ubc_serial_init(57600);
+        ubc_serial_flush();
+
+        ubc_serial_write_str("[UBC] vb[");
+        ubc_serial_write_hex((unsigned int) vbr_buffer);
+
+        ubc_serial_write_str("] VBR[");
+        ubc_serial_write_hex(stack->vbr);
+
+        ubc_serial_write_str("] CRC[");
+        ubc_serial_write_hex(calcCRC((unsigned char *) stack->vbr, 3072));
+
+        ubc_serial_write_str("]\r\n");
+    }
+
+    flip_count++;
+
+    return my_exception_finish;
+}
