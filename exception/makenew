@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm 2ndstage/2ndstage.bin
+make
+#ls -al 2ndstage/2ndstage.bin
+sh-elf-size 2ndstage/2ndstage.elf
