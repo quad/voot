@@ -5,8 +5,7 @@
 #include "vars.h"
 #include "voot.h"
 
-#define VOOT_SLAVE_PORT     5007
-#define VOOT_SERVER_PORT    5008
+#define NPC_EVENT_QUEUE_SIZE    50
 
 typedef enum
 {
@@ -64,14 +63,20 @@ typedef struct
 
     char                *server_name;
     uint16              server_port;
-    int32               server_socket;
-    int32               server_socket_wait;
+    volatile int32      server_socket;
+    volatile int32      server_socket_wait;
     pthread_t           server_thread;
+
+    npc_command_t*      event_queue[NPC_EVENT_QUEUE_SIZE];
+    uint32              event_queue_size;
+    uint32              event_queue_tail;
 } npc_data_t;
 
 int32 handle_npc_command(npc_command_t *command);
+bool npc_add_event_queue(npc_command_t *command);
+npc_command_t* npc_get_event_queue(void);
 npc_command_t* npc_get_event(void);
-npc_command_t* npc_io_check(int32 socket, npc_command type);
+bool npc_io_check(int32 socket, npc_command type);
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);
 int npc_server_listen(void);
 void npc_exit(int code);

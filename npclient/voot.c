@@ -27,6 +27,16 @@ static bool voot_check_packet(voot_packet *packet, uint32 size)
     return ntohs(packet->header.size) == size - sizeof(voot_packet_header);
 }
 
+uint32 voot_check_packet_advsize(voot_packet *packet, uint32 size)
+{
+    uint32 advsize;
+
+    if (size < sizeof(voot_packet_header))
+        return 0;
+
+    return ((advsize = (sizeof(voot_packet_header) + ntohs(packet->header.size))) > size) ? size : advsize;
+}
+
 voot_packet* voot_parse_buffer(unsigned char *buffer, unsigned int buffer_size)
 {
     voot_packet *packet;
@@ -36,8 +46,6 @@ voot_packet* voot_parse_buffer(unsigned char *buffer, unsigned int buffer_size)
 
     packet = malloc(sizeof(voot_packet));
     memcpy(packet, buffer, buffer_size);
-
-    packet->header.size = ntohs(packet->header.size);
 
     return packet;
 }
@@ -51,3 +59,31 @@ voot_packet* voot_parse_socket(int32 socket)
 
     return voot_parse_buffer(data, rx);
 }    
+
+int32 voot_send_packet(int32 socket, voot_packet *packet, uint32 size)
+{
+    if (socket < 0)
+        return FALSE;
+    else if (!voot_check_packet(packet, size))
+        return FALSE;
+
+    return send(socket, packet, size, 0);
+}
+
+int32 voot_send_command(int32 socket, uint8 command)
+{
+    int32 retval;
+    voot_packet *packet;
+
+    packet = malloc(sizeof(voot_packet));
+
+    packet->header.type = VOOT_PACKET_TYPE_COMMAND;
+    packet->header.size = htons(1);
+    packet->buffer[0] = command;
+
+    retval = voot_send_packet(socket, packet, voot_check_packet_advsize(packet, sizeof(voot_packet)));
+
+    free(packet);
+    
+    return retval;
+}

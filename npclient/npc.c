@@ -21,6 +21,14 @@ CHANGELOG
         Improved the stability of socket relations. More specificially, we
         can handle disconnected sockets.
 
+    Fri Jan 11 00:39:32 PST 2002    Scott Robinson <scott_np@quadhome.com>
+        Added a full event queue and started attaching events into the
+        queue. Now we can pass cleanly between sockets?
+
+    Mon Jan 21 16:24:12 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        We rely completely on the event queue now. Now directly passing
+        packets between server and slave sockets via VOOT protocol library.
+
 TODO
 
     Remove console system assumptions. All IO logic should be handled by the client itself.
@@ -38,7 +46,7 @@ TODO
 #include "voot.h"
 #include "npc.h"
 
-#define NPC_DEBUG   1
+#define NPC_DEBUG    1
 
 npc_data_t  npc_system;
 
@@ -97,7 +105,12 @@ int32 handle_npc_command(npc_command_t *command)
             switch (command->packet->header.type)
             {
                 case VOOT_PACKET_TYPE_DEBUG:
-                    fprintf(stderr, "[npc] DEBUG: %s", command->packet->buffer);
+                    fprintf(stderr, "[npc] DEBUG(slave): %s", command->packet->buffer);
+                    break;
+
+                case VOOT_PACKET_TYPE_DATA:
+                    fprintf(stderr, "[npc] DATA(slave): '%c'... [passing]\n", command->packet->buffer[0]);
+                    voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
             
                 default:
@@ -112,7 +125,20 @@ int32 handle_npc_command(npc_command_t *command)
             break;
 
         case C_PACKET_FROM_SERVER:
-            fprintf(stderr, "[npc] received a packet from the server.\n");
+            switch (command->packet->header.type)
+            {
+                case VOOT_PACKET_TYPE_DEBUG:
+                    fprintf(stderr, "[npc] DEBUG(server): %s", command->packet->buffer);
+                    break;
+
+                case VOOT_PACKET_TYPE_DATA:
+                    fprintf(stderr, "[npc] DATA(server): '%c'... [passing]\n", command->packet->buffer[0]);
+                    voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
+                    break;
+            
+                default:
+                    break;
+            }
 
             free(command->packet);
             break;
@@ -140,12 +166,43 @@ int32 handle_npc_command(npc_command_t *command)
     return retval;
 }
 
+bool npc_add_event_queue(npc_command_t *command)
+{
+    if (npc_system.event_queue_size >= NPC_EVENT_QUEUE_SIZE)
+    {
+        fprintf(stderr, "[npc] Event queue overflow!\n");
+        return TRUE;
+    }
+
+    npc_system.event_queue[(npc_system.event_queue_tail + npc_system.event_queue_size) % NPC_EVENT_QUEUE_SIZE] = command;
+    npc_system.event_queue_size++;
+
+    return FALSE;
+}
+
+npc_command_t* npc_get_event_queue(void)
+{
+    npc_command_t *command;
+
+    if (!npc_system.event_queue_size)
+        return NULL;
+
+    command = npc_system.event_queue[npc_system.event_queue_tail];
+
+    npc_system.event_queue_tail = ++npc_system.event_queue_tail % NPC_EVENT_QUEUE_SIZE;
+    npc_system.event_queue_size--;
+
+    return command;
+}
+
 npc_command_t* npc_get_event(void)
 {
     npc_command_t *event;
 
-    if ((event = npc_io_check(npc_system.slave_socket, C_PACKET_FROM_SLAVE)));
-    else if ((event = npc_io_check(npc_system.server_socket, C_PACKET_FROM_SERVER)));
+    npc_io_check(npc_system.slave_socket, C_PACKET_FROM_SLAVE);
+    npc_io_check(npc_system.server_socket, C_PACKET_FROM_SERVER);
+    
+    if ((event = npc_get_event_queue()));
     else if (!event)
     {
         event = (npc_command_t *) malloc(sizeof(npc_command_t));
@@ -155,20 +212,23 @@ npc_command_t* npc_get_event(void)
     return event;
 }
 
-npc_command_t* npc_io_check(int32 socket, npc_command type)
+bool npc_io_check(int32 socket, npc_command type)
 {
     fd_set read_fds;
     voot_packet *packet;
     npc_command_t *event;
+    struct timeval tv;
 
     if (socket < 0)
-        return NULL;
+        return FALSE;
 
     /* Check if we have received data on the socket. */
     FD_ZERO(&read_fds);
     FD_SET(socket, &read_fds);
-    if (select(socket + 1, &read_fds, NULL, NULL, 0) < 0)
-        return NULL;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    if (select(socket + 1, &read_fds, NULL, NULL, &tv) <= 0)
+        return FALSE;
 
     packet = voot_parse_socket(socket);
 
@@ -180,7 +240,7 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
         }
         else
         {
-            return NULL;
+            return FALSE;
         }
     }
 
@@ -188,7 +248,8 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
     event->type = type;
     event->packet = packet;
 
-    return event;
+    npc_add_event_queue(event);
+    return TRUE;
 }
 
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
@@ -224,12 +285,9 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
         return -3;
     }
 
-    /* FIXME: !!! Send version command to slave. */
-    {
-        char v_string[] = "c  v";
+    fprintf(stderr, "[npc] connected to %s:%u and sending VERSION command.\n", dest_name, dest_port);
 
-        send(new_socket, v_string, strlen(v_string), 0);
-    }
+    voot_send_command(new_socket, VOOT_COMMAND_TYPE_VERSION);
 
     return new_socket;
 }
@@ -248,7 +306,7 @@ static void* npc_server_accept_task(void *arg)
         if (new_socket >= 0 && (npc_system.server_socket < 0))
         {
             npc_system.server_socket = new_socket;
-            fprintf(stderr, "[npc] accepted connection for server!\n");
+            fprintf(stderr, "[npc] accepted connection for server! [%d]\n", new_socket);
         }
         else
         {
