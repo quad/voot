@@ -14,5 +14,6 @@ typedef union unikey
 
 volatile uint8* search_sysmem(const uint8 *key, uint32 key_size);
 volatile uint8* search_sysmem_at(const uint8 *key, uint32 key_size, volatile uint8 *start_loc, volatile uint8 *end_loc);
+void search_grep_memory(const char *string);
 
 #endif

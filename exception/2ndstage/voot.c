@@ -42,57 +42,43 @@ static void dump_framebuffer_udp(void)
     biudp_write_str("#\r\n[UBC] Done with screenshot.\r\n");
 }
 
-static void grep_memory(const char *string)
-{
-    volatile uint8 *mem_loc;
 
-    biudp_write_str("[UBC] Grepping memory for '");
-    biudp_write_str(string);
-    biudp_write_str("' ...\r\n");
-
-    mem_loc = search_sysmem(string, strlen(string));
-
-    if (mem_loc)
-    {
-        biudp_write_str("[UBC] Match @ 0x");
-        biudp_write_hex((uint32) mem_loc);
-        biudp_write_str("\r\n[UBC] Grep done!\r\n");
-    }
-}
-
-static void maybe_respond_command(uint8 maybe_command)
+static void maybe_respond_command(uint8 maybe_command, udp_header_t *udp, uint16 udp_data_length)
 {
     volatile uint16 *player_a_health = (uint16 *) 0x8CCF6284;
     volatile uint16 *player_b_health = (uint16 *) 0x8CCF7402;
 
     switch (maybe_command)
     {
-        /* STAGE: Reset health commands. */
+        /* STAGE: Dump VOOT system memory. */
         case '1':
+            biudp_write_buffer((const uint8 *) VOOT_MEM_START, VOOT_MEM_END - VOOT_MEM_START);
+            break;
+
+        case '2':
+            biudp_write_str("[UBC] Uploading game data.\r\n");
+            memcpy((uint8 *) VOOT_MEM_START, (uint8 *) udp + sizeof(udp_header_t) + 1, VOOT_MEM_END - VOOT_MEM_START);
+            biudp_write_str("[UBC] Uploaded game data.\r\n");
+            break;
+
+        /* STAGE: Do we take a screenshot? */
+        case 's':
+            dump_framebuffer_udp();
+            break;
+
+        /* STAGE: Reset health commands. */
+        case 'a':
             biudp_write_str("[UBC] Resetting player A health.\r\n");
             *player_a_health = 1200;
             break;
 
-        case '2':
+        case 'b':
             biudp_write_str("[UBC] Resetting player B health.\r\n");
             *player_b_health = 1200;
             break;
 
-        /* STAGE: Do we take a screenshot? */
-        case '3':
-            dump_framebuffer_udp();
-            break;
-
-        /* STAGE: Do we search for the binary header location? */
-        case '4':
-            biudp_write_str("[UBC] Calling search functions.\r\n");
-            grep_memory("fieldtst.bin");
-            grep_memory("1E3F3G3H3I3J3K3L3M3N3O3P3Q3R3S3T3U3V3W3X3");
-            grep_memory("DIGITALMEDIA");
-            break;
-
         /* STAGE: Dump 16mb of system memory. */
-        case '5':
+        case 'S':
             biudp_write_buffer((const uint8 *) SYS_MEM_START, SYS_MEM_END - SYS_MEM_START);
             break;
 
@@ -107,5 +93,5 @@ void voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 
     command = (uint8 *) udp + sizeof(udp_header_t);
 
-    maybe_respond_command(*command);
+    maybe_respond_command(*command, udp, udp_data_length);
 }

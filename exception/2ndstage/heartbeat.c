@@ -8,9 +8,9 @@
 #include "vars.h"
 #include "exception.h"
 #include "system.h"
-#include "heartbeat.h"
 #include "serial.h"
 #include "asic.h"
+#include "heartbeat.h"
 
 void init_heartbeat(void)
 {
@@ -23,8 +23,11 @@ void init_heartbeat(void)
 
     rcode = add_exception_handler(new);
 
+#ifdef DEBUG
+    /* There needs to be a better method of notification. */
     if (!rcode)
         ubc_serial_write_str("[UBC] Unable to hook heartbeat handler.\r\n");
+#endif
 }
 
 void* heartbeat(register_stack *stack, void *current_vector)

@@ -98,21 +98,19 @@ void* exception_handler(register_stack *stack)
     /* STAGE: Handle the first initialization */
     if (!exp_table.vbr_switched && is_vbr_switch_time())
     {
+#ifdef DEBUG
         /* STAGE: Initialize the serial port */
         ubc_serial_init(57600);
+#endif
 
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
         /* STAGE: Initialize the BBA. */
-        ubc_serial_write_str("[UBC] Net Init:");
         if (pci_detect())
         {
-            ubc_serial_write_str(" pci");
             if (pci_bb_init())
             {
-                ubc_serial_write_str(" bb");
                 if(rtl_init())
                 {
-                    ubc_serial_write_str(" rtl\r\n");
                     /* STAGE: Handle ASIC exceptions */
                     init_asic_handler();
                 }
@@ -120,11 +118,9 @@ void* exception_handler(register_stack *stack)
         }
 
         /* STAGE: Grab a UBC timer. */
-        ubc_serial_write_str("[UBC] heartbeat init()\r\n");
         init_heartbeat();
 
         /* STAGE: Initialize the new VBR */
-        ubc_serial_write_str("[UBC] VBR init()\r\n");
         init_vbr_table();
     }
 

@@ -12,7 +12,6 @@
 
 #include "vars.h"
 #include "rtl8139c.h"
-#include "serial.h"
 #include "net.h"
 #include "bswap.h"
 #include "voot.h"
@@ -140,10 +139,7 @@ static void icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_leng
 
     /* STAGE: ICMP header checksum */
     if (icmp->checksum != icmp_checksum(icmp, icmp_data_length))
-    {
-        ubc_serial_write_str("[UBC] Bad ICMP checksum.\r\n");
         return;
-    }
 
     /* STAGE: Handle ICMP packet types */
     switch (icmp->type)
@@ -223,13 +219,8 @@ static void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_lengt
             checksum = 0xffff;
 
         if (checksum != udp->checksum)
-        {
-            ubc_serial_write_str("[UBC] Bad UDP checksum.\r\n");
             return;
-        }
     }
-    else
-        ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
 
     /* STAGE: Use the information from the ICMP echo to fill out our
         biudp information. */
@@ -385,10 +376,7 @@ static void ip_handle_packet(ether_info_packet_t *frame)
 
     /* STAGE: IP Header checksum */
     if (ip->checksum != ip_checksum(ip, ip_header_length))
-    {
-        ubc_serial_write_str("[UBC] Bad IP checksum.\r\n");
         return;
-    }
 
     /* STAGE: And handle the appropriate protocol type! */
     switch (ip->protocol)
@@ -403,7 +391,6 @@ static void ip_handle_packet(ether_info_packet_t *frame)
 
         //case IP_PROTO_TCP:
         default:    /* Yeah, we don't support this. */
-            ubc_serial_write_str("[UBC] Unfamiliar packet type.\r\n");
             return;
     }
 }
