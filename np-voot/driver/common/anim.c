@@ -1,6 +1,6 @@
 /*  anim.c
 
-    $Id: anim.c,v 1.4 2002/07/07 04:41:09 quad Exp $
+    $Id: anim.c,v 1.5 2002/07/09 10:19:23 quad Exp $
 
 DESCRIPTION
 
@@ -56,8 +56,7 @@ static void* anim_trap_handler (register_stack *stack, void *current_vector)
 
 void anim_init (void)
 {
-    uint16                  anim_trap;
-    exception_table_entry   new_exception;
+    uint16  anim_trap;
 
     /* STAGE: Generate our trap code for comparison testing... */
 
@@ -68,15 +67,19 @@ void anim_init (void)
     if (!anim_render_root || memcmp (anim_render_root, &anim_trap, sizeof (anim_trap)))
         anim_render_root = search_gamemem (anim_render_key, sizeof (anim_render_key));
 
-    /* STAGE: Configure an exception handler for traps. */
-
-    new_exception.type      = EXP_TYPE_GEN;
-    new_exception.code      = EXP_CODE_TRAP;
-    new_exception.handler   = anim_trap_handler;
+    /* STAGE: If we haven't already, configure an exception handler for traps. */
 
     if (!inited)
-        inited = exception_add_handler (&new_exception, &old_trap_handler);
+    {
+        exception_table_entry   new_exception;
 
+        new_exception.type      = EXP_TYPE_GEN;
+        new_exception.code      = EXP_CODE_TRAP;
+        new_exception.handler   = anim_trap_handler;
+
+        inited = exception_add_handler (&new_exception, &old_trap_handler);
+    }
+ 
     /* STAGE: Add the trappoint, if we're ready for it. */
 
     if (anim_render_root && inited)

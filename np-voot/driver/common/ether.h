@@ -1,6 +1,6 @@
 /*  ether.h
 
-    $Id: ether.h,v 1.4 2002/06/24 07:37:05 quad Exp $
+    $Id: ether.h,v 1.5 2002/07/09 10:19:23 quad Exp $
 
 */
 
@@ -49,6 +49,7 @@ bool    ether_init          (void);
 bool    ether_transmit      (ether_info_packet_t *frame_in);
 uint8 * ether_mac           (void);
 bool    ether_handle_frame  (const uint8* data, uint32 data_size);
+void    ether_handle_tx     (void);
 void    ether_reverse_frame (ether_info_packet_t *frame);
 
 #endif

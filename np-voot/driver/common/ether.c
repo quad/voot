@@ -1,6 +1,6 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.5 2002/06/30 09:15:06 quad Exp $
+    $Id: ether.c,v 1.6 2002/07/09 10:19:23 quad Exp $
 
 DESCRIPTION
 
@@ -28,11 +28,25 @@ TODO
 
 /* NOTE: Miscellaneous utility functions. No logic occurs within these. */
 
-static bool ether_tx (const uint8 *header, uint32 header_size, const uint8 *data, uint32 data_size)
+static bool ether_tx_write (const uint8 *data, uint32 data_size)
 {
     /* TODO: Dummy function directly accessing the RTL. */
 
-    return rtl_tx (header, header_size, data, data_size);
+    return rtl_tx_write (data, data_size);
+}
+
+static bool ether_tx_final (void)
+{
+    /* TODO: Dummy function directly accessing the RTL. */
+
+    return rtl_tx_final ();
+}
+
+static bool ether_tx_abort (void)
+{
+    /* TODO: Dummy function directly accessing the RTL. */
+
+    return rtl_tx_abort ();
 }
 
 /*
@@ -119,7 +133,14 @@ bool ether_transmit (ether_info_packet_t *frame_in)
 
     /* STAGE: Transmit the packet. */
 
-    return ether_tx ((const uint8 *) &frame_out, sizeof (ether_ii_header_t), frame_in->data, frame_in->length);
+    if (!ether_tx_write ((const uint8 *) &frame_out, sizeof (ether_ii_header_t)))
+        return !ether_tx_abort ();
+    else if (!ether_tx_write (frame_in->data, frame_in->length))
+        return !ether_tx_abort ();
+    else if (!ether_tx_final ())
+        return !ether_tx_abort ();
+
+    return TRUE;
 }
 
 uint8* ether_mac (void)
@@ -142,9 +163,6 @@ bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
 
     /*
         STAGE: Handle the specified ethertype.
-
-        TODO: If we end up requiring multiple ethertypes, change this into a
-        handler chain.
     */
 
     switch (frame.ethertype)
@@ -157,6 +175,14 @@ bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
         default :
             return FALSE;
     }
+}
+
+void ether_handle_tx (void)
+{
+    /*
+        TODO: Dummy function called from the hardware layer. It's notifying
+        it's safe to transmit a frame.
+    */
 }
 
 void ether_reverse_frame (ether_info_packet_t *frame)

@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.12 2002/07/06 14:18:15 quad Exp $
+    $Id: rtl8139c.c,v 1.13 2002/07/09 10:19:23 quad Exp $
 
 DESCRIPTION
 
@@ -19,9 +19,6 @@ TODO
 
     Remove rtl_rx_all function and replace with a completely interrupt
     driven driver.
-
-    Split rtl_tx functionality so it'll allow multiple data transfers to
-    compose a packet.
 
 */
 
@@ -337,6 +334,11 @@ static void* rtl_irq_handler (void *passer, register_stack *stack, void *current
     {
         rtl_rx_all ();
     }
+    else if (intr & RTL_INT_TX_OK)
+    {
+        ether_handle_tx ();
+    }
+
 
     if (rtl_info.old_rtl_handler)
         return rtl_info.old_rtl_handler (passer, stack, my_exception_finish);
@@ -397,7 +399,7 @@ static bool rtl_int_configure (void)
 
     /* STAGE: Tell the RTL which interrupts to fire off. */
 
-    RTL_IO_SHORT(RTL_INTRMASK) = RTL_INT_RX_OK | RTL_INT_RXFIFO_OVERFLOW | RTL_INT_RXBUF_OVERFLOW | RTL_INT_LINKCHG;
+    RTL_IO_SHORT(RTL_INTRMASK) = RTL_INT_TX_OK | RTL_INT_RX_OK | RTL_INT_RXFIFO_OVERFLOW | RTL_INT_RXBUF_OVERFLOW | RTL_INT_LINKCHG;
 
     /* STAGE: Disable all multi-interrupts - don't tell us about weird frames. */
 
@@ -525,20 +527,20 @@ bool rtl_init (void)
     return rtl_info.inited;
 }
 
-bool rtl_tx (const uint8 *header, uint32 header_length, const uint8 *data, uint32 data_length)
+bool rtl_tx_write (const uint8 *data, uint32 data_length)
 {
-    uint32 frame_length;
+    uint32  maybe_frame_length;
 
     /* STAGE: Ensure the driver is initialized. */
 
     if (!rtl_info.inited)
         return FALSE;
 
-    /* STAGE: Limit the frame to a certain size. */
+    /* STAGE: Limit the total frame to a certain size. */
 
-    frame_length = header_length + data_length;
+    maybe_frame_length = rtl_info.cur_tx_index + data_length;
 
-    if (frame_length > RTL_TX_SIZE_MASK)
+    if (maybe_frame_length > RTL_TX_SIZE_MASK)
         return FALSE;
 
     /* STAGE: Wait/force the descriptor to open up. */
@@ -549,11 +551,31 @@ bool rtl_tx (const uint8 *header, uint32 header_length, const uint8 *data, uint3
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) |= 1;
     }
 
-    /* STAGE: Copy the complete frame into the descriptor. */
+    /* STAGE: Copy the incomplete frame into the descriptor. */
 
-    memcpy (rtl_tx_descs[rtl_info.cur_tx], header, header_length);
-    memcpy (rtl_tx_descs[rtl_info.cur_tx] + header_length, data, data_length);
+    memcpy (rtl_tx_descs[rtl_info.cur_tx] + rtl_info.cur_tx_index, data, data_length);
+
+    /* STAGE: Update the index into the descriptor. */
+
+    rtl_info.cur_tx_index = maybe_frame_length;
     
+    return TRUE;
+}
+
+bool rtl_tx_final (void)
+{
+    uint32  frame_length;
+
+    frame_length = rtl_info.cur_tx_index;
+
+    /*
+        STAGE: Since they can't begin a transmission without us being
+        initialized, I'll only check if we have data in the TX descriptor.
+    */
+
+    if (!frame_length)
+        return FALSE;
+
     /*
         STAGE: Inform the chip the frame has landed and the 'proper' size of it.
 
@@ -564,9 +586,29 @@ bool rtl_tx (const uint8 *header, uint32 header_length, const uint8 *data, uint3
 
     RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof (uint32))) = frame_length;
 
-    /* STAGE: And use the next descriptor on the next TX. */
+    /* STAGE: Use the next descriptor on our next TX. */
 
-    rtl_info.cur_tx = (rtl_info.cur_tx + 1) % 4;
+    rtl_info.cur_tx_index   = 0;
+    rtl_info.cur_tx         = (rtl_info.cur_tx + 1) % 4;
+
+    return TRUE;
+}
+
+bool rtl_tx_abort (void)
+{
+    /*
+        STAGE: Since they can't begin a transmission without us being
+        initialized, I'll only check if we have data in the TX descriptor.
+    */
+
+    if (!rtl_info.cur_tx_index)
+        return FALSE;
+
+    /*
+        STAGE: Reset the TX descriptor index.
+    */
+    
+    rtl_info.cur_tx_index = 0;
 
     return TRUE;
 }
