@@ -16,9 +16,9 @@ TODO
 #include <dream.h>
 #include "vconsole.h"
 
-char printf_buf[1024];
+static char printf_buf[1024];
 
-unsigned short vc_line;
+static unsigned short vc_line;
 
 #define INDENT_BYTES        20
 #define LINE_SPACING        24

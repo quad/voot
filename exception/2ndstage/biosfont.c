@@ -41,7 +41,7 @@ syscall_b4:
     .long   0x8c0000b4
 ");
 
-volatile uint8 *bfont_address;
+static volatile uint8 *bfont_address;
 
 /* Pre-calculate the biosfont address. */
 void bfont_init(void)

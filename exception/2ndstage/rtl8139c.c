@@ -29,6 +29,15 @@ TODO
 
 #include "rtl8139c.h"
 
+rtl_t   rtl_info;
+
+/* RTL8139c Tx descriptor indexes */
+static uint8* rtl_tx_descs[] = { (uint8 *) 0xa1846000,
+                                 (uint8 *) 0xa1846800,
+                                 (uint8 *) 0xa1847000,
+                                 (uint8 *) 0xa1847800
+                               };
+
 /* *
    * GAPS PCI Controller and BBA PCI Configuration
    *
@@ -97,16 +106,7 @@ bool pci_bb_init(void)
    *
 */
 
-rtl_t   rtl_info;
-
-/* RTL8139c Tx descriptor indexes */
-static uint8* rtl_tx_descs[] = { (uint8 *) 0xa1846000,
-                                 (uint8 *) 0xa1846800,
-                                 (uint8 *) 0xa1847000,
-                                 (uint8 *) 0xa1847800
-                               };
-
-static void rtl_mac(void)
+static void rtl_get_mac(void)
 {
     unsigned tmp;
 
@@ -214,8 +214,6 @@ bool rtl_init(void)
     rtl_start();
 
 /*** CONFIGURE INTERRUPTS ***/
-#define ENABLE_RTL_INTS
-#ifdef ENABLE_RTL_INTS
     {
         asic_lookup_table_entry entry;
 
@@ -238,7 +236,6 @@ bool rtl_init(void)
         */
         RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
     }
-#endif
 
     /* STAGE: Disable all multi-interrupts - don't tell us about weird packets. */
     RTL_IO_SHORT(RTL_MULTIINTR) = 0;
@@ -250,7 +247,7 @@ bool rtl_init(void)
 /*** INITIALIZE INTERNAL DATA STRUCTURE ***/
 
     /* STAGE: Read MAC address */
-    rtl_mac();
+    rtl_get_mac();
 
     /* STAGE: Zero the Rx and Tx counters */
     rtl_info.cur_rx = rtl_info.cur_tx = 0;
@@ -291,59 +288,6 @@ static uint8* rtl_copy_packet(const uint8 *src, uint32 size)
     return dest;
 }
 
-#ifdef TX_SCOTT_IMPL
-
-static int16 rtl_find_free_descriptor(void)
-{
-    int16 index;
-
-    index = 0;
-
-    for (;;)
-    {
-        /* STAGE: We can conveniently handle re-transmission of packets
-            here. Of course, if there is something fundamentally wrong we'll
-            run out of slots really fast. */
-        if (RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) & RTL_TX_ABORTED)
-        {
-            //RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) ~&= ~RTL_TX_HOST_OWNS;
-            RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) |= 1;
-        }
-        else if (RTL_IO_INT((index * sizeof(uint32)) + RTL_TXSTATUS0) & RTL_TX_HOST_OWNS)
-            return index;
-
-        index = (index + 1) % 4;
-    }
-
-    return -1;
-}
-
-bool rtl_tx(const uint8* frame, uint32 length)
-{
-    int16  descriptor;
-
-    /* STAGE: Basic paranoia checking. */
-    if (length >= NET_MAX_PACKET)
-        return FALSE;
-
-    /* STAGE: Find an open Tx descriptor for use. */
-    descriptor = rtl_find_free_descriptor();
-    if (descriptor < 0)
-        return FALSE;
-
-    /* STAGE: Copy frame into the TX descriptor. */
-    memcpy(rtl_tx_descs[descriptor], frame, length);
-    length = (length >= 60) ? length : 60;   /* Apparently you need to pad Ethernet frames. */
-
-    /* STAGE: Copy the length into the status register - it also resets the
-        register, but that's cool. */
-    RTL_IO_INT((descriptor * sizeof(uint32)) + RTL_TXSTATUS0) = length;
-
-    return TRUE;
-}
-
-#else
-
 /* !!! This entire implementation is stinky to me because you can't cycle
         through the descriptors to whichever happens to be open. I want to
         be able to parallelize like that. Why can't I, huh? */
@@ -369,8 +313,6 @@ bool rtl_tx(const uint8* frame, uint32 length)
 
     return TRUE;
 }
-
-#endif
 
 void rtl_rx_all(void)
 {
