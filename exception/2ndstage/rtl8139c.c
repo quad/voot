@@ -19,7 +19,7 @@
 #include "system.h"
 #include "asic.h"
 #include "exception-lowlevel.h"
-#include "net.h"
+#include "voot.h"
 #include "util.h"
 #include "rtl8139c.h"
 
@@ -230,8 +230,8 @@ bool rtl_init(void)
             It seems the RTL requires RTL_IMR_LINKCHK to work properly. Oh
             well.
         */
-        RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_LINKCHG | RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
-        //RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
+        //RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_LINKCHG | RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
+        RTL_IO_SHORT(RTL_INTRMASK) = RTL_IMR_RX_OK | RTL_IMR_FIFO_OVER | RTL_IMR_DMA_OVER;
     }
 #endif
 
@@ -268,7 +268,7 @@ static uint8* rtl_copy_packet(const uint8 *src, uint32 size)
     if (!dest)
         return NULL;
 
-    if ((uint32) (src + size) < (uint32) dma_buffer_end) /* maybe this wants to be <= */
+    if ((uint32) (src + size) < (uint32) dma_buffer_end)
         memcpy(dest, src, size);
     else
     {
@@ -335,8 +335,18 @@ bool rtl_tx(const uint8* frame, uint32 length)
         through the descriptors to whichever happens to be open. I want to
         be able to parallelize like that. Why can't I, huh? */
 
+#ifdef RTL_TX_COUNT
+    uint32 rtl_max_wait_count;
+#endif
+
 bool rtl_tx(const uint8* frame, uint32 length)
 {
+#ifdef RTL_TX_COUNT
+    uint32 wait_count;
+#endif
+
+    wait_count = 0;
+
     /* STAGE: Limit us to the size of the  */
     length &= RTL_TX_SIZE_MASK;
 
@@ -344,7 +354,18 @@ bool rtl_tx(const uint8* frame, uint32 length)
     {
         if (RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) & RTL_TX_ABORTED)
             RTL_IO_INT(RTL_TXSTATUS0 + (rtl_info.cur_tx * sizeof(uint32))) |= 1;
+
+#ifdef RTL_TX_COUNT
+        wait_count++;
+#endif
     }
+
+#ifdef RTL_TX_COUNT
+    if (wait_count > rtl_max_wait_count)
+    {
+        rtl_max_wait_count = wait_count;
+    }
+#endif
 
     memcpy(rtl_tx_descs[rtl_info.cur_tx], frame, length);
 
@@ -440,6 +461,8 @@ void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
         RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_info.cur_rx - RX_BUFFER_THRESHOLD;
 
         rtl_start();
+
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!\n");
     }
 
     /* STAGE: Return from the handler */

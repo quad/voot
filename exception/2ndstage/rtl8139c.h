@@ -153,6 +153,11 @@ typedef struct {
 
 extern rtl_t rtl_info;
 
+#define RTL_TX_COUNT
+#ifdef RTL_TX_COUNT
+extern uint32 rtl_max_wait_count;
+#endif
+
 /* Module Function Definitions */
 
 bool    pci_detect      (void);

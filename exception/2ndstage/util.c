@@ -78,6 +78,7 @@ void grep_memory(const char *key, uint32 key_size)
 
 /* Stolen from VOOT! Accessor to syMalloc() */
 uint8 *malloc_root;
+uint32 malloc_fail_count;
 const uint8 malloc_key[] = { 0xE6, 0x2F, 0xFC, 0x7F, 0x02, 0x00 };
 
 void malloc_init(void)
@@ -88,8 +89,15 @@ void malloc_init(void)
 
 void* malloc(uint32 size)
 {
+    void *mem;
+
     if (malloc_root)
-        return (*(void* (*)()) malloc_root)(size);
+    {
+        mem = (*(void* (*)()) malloc_root)(size);
+        if (!mem)
+            malloc_fail_count++;
+        return mem;
+    }
     else
         return NULL;
 }

@@ -21,6 +21,8 @@ typedef union unikey
     uint8   c[sizeof(uint8 *)];
 } unikey;
 
+extern uint32 malloc_fail_count;
+
 void* memmove(void *dest, const void *src, uint32 count);
 void vid_waitvbl(void);
 uint8* search_sysmem(const uint8 *key, uint32 key_size);

@@ -51,15 +51,19 @@ static void init_vbr_table(void)
 
 static bool is_vbr_switch_time(void)
 {
-    uint32 int_installed;
+#ifdef DO_VBR_RESET
+    uint32 int_changed;
 
     /* STAGE: Check to see if our interrupt hooks are still installed. */
-    int_installed = memcmp(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
+    int_changed = memcmp(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
                             interrupt_sub_handler,
                             interrupt_sub_handler_end - interrupt_sub_handler);
+#else
+    bool int_changed = TRUE;
+#endif
 
     /* Have we had enough exceptions to make it worthwhile? */
-    return int_installed && exp_table.ubc_exception_count >= 5;
+    return int_changed && exp_table.ubc_exception_count >= 5;
 }
 
 uint32 add_exception_handler(const exception_table_entry *new_entry)
@@ -127,6 +131,12 @@ void* exception_handler(register_stack *stack)
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
+        /* STAGE: Initialize the new VBR */
+        init_vbr_table();
+
+        /* STAGE: Handle ASIC exceptions */
+        init_asic_handler();
+
         /* STAGE: Initialize the BBA. */
         if (pci_detect())
         {
@@ -135,12 +145,6 @@ void* exception_handler(register_stack *stack)
                 rtl_init();
             }
         }
-
-        /* STAGE: Initialize the new VBR */
-        init_vbr_table();
-
-        /* STAGE: Handle ASIC exceptions */
-        init_asic_handler();
 
         /* STAGE: Grab a UBC timer. */
         init_heartbeat();
@@ -151,6 +155,7 @@ void* exception_handler(register_stack *stack)
         /* DEBUG: Notification. */
         biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR\n");
     }
+#ifdef DO_VBR_RESET
     /* STAGE: Handle reinitializations differently. */
     else if(do_vbr_switch && exp_table.vbr_switched)
     {
@@ -160,6 +165,7 @@ void* exception_handler(register_stack *stack)
         /* DEBUG: Notification. */
         biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR\n");
     }
+#endif
 
     /* STAGE: Handle exception table */
     for (index = 0; index < EXP_TABLE_SIZE; index++)

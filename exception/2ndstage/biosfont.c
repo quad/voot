@@ -20,11 +20,11 @@ Ported from KallistiOS (Dreamcast OS) for libdream by Dan Potter
 */
 
 /* A little assembly that grabs the font address */
-extern volatile uint8* get_font_address();
+extern volatile uint8* bfont_get_address();
 extern int32 bfont_lock();
 extern void bfont_unlock();
 asm("
-_get_font_address:
+_bfont_get_address:
     mov.l   syscall_b4, r0
     mov.l   @r0, r0
     jmp     @r0
@@ -52,7 +52,11 @@ volatile uint8 *bfont_address;
 /* Pre-calculate the biosfont address. */
 void bfont_init(void)
 {
-    bfont_address = get_font_address();
+    if (!bfont_lock())
+    {
+        bfont_address = bfont_get_address();
+        bfont_unlock();
+    }
 }
 
 /* Given a character, find it in the BIOS font if possible */
@@ -82,6 +86,9 @@ void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
     uint32 ch_base;
     uint16 word;
     uint32 x, y;
+
+    if (!bfont_address)
+        return;
 
     if (!bfont_lock())
     {

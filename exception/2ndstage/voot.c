@@ -11,6 +11,8 @@
 #include "util.h"
 #include "voot.h"
 
+#include "rtl8139c.h"
+
 #ifdef DEPRECATED_VOOT_NET
 
 static void dump_framebuffer_udp(void)
@@ -79,6 +81,8 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         {
             uint8 *ba, *bb, *bc;
 
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc_fail_count == %u\n", malloc_fail_count);
+
             ba = malloc(NET_MAX_PACKET);
             bb = malloc(NET_MAX_PACKET);
             bc = malloc(NET_MAX_PACKET);
@@ -95,6 +99,10 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
             free(ba);
         }
+            break;
+
+        case 'n':
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u\n", rtl_max_wait_count);
             break;
 
         case 'p':
