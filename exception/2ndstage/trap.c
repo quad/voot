@@ -68,11 +68,6 @@ void init_ubc_b_serial(void)
     add_exception_handler(&new);
 } 
 
-static void phy_sync(void)
-{
-    /* TODO: Flush all OUT marked data in the physical fifo. */
-    /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
-}
 
 static bool phy_fifo_add(uint8 in_data, dir_e dir)
 {
@@ -112,6 +107,69 @@ static bool phy_fifo_del(uint8 check_data)
     phy_fifo.size--;
 
     return TRUE;
+}
+
+static void phy_sync(void)
+{
+    uint8 temp_buffer[PHY_FIFO_SIZE];
+    uint32 work_index, temp_index;
+
+    /* DEBUG: Notification of physical fifo flush. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Saving and flushing physical fifo...\n");
+
+    /* STAGE: Flush all data not marked IN in the physical fifo. */
+    temp_index = 0;
+    for(work_index = 0; work_index < PHY_FIFO_SIZE; work_index++)
+    {
+        uint32 fifo_index;
+
+        fifo_index = (phy_fifo.start + work_index) % PHY_FIFO_SIZE;
+
+        if(phy_fifo.data[fifo_index].direction == IN)
+        {
+            temp_buffer[temp_index] = phy_fifo.data[fifo_index].data;
+            temp_index++;
+        }
+    }
+    
+    /* STAGE: Reset the physical fifo. */
+    phy_fifo.start = phy_fifo.size = 0;
+
+    /* DEBUG: Notification of physical completion. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo clear!\n");
+
+    /* DEBUG: Notification of SCIF flush. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Flushing the SCIF fifo...\n");
+
+    /* STAGE: Flush the SCIF fifo. */
+    while(*SCIF_R_FS &= SCIF_FS_RDF)
+    {
+        /* STAGE: Drop a single character from the SCIF fifo. */
+        *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+
+        /* DEBUG: Notify for debugging. Make sure this crap is even working. */
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "...flush SCIF...\n");
+    }
+
+    /* DEBUG: Notification of SCIF completion. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF FIFO clear!\n");
+
+    /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
+
+    /* DEBUG: Notification of resynchronization. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Resynchronizing the physical and SCIF fifos:\n");
+
+    /* STAGE: Inject the temporary buffer data in both the SCIF and physical fifos. */
+    for(work_index = 0; work_index < temp_index; work_index++)
+    {
+        /* STAGE: Handle the physical fifo. */
+        phy_fifo_add(temp_buffer[work_index], IN);
+
+        /* TODO: Handle the SCIF fifo. */
+    }
+
+    /* DEBUG: Notification of resynchronization completion. */
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical and SCIF fifos resynchronized.\n");
 }
 
 static uint32 phy_size(void)
