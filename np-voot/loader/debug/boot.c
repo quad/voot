@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.2 2002/06/29 13:02:27 quad Exp $
+    $Id: boot.c,v 1.3 2002/06/29 13:06:32 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,9 @@ CHANGELOG
 
     Tue May 28 09:19:02 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Split out the boot loading functionality from the main module.
+
+    Thu Jun  6 01:31:29 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Miscellaneous code cleanups.
 
     Mon Jun 24 22:53:47 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Shifted load address to new safe page.
@@ -42,7 +45,7 @@ void boot_loader (void)
 
     /*
         STAGE: Because we only use ROMFS, we can memory map the driver
-        binary.
+        binary and then just perform an arch_exec ().
     */
 
     driver_buffer = fs_mmap (in_driver);

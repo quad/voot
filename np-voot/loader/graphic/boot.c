@@ -1,6 +1,6 @@
 /*  boot.c
 
-    $Id: boot.c,v 1.2 2002/06/29 13:02:27 quad Exp $
+    $Id: boot.c,v 1.3 2002/06/29 13:06:32 quad Exp $
 
 DESCRIPTION
 
@@ -45,7 +45,7 @@ void boot_loader (void)
 
     /*
         STAGE: Because we only use ROMFS, we can memory map the driver
-        binary and then just perform a normal memcpy.
+        binary and then just perform an arch_exec ().
     */
 
     driver_buffer = fs_mmap (in_driver);
