@@ -64,6 +64,10 @@ CHANGELOG
         Added a condition to the event queue. This should remove any need
         for a running loop and reduce processor consumption.
 
+    Sun Nov 24 05:57:38 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Removed a race condition that could occur under extreme stress. That
+        said, I already triggered it once.
+
 */
 
 #include <stdlib.h>
@@ -329,12 +333,16 @@ int32 npc_handle_command(npc_command_t *command)
 
 bool npc_add_event_queue(npc_command_t *command)
 {
+    pthread_mutex_lock(&(npc_system.event_queue_busy));
+
     if (npc_system.event_queue_size >= NPC_EVENT_QUEUE_SIZE)
     {
         NPC_LOG(npc_system, LOG_ERR, "Event queue overflow!");
+
+        pthread_mutex_unlock(&(npc_system.event_queue_busy));
+
         return TRUE;
     }
-    else if(pthread_mutex_lock(&(npc_system.event_queue_busy)));
 
     npc_system.event_queue[(npc_system.event_queue_tail + npc_system.event_queue_size) % NPC_EVENT_QUEUE_SIZE] = command;
     npc_system.event_queue_size++;
@@ -368,16 +376,7 @@ npc_command_t* npc_get_event(void)
 {
     npc_command_t *event;
 
-    if ((event = npc_get_event_queue()));
-    else if (!event)
-    {
-        /* NOTE: This should never occur! */
-
-        NPC_LOG(npc_system, LOG_DEBUG, "Empty event passback!");
-
-        event = (npc_command_t *) malloc(sizeof(npc_command_t));
-        event->type = C_NONE;
-    }
+    event = npc_get_event_queue();
 
     return event;
 }
