@@ -69,7 +69,6 @@ extern void vbr_set(const void *set);
 extern uint32 r15(void);
 extern uint32 spc(void);
 
-extern void disable_cache();
 extern void flush_cache();
 
 #endif

@@ -19,7 +19,8 @@ OBJS += util.o serial.o gamedata.o printf.o biosfont.o assert.o
 #CC += -DNETWORK_SUPPORT
 
 # TA Heartbeat
-OBJS += heartbeat.o
+#OBJS += heartbeat.o
+#CC += -DHEARTBEAT_SUPPORT
 
 # Ill-fated game-smart SCIF emulation logic
 #OBJS += trap.o

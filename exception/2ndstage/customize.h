@@ -3,6 +3,12 @@
 
 #include "system.h"
 
+#define CUSTOMIZE_VMU_SIZE          10
+#define CUSTOMIZE_VMU_VR_IDX        0x2A0
+#define CUSTOMIZE_VMU_COLOR_IDX     0x2B0
+#define CUSTOMIZE_VR_COUNT          13
+#define CUSTOMIZE_PALETTE_SIZE      0x200
+
 typedef enum
 {
     LOAD,
@@ -36,17 +42,10 @@ typedef enum
 
 typedef struct
 {
-    uint8 palette[0x200];
+    uint8 palette[CUSTOMIZE_PALETTE_SIZE];
 } customize_data;
 
-#define CUSTOMIZE_VMU_SIZE          10
-#define CUSTOMIZE_VMU_VR_IDX        0x2A0
-#define CUSTOMIZE_VMU_COLOR_IDX     0x2B0
-
 void customize_init(void);
-bool customize_reinit(void);
-void customize_clear_player(uint32 side);
 void* customize_handler(register_stack *stack, void *current_vector);
-void maybe_load_customize();
 
 #endif

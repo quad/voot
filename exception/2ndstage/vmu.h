@@ -3,15 +3,17 @@
 
 typedef uint8 vmu_port;
 
-#define VMU_PORT_A1     0
-#define VMU_PORT_A2     1
-#define VMU_PORT_B1     2
-#define VMU_PORT_B2     3
-#define VMU_PORT_C1     4
-#define VMU_PORT_C2     5
-#define VMU_PORT_D1     6
-#define VMU_PORT_D2     7
-#define VMU_PORT_NONE   8
+#define VMU_PORT_A1         0
+#define VMU_PORT_A2         1
+#define VMU_PORT_B1         2
+#define VMU_PORT_B2         3
+#define VMU_PORT_C1         4
+#define VMU_PORT_C2         5
+#define VMU_PORT_D1         6
+#define VMU_PORT_D2         7
+#define VMU_PORT_NONE       8
+
+#define VMU_MAX_FILENAME    20
 
 /* NOTE: Possible copyright violation here. The VMU error codes were passed
     to me by a guy on #dcdev. If it's bad for me to have this, I could just
@@ -41,8 +43,8 @@ typedef uint8 vmu_port;
 
 /* NOTE: Since they have a common theme. */
 
-#define VMU_STATUS_READY        0x00000000
-#define VMU_STATUS_BUSY         0xffffffff
+#define VMU_STATUS_READY    0x00000000
+#define VMU_STATUS_BUSY     0xffffffff
 
 void vmu_init (void);
 uint32 vmu_load_file (vmu_port port, char *filename, uint8 *obuffer, uint32 num_blocks);

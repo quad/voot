@@ -175,8 +175,10 @@ void* exception_handler(register_stack *stack)
         }
 #endif
 
+#ifdef HEARTBEAT_SUPPORT
         /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();
+#endif
 
         /* STAGE: Pre-cache the biosfont address. */
         bfont_init(); 

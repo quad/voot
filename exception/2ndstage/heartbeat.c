@@ -4,6 +4,11 @@ DESCRIPTION
 
     Every pageflip we receive a call here. It's a great timer.
 
+TODO
+
+    This causes random crashs. The delay on the pageflip seems to be
+    harmful. I need to find a better pageflip vector.
+
 */
 
 #include "vars.h"
@@ -27,20 +32,8 @@ void init_heartbeat(void)
 
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
-    uint16 *anim_mode_a = (uint16 *) 0x8ccf0228;
-    uint16 *anim_mode_b = (uint16 *) 0x8ccf022a;
-
     /* STAGE: Enable the various codes. */
     gamedata_enable_debug();
-
-    /* STAGE: See if we need to load customization information. */
-    if ((*anim_mode_a == 0x0 && *anim_mode_b == 0x2) ||     /* Training Mode select. */
-        (*anim_mode_a == 0x0 && *anim_mode_b == 0x5) ||     /* Single Player 3d select. */
-        (*anim_mode_a == 0x2 && *anim_mode_b == 0x9) ||     /* Single Player quick select. */
-        (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
-    {
-        maybe_load_customize();
-    }
 
     return current_vector;
 }

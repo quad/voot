@@ -22,6 +22,7 @@ int32 dc_main(int32 do_warez)
     unsigned long bin_size;
 
     /* STAGE: Initialize the UBC. */
+    *UBC_R_BBRA = *UBC_R_BBRB = 0;
     *UBC_R_BRCR = UBC_BRCR_UBDE | UBC_BRCR_PCBA | UBC_BRCR_PCBB;
     dbr_set(exception_handler_lowlevel);
     vbr_set(vbr_buffer);
@@ -35,8 +36,6 @@ int32 dc_main(int32 do_warez)
     /* STAGE: Handle the 1ST_READ.BIN */
     if (do_warez)
     {
-        disable_cache();
-
         warez_load(*((unsigned long *) REAL_LOAD_POINT));
     }
     else
@@ -46,7 +45,6 @@ int32 dc_main(int32 do_warez)
         memmove((uint8 *) REAL_LOAD_POINT, (uint8 *) LOADED_POINT, bin_size);
 
         /* STAGE: Execute the 1ST_READ.BIN */
-        disable_cache();
         (*(void (*)()) REAL_LOAD_POINT) ();
     }
 
