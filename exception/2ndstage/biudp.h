@@ -6,14 +6,12 @@
 
 #define BIUDP_SEGMENT_SIZE  1024
 
-/* #define HARDCODE_IP         1 */
-
 typedef struct
 {
     uint8   dest_mac[ETHER_MAC_SIZE];
     uint32  source_ip;
     uint32  dest_ip;
-    uint32  port;
+    uint16  port;
     bool    initialized;
 } biudp_control_t;
 

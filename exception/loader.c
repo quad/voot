@@ -20,7 +20,6 @@ static char *stage_buffer = (char *) 0xAC004000;
 static char *first_load_buffer = (char *) FIRST_LOAD_POINT;
 static unsigned long *first_load_size = (unsigned long *) FIRST_RUN_POINT;
 
-
 #define COLOR_FIRST_WAIT    0, 0, 0
 #define COLOR_BOOT_INIT     0, 0, 100
 

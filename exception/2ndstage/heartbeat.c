@@ -1,6 +1,14 @@
 /*  heartbeat.c
 
+DESCRIPTION
+
     Every pageflip we receive a call here. It's a great timer.
+
+CHANGELOG
+
+    Sat Mar  9 05:10:14 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
+
 */
 
 #include "vars.h"
@@ -13,8 +21,6 @@
 #include "trap.h"
 
 #include "heartbeat.h"
-
-my_pageflip pageflip_info;
 
 void init_heartbeat(void)
 {
@@ -36,26 +42,6 @@ void init_heartbeat(void)
     //add_asic_handler(&new_irq);
 }
 
-#ifdef COUNT_PAGEFLIP
-
-static void count_pageflip(void)
-{
-    /* STAGE: Display statistic information only in the case of a new pageflip handler. */
-    if (pageflip_info.spc != spc())
-    {
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip %x lasted %u", pageflip_info.spc, pageflip_info.count);
-
-        pageflip_info.spc = spc();
-        pageflip_info.count = 0;
-
-        voot_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip @ %x", pageflip_info.spc);
-    }
-
-    pageflip_info.count++;
-}
-
-#endif
-
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
     static bool done_once = FALSE;
@@ -70,11 +56,6 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
 
         done_once = TRUE;
     }
-
-#ifdef COUNT_PAGEFLIP
-    /* STAGE: Pageflip statistics. */
-    count_pageflip();
-#endif
 
     trap_ping_perframe();
 

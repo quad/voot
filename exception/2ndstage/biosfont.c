@@ -1,24 +1,22 @@
-/*
- * Please see libdream.c for further details.
- *
- * (c)2000 Dan Potter
- */
+/*  biosfont.c
 
-#include "vars.h"
+DESCRIPTION
 
-#include "biosfont.h"
+    A accessor module for the BIOS font functions.
 
-/*
+CHANGELOG
 
-This module handles interfacing to the BIOS to get its "thin" font,
-which is used in the BIOS menus. Among other useful properties (being
-there without being loaded! =) this font includes Japanese characters.
-
-Thanks to Marcus Comstedt for this information.
-
-Ported from KallistiOS (Dreamcast OS) for libdream by Dan Potter
+    Sat Mar  9 05:05:38 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry. This code is an almost exact
+        duplicate from Dan Potter's libdream's biosfont.c - except this
+        version of the source checks the BIOS mutex.
 
 */
+
+#include "vars.h"
+#include "util.h"
+
+#include "biosfont.h"
 
 /* A little assembly that grabs the font address */
 extern volatile uint8* bfont_get_address();

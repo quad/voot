@@ -1,6 +1,14 @@
 /*  biudp.c
 
+DESCRIPTION
+
     Bi-directional UDP communications code.
+
+CHANGELOG
+
+    Sat Mar  9 05:10:55 PST 2002     Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
+
 */
 
 #include "vars.h"
@@ -9,7 +17,7 @@
 
 #include "biudp.h"
 
-biudp_control_t control;
+static biudp_control_t control;
 
 void biudp_init(const biudp_control_t *in_control)
 {
@@ -58,8 +66,8 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
     ip->protocol = IP_PROTO_UDP;
     ip->checksum = 0;
 
-    IP_ADDR_COPY(ip->source, control.source_ip);
-    IP_ADDR_COPY(ip->dest, control.dest_ip);
+    SAFE_UINT32_COPY(ip->source, control.source_ip);
+    SAFE_UINT32_COPY(ip->dest, control.dest_ip);
 
     /* STAGE: Calculate the IP checksum last. */
     ip_header_length = IP_HEADER_SIZE(ip);

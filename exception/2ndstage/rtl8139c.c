@@ -1,5 +1,7 @@
 /*  rtl8139c.c
 
+DESCRIPTION
+
     Driver code for the RealTek 8139c.
 
     This card is a very confusing card but I hope to write my driver
@@ -11,6 +13,17 @@
 
     Andrew has also contributed to this card with great reference code and
     even better personal support in #dcdev@EFNet. Give the guy a damn hand.
+
+CHANGELOG
+
+    Sat Mar  9 05:08:47 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry. There should never be any changes
+        past this one .. except maybe the TX code.
+
+TODO
+
+    Rewrite the rtl_tx logic into something I understand.
+
 */
 
 #include "vars.h"

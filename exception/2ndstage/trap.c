@@ -1,6 +1,13 @@
 /*  trap.c
 
+DESCRIPTION
+
     Serial trapping, tapping, and injection logic.
+
+CHANGELOG
+
+    Sat Mar  9 05:08:30 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
 
 */
 
@@ -32,7 +39,7 @@
 #define NET_FIFO_SIZE   64
 #define PF_FIFO_SIZE    (PHY_FIFO_SIZE + NET_FIFO_SIZE)
 
-struct
+static struct
 {
     struct
     {
@@ -44,7 +51,7 @@ struct
     uint32      size;
 } phy_fifo;
 
-struct
+static struct
 {
     uint8       data[NET_FIFO_SIZE];
 
@@ -52,7 +59,7 @@ struct
     uint32      size; 
 } net_fifo;
 
-struct
+static struct
 {
     uint8       data[PF_FIFO_SIZE + 1];
 

@@ -1,6 +1,14 @@
 /*  exception.c
 
+DESCRIPTION
+
     Handle incoming exceptions in readable C-code.
+
+CHANGELOG
+
+    Sat Mar  9 05:10:34 PST 2002     Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
+
 */
 
 #include "vars.h"
@@ -14,11 +22,11 @@
 
 #include "exception.h"
 
-exception_table exp_table;
+static exception_table exp_table;
 
 /* The VBR Buffer - we better find out how large VO's actually is */
 uint8 vbr_buffer[VO_VBR_SIZE];
-uint8 *vbr_buffer_katana;
+static uint8 *vbr_buffer_katana;
 
 void init_ubc_a_exception(void)
 {

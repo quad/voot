@@ -15,6 +15,11 @@
 #define islower(c)      ((c) >= 'a' && (c) <= 'z')
 #define strnlen(s, max) ((strlen(s) > max) ? max : strlen(s))
 
+#define SAFE_UINT32_COPY(trgt, src) {                           \
+    *(((uint16 *) &(trgt))    ) = *(((uint16 *) &(src))    );   \
+    *(((uint16 *) &(trgt)) + 1) = *(((uint16 *) &(src)) + 1);   \
+                                    }
+
 typedef union unikey
 {
     uint32  i;
@@ -22,6 +27,15 @@ typedef union unikey
 } unikey;
 
 extern uint32 malloc_fail_count;
+
+/* Standard Library Functions, we don't want to import the actual headers
+    themselves! */
+
+void* memcpy(void *dest, const void *src, uint32 n);
+int memcmp(const void *s1, const void *s2, uint32 n);
+uint32 strlen(const char *s);
+
+/* Util Module Prototypes. */
 
 void* memmove(void *dest, const void *src, uint32 count);
 void vid_waitvbl(void);

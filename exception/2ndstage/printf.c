@@ -257,9 +257,11 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
             num = va_arg(args, unsigned long);
         else if (qualifier == 'h')
             if (flags & SIGN)
-                num = va_arg(args, short);
+//                num = va_arg(args, int16);
+                num = va_arg(args, int);
             else
-                num = va_arg(args, unsigned short);
+//                num = va_arg(args, uint16);
+                num = va_arg(args, unsigned int);
         else if (flags & SIGN)
             num = va_arg(args, int);
         else

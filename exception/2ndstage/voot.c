@@ -1,6 +1,13 @@
 /*  voot.c
 
+DESCRIPTION
+
     VOOT netplay protocol debug implementation.
+
+CHANGELOG
+
+    Sat Mar  9 05:08:07 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
 
 */
 
@@ -42,24 +49,30 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
         case VOOT_COMMAND_TYPE_DUMPON:
         {
+            uint32 *buffer_index;
             uint32 address;
 
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Received DUMPON command...");
+            buffer_index = &(((uint32 *) packet->buffer)[1]);
+            
+            SAFE_UINT32_COPY(address, buffer_index);
 
-            address = ((uint32 *) packet->buffer)[1];
-
-            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Receiving dump to address %u", address);
-
-#if 0
             dump_start(address);
-#endif
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Processed DUMPON command. (%x)", address);
 
             break;
         }
 
         case VOOT_COMMAND_TYPE_DUMPOFF:
-            dump_stop();
+        {
+            uint32 bytes;
+
+            bytes = dump_stop();
+
+            voot_printf(VOOT_PACKET_TYPE_DEBUG, "Processed DUMPOFF command. (%u)", bytes);
+
             break;
+        }
 
         /* TODO: After taking a certain number of screenshots, it appears to
             crash the system. Maybe the dump_framebuffer() call should be
@@ -100,7 +113,7 @@ static bool maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
             break;
 
         case VOOT_PACKET_TYPE_DUMP:
-            dump_add(packet->buffer, packet->header.size - 1);
+            dump_add(packet->buffer, packet->header.size);
             break;
 
         default:

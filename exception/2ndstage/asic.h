@@ -55,8 +55,6 @@ typedef struct
     asic_lookup_table_entry   table[ASIC_TABLE_SIZE];
 } asic_lookup_table;
 
-extern asic_lookup_table asic_table;
-
 uint32 add_asic_handler(const asic_lookup_table_entry *new_entry);
 void* handle_asic_exception(register_stack *stack, void *current_vector);
 

@@ -14,10 +14,11 @@ CHANGELOG
 
 #include "vars.h"
 #include "voot.h"
+#include "util.h"
 
 #include "dumpio.h"
 
-dump_control_t control;
+static dump_control_t control;
 
 void dump_framebuffer(void)
 {
@@ -69,7 +70,13 @@ void dump_start(uint32 target_loc)
     control.index = 0;
 }
 
-void dump_stop(void)
+uint32 dump_stop(void)
 {
+    uint32 num_bytes_dumped;
+
+    num_bytes_dumped = control.index;
+
     control.target = control.index = 0;
+
+    return num_bytes_dumped;
 }

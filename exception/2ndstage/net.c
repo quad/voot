@@ -1,5 +1,7 @@
 /*  net.c
 
+DESCRIPTION
+
     Networking sub-system. I intend on handling the following protocols:
 
     * UDP           - Our primary data transfer protocol.
@@ -7,6 +9,16 @@
                        foreign environments.
         * VOOT      - The Netplay VOOT protocol.
     * ICMP          - Pings, primarily.
+
+CHANGELOG
+
+    Sat Mar  9 05:09:33 PST 2002     Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
+
+TODO
+
+    Implement DHCP.
+
 */
 
 #include "vars.h"
@@ -233,9 +245,9 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
-    IP_ADDR_COPY(temp_ipaddr, ip->source);
-    IP_ADDR_COPY(ip->source, ip->dest);
-    IP_ADDR_COPY(ip->dest, temp_ipaddr);
+    SAFE_UINT32_COPY(temp_ipaddr, ip->source);
+    SAFE_UINT32_COPY(ip->source, ip->dest);
+    SAFE_UINT32_COPY(ip->dest, temp_ipaddr);
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, IP_HEADER_SIZE(ip));
@@ -294,8 +306,8 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     udp->checksum = 0;
 
     /* STAGE: Construct the UDP psuedo-header. */
-    IP_ADDR_COPY(udp_top.source_ip, ip->source);
-    IP_ADDR_COPY(udp_top.dest_ip, ip->dest);
+    SAFE_UINT32_COPY(udp_top.source_ip, ip->source);
+    SAFE_UINT32_COPY(udp_top.dest_ip, ip->dest);
 
     udp_top.zero = 0;
     udp_top.protocol = ip->protocol;
@@ -335,9 +347,9 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     memcpy(frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
-    IP_ADDR_COPY(temp_ipaddr, ip->source);
-    IP_ADDR_COPY(ip->source, ip->dest);
-    IP_ADDR_COPY(ip->dest, temp_ipaddr);
+    SAFE_UINT32_COPY(temp_ipaddr, ip->source);
+    SAFE_UINT32_COPY(ip->source, ip->dest);
+    SAFE_UINT32_COPY(ip->dest, temp_ipaddr);
 
     /* STAGE: Compute IP checksum. */
     ip->checksum = ip_checksum(ip, ip_header_size);
@@ -381,8 +393,8 @@ bool udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
 
         ip = (ip_header_t *) frame->data;
         memcpy(control.dest_mac, frame->source, ETHER_MAC_SIZE);
-        IP_ADDR_COPY(control.source_ip, ip->dest);
-        IP_ADDR_COPY(control.dest_ip, ip->source);
+        SAFE_UINT32_COPY(control.source_ip, ip->dest);
+        SAFE_UINT32_COPY(control.dest_ip, ip->source);
         control.port = udp->src;
 
         biudp_init(&control);

@@ -10,6 +10,6 @@ typedef struct
 void dump_framebuffer(void);
 void dump_add(const uint8 *in_data, uint32 in_data_size);
 void dump_start(uint32 target_loc);
-void dump_stop(void);
+uint32 dump_stop(void);
 
 #endif

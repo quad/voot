@@ -34,7 +34,6 @@ typedef struct
     bool        vbr_switched;
 } exception_table;
 
-extern exception_table exp_table;
 extern uint8 vbr_buffer[VO_VBR_SIZE];
 
 void init_ubc_a_exception(void);

@@ -1,15 +1,24 @@
 /*  asic.c
 
+DESCRIPTION
+
     Handle the SEGA-G2 bus ASIC controller.
+
+CHANGELOG
+
+    Sat Mar  9 05:11:16 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        First added this changelog entry.
+
 */
 
 #include "vars.h"
 #include "system.h"
+#include "util.h"
 #include "exception.h"
 
 #include "asic.h"
 
-asic_lookup_table asic_table;
+static asic_lookup_table asic_table;
 
 uint32 add_asic_handler(const asic_lookup_table_entry *new_entry)
 {
@@ -37,7 +46,6 @@ uint32 add_asic_handler(const asic_lookup_table_entry *new_entry)
 
                 default:    /* Whoa, someone got very screwed up here. Abort! */
                     return 0;
-                    break;
             }
 
             mask_base[0] |= new_entry->mask0;
