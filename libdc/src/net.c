@@ -21,11 +21,8 @@ CHANGELOG
 
 #include "vars.h"
 #include "rtl8139c.h"
-#include "serial.h"
-#include "net.h"
 #include "bswap.h"
-
-uint8 frame_out_buffer[NET_MAX_PACKET];
+#include "net.h"
 
 static void maybe_respond_command(icmp_header_t *icmp, uint16 icmp_data_length)
 {
@@ -63,7 +60,7 @@ static void net_transmit(ether_info_packet_t *frame_in)
 
     /* If it was originally a II header, we're covered. If it was originally
         a 802.3 header, we're left with space to spare. :-) */
-    frame_out = (ether_ii_header_t *) frame_out_buffer;
+    frame_out = (ether_ii_header_t *) rtl_info.frame_out_buffer;
 
     /* STAGE: Setup the packet. */
     memcpy(frame_out->source, frame_in->source, ETHER_MAC_SIZE);

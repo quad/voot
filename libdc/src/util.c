@@ -13,9 +13,17 @@ CHANGELOG
     Mon Aug  6 15:46:17 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
         Imported, modified, and just generally added a timestamp when I
         created the libdc distribution.
+
+    Wed Aug  8 00:18:28 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
+        This is mainly just a note. The "util" and related util modules will
+        be the only ones were the functions don't have to hold a standard
+        naming paradigm. Mainly because, in the future, I don't want to
+        rename "memcpy".
+
 */
 
 #include "vars.h"
+#include "util.h"
 
 /* Borrowed from dcload-ip with andrewk's permission */
 void uint_to_string(uint32 foo, uint8 *bar)

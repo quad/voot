@@ -21,6 +21,14 @@ CHANGELOG
     Mon Aug  6 15:46:17 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
         Imported, modified, and just generally added a timestamp when I
         created the libdc distribution.
+
+    Tue Aug  7 02:23:42 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
+        Changed over to using the new unified exception handler. Removed the
+        use of globals and shifted to passed structure form.
+
+    Wed Aug  8 00:27:10 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
+        Continued work on shifting to libdc global spec. I hate indirections.
+
 */
 
 #define RTL_DCLOAD_VERSION
@@ -99,7 +107,7 @@ bool pci_bb_init(void)
    *
 */
 
-rtl_t   rtl_info;
+rtl_t rtl_info;
 
 /* RTL8139c Tx descriptor indexes */
 static uint8* rtl_tx_descs[] = { (uint8 *) 0xa1846000,
@@ -108,7 +116,7 @@ static uint8* rtl_tx_descs[] = { (uint8 *) 0xa1846000,
                                  (uint8 *) 0xa1847800
                                };
 
-static void rtl_mac(void)
+static void rtl_get_mac(void)
 {
     unsigned tmp;
 
@@ -253,7 +261,7 @@ bool rtl_init(exception_table *exp_table)
 /*** INITIALIZE INTERNAL DATA STRUCTURE ***/
 
     /* STAGE: Read MAC address */
-    rtl_mac();
+    rtl_get_mac();
 
     /* STAGE: Zero the Rx and Tx counters */
     rtl_info.cur_rx = rtl_info.cur_tx = 0;
@@ -270,9 +278,10 @@ static void rtl_copy_packet(uint8 *dest, uint8 *src, uint32 size)
         this, but we've turned off optimization for the moment. */
     dma_buffer_end = (uint8 *) RTL_DMA_BYTE + RX_BUFFER_LEN;
 
-    if (size > sizeof(rtl_info.frame_in_buffer))   /* Final paranoia. */ 
-        return;
-
+    /* Is this code even nessicary? Especially if this is supposed to be a
+        generalized function... */
+#ifdef IS_NESSICARY
+#endif
     if ((uint32) (src + size) < (uint32) dma_buffer_end) /* maybe this wants to be <= */
         memcpy(dest, src, size);
     else
@@ -375,7 +384,6 @@ bool rtl_tx(const uint8* frame, uint32 length)
 
 #endif
 
-
 void rtl_rx_all(void)
 {
     /* STAGE: Keep receiving packets until they're all gone - I hope we
@@ -401,7 +409,7 @@ void rtl_rx_all(void)
         packet_size = rx_size - 4;
 
         /* Handle that GOOD packet, baby! */
-        if (rx_status & 1)  /* if it's done? */
+        if ((rx_status & 1) && (packet_size <= sizeof(rtl_info.frame_in_buffer)))  /* if it's done and its digestable */
         {
             /* + 4 to skip the header. */
             packet_data = (uint8 *) ((((uint32) RTL_DMA_BYTE) + rtl_info.cur_rx) + 4);

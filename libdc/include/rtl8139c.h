@@ -1,5 +1,5 @@
-#ifndef __RTL8139C_H__
-#define __RTL8139C_H__
+#ifndef __LIBDC_RTL8139C_H__
+#define __LIBDC_RTL8139C_H__
 
 #include "vars.h"
 #include "system.h"
@@ -149,13 +149,14 @@ typedef struct {
     uint8       mac[6];         /* Mac address */
 
     uint8       frame_in_buffer[NET_MAX_PACKET];
+    uint8       frame_out_buffer[NET_MAX_PACKET];
 
     uint32      hdl_tbl_index;  /* Exception handler table index */
 } rtl_t;
 
-extern rtl_t rtl_info;
+/* Module Exports */
 
-/* Module Function Definitions */
+extern rtl_t rtl_info;
 
 bool    pci_detect      (void);
 bool    pci_bb_init     (void);

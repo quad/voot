@@ -5,10 +5,13 @@ INCS = ../include/
 BIN = libdc
 OBJS = bswap.o exception.o net.o rtl8139c.o serial.o system.o util.o
 
-all: $(BIN).a
+all: build-src
+
+build-src: $(BIN).a
 
 $(BIN).a: $(OBJS)
-#	$(CC) -static -Wl,-Ttext,0xAC004000 -nostartfiles -o $(BIN).elf $(OBJS) $(LIBS)
+	$(AR) rcs $@ $(OBJFILES)
+	-cp $@ ../lib/
 
 %.o: %.c
 	$(CC) -I $(INCS) -c $< -o $@
@@ -17,8 +20,10 @@ $(BIN).a: $(OBJS)
 	$(CC) -I $(INCS) -c $< -o $@
 
 clean:
-	rm *.o *.bak *~
+	rm -f *.o *.bak *~
 
-force:
-	-rm -f $(BIN).elf
-	make
+reallyclean:
+	rm -f *.elf *.srec *.bin
+
+force: reallyclean
+	$(MAKE)

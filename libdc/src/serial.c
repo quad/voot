@@ -17,15 +17,20 @@ CHANGELOG
         Imported, modified, and just generally added a timestamp when I
         created the libdc distribution.
 
+    Wed Aug  8 00:17:14 PDT 2001    Scott Robinson <scott_dcdev@dsn.itgo.com>
+        Removed the "ubc_" prefix to all the functions. This solves two
+        problems: 1) brings the naming of functions back into my current
+        paradigm. 2) it breaks any old debugging code! Mu ha ha!
+
 */
 
 #include "vars.h"
-#include "serial.h"
 #include "util.h"
+#include "serial.h"
 
 /* Initialize the SCIF port; baud_rate must be at least 9600 and
    no more than 57600. 115200 does NOT work for most PCs. */
-void ubc_serial_init(uint16 baud_rate)
+void serial_init(uint16 baud_rate)
 {
     volatile uint16 *scif16 = (uint16 *) 0xffe80000;
     volatile uint8 *scif8 = (uint8 *) 0xffe80000;
@@ -55,7 +60,7 @@ void ubc_serial_init(uint16 baud_rate)
 }
 
 /* Write one char to the serial port (call serial_flush()!)*/
-void ubc_serial_write(int32 c)
+void serial_write(int32 c)
 {
     volatile uint16 *ack = (uint16 *) 0xffe80010;
     volatile uint8 *fifo = (uint8 *) 0xffe8000c;
@@ -71,7 +76,7 @@ void ubc_serial_write(int32 c)
 }
 
 /* Flush all FIFO'd bytes out of the serial port buffer */
-void ubc_serial_flush(void)
+void serial_flush(void)
 {
     volatile uint16 *ack = (uint16 *) 0xffe80010;
 
@@ -83,22 +88,22 @@ void ubc_serial_flush(void)
 }
 
 /* Send an entire buffer */
-void ubc_serial_write_buffer(uint8 * data, uint32 len)
+void serial_write_buffer(uint8 * data, uint32 len)
 {
     while (len-- > 0)
-        ubc_serial_write(*data++);
+        serial_write(*data++);
 
-    ubc_serial_flush();
+    serial_flush();
 }
 
 /* Send a string (null-terminated) */
-void ubc_serial_write_str(uint8 * str)
+void serial_write_str(uint8 * str)
 {
-    ubc_serial_write_buffer((uint8 *) str, strlen(str));
+    serial_write_buffer((uint8 *) str, strlen(str));
 }
 
 /* Read one char from the serial port (-1 if nothing to read) */
-int32 ubc_serial_read(void)
+int32 serial_read(void)
 {
     volatile uint16 *status = (uint16 *) 0xffe8001c;
     volatile uint16 *ack = (uint16 *) 0xffe80010;
@@ -118,11 +123,11 @@ int32 ubc_serial_read(void)
     return c;
 }
 
-void ubc_serial_write_hex(uint32 val)
+void serial_write_hex(uint32 val)
 {
     uint8 uint_buffer[10];
 
     uint_to_string(val, uint_buffer);
 
-    ubc_serial_write_str(uint_buffer);
+    serial_write_str(uint_buffer);
 }
