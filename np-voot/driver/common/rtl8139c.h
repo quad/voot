@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.2 2002/06/20 10:20:05 quad Exp $
+    $Id: rtl8139c.h,v 1.3 2002/06/23 22:01:30 quad Exp $
 
 */
 
@@ -147,7 +147,6 @@
     Append CRC
     1024b Tx DMA bursts
     Retry Tx 16 times MAX
-
 */
 
 #define RTL_TXCONFIG_ON         0x00000600
@@ -183,11 +182,9 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-bool    pci_detect      (void);
-bool    pci_bb_init     (void);
-uint8 * rtl_mac         (void);
-bool    rtl_tx          (const uint8* frame, uint32 length);
-void *  rtl_handler     (void *passer, register_stack *stack, void *current_vector);
 bool    rtl_init        (void);
+bool    rtl_tx          (const uint8 *frame, uint32 length);
+uint8 * rtl_mac         (void);
+void *  rtl_irq_handler (void *passer, register_stack *stack, void *current_vector);
 
 #endif
