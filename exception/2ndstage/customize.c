@@ -10,9 +10,7 @@ TODO
 
     Cable versus needs to be tested.
 
-    Menu select side should be checked instead of game side in Cable Versus mode/
-
-    Find animation IDs for 2D single player continue.
+    Menu select side should be checked instead of game side in Cable Versus mode.
 
 */
 
@@ -40,7 +38,7 @@ static uint8 player = 0;
 static uint8 side = 0;
 static uint8 file_number = 0;
 static uint8 *file_buffer = NULL;
-static customize_data* colors[2][CUSTOMIZE_VR_COUNT]; 
+static customize_data* colors[2][VR_SENTINEL]; 
 
 void customize_init(void)
 {
@@ -67,7 +65,7 @@ static void customize_clear_player(uint32 player, bool do_head)
     uint8 *cust_head = (uint8 *) (0x8ccf9ecc + 0x4b);
 
     /* STAGE: Free and null out all the customization for a particular player. */
-    for (vr = 0; vr < CUSTOMIZE_VR_COUNT ; vr++)
+    for (vr = 0; vr < VR_SENTINEL ; vr++)
     {
         if (colors[player][vr])
         {
@@ -87,9 +85,9 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
 
     vr = stack->r4;
     player = stack->r5;
-    
+
     /* STAGE: Ensure we've been given sane values. */
-    if ((vr >= 0 && vr < CUSTOMIZE_VR_COUNT) && (player == 0 || player == 1))
+    if ((vr >= 0 && vr < VR_SENTINEL) && (player == 0 || player == 1))
     {
         if (colors[player][vr])
         {
@@ -250,7 +248,7 @@ static void maybe_do_load_customize(void)
 
         /* STAGE: If it is one of the VR types we're storing, copy the data
             over. If we already stored one, skip it. */
-        if (vr < CUSTOMIZE_VR_COUNT && !colors[player][vr])
+        if (vr < VR_SENTINEL && !colors[player][vr])
         {
             customize_data temp_color;
             uint8 temp_head;
@@ -298,6 +296,8 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         if (memcmp((uint8 *) custom_func, custom_func_key, sizeof(custom_func_key)) && strcmp(module_save, (const char *) VOOT_MODULE_NAME))
         {
             strncpy(module_save, (const char *) VOOT_MODULE_NAME, sizeof(module_save));
+
+            /* STAGE: Try to locate one of the customization functions. */
             custom_func = (uint32) search_sysmem_at(custom_func_key, sizeof(custom_func_key), GAME_MEM_START, SYS_MEM_END);
 
             /* STAGE: Place the breakpoint on the customization function, if we found it. */
@@ -312,9 +312,6 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
 
             ubc_wait();
         }
-
-        /* DEBUG: Notify of animation mode changeovers. */
-        voot_debug("A [%x] B [%x]", *anim_mode_a, *anim_mode_b);
 
         /* STAGE: If we move back to the main menu, clear all the information. */
         if (*anim_mode_a == 0x2 && !(*anim_mode_b == 0x9 || *anim_mode_b == 0xa))
@@ -335,11 +332,35 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         (*anim_mode_a == 0x3 && *anim_mode_b == 0x29) ||    /* Single Player quick continue. */
         (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
     {
+        uint8 *p1_vr_loc = (uint8 *) 0x8ccf6236;
+        uint8 *p2_vr_loc = (uint8 *) 0x8ccf73b2;
+        voot_vr_id p1_vr = VR_SENTINEL;
+        voot_vr_id p2_vr = VR_SENTINEL;
+        uint8 *cust_head = (uint8 *) (0x8ccf9ecc + 0x4b);
+
+        /* STAGE: Handle customization load process. */
         maybe_start_load_customize();
         maybe_do_load_customize();
+
+        /* STAGE: An ugly hack of an attempt at customized heads. */
+        p1_vr = *p1_vr_loc;
+        p2_vr = *p2_vr_loc;
+
+        if (p1_vr >= 0 && p1_vr < VR_SENTINEL && colors[0][p1_vr])
+            cust_head[0] = colors[0][p1_vr]->head;
+        else
+            cust_head[0] = 0x0;
+
+        if (p2_vr >= 0 && p2_vr < VR_SENTINEL && colors[1][p2_vr])
+            cust_head[1] = colors[1][p2_vr]->head;
+        else
+            cust_head[1] = 0x0;
     }
     else
+    {
+        /* STAGE: Handle the customization load process. (or cleanup) */
         maybe_do_load_customize();
+    }
 
     /* STAGE: Health OSD segment - only triggers in game mode. */
     if (*anim_mode_b == 0xf && *anim_mode_a == 0x3)
@@ -413,15 +434,6 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
 void* customize_handler(register_stack *stack, void *current_vector)
 {
     /* STAGE: In the case of the secondary animation mode (channel A) exception. */
-    if (*UBC_R_BRCR & UBC_BRCR_CMFA)
-    {
-        /* STAGE: Be sure to clear the proper bit. */
-        *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
-
-        /* STAGE: Pass control to the actual code base. */
-        current_vector = my_anim_handler(stack, current_vector);
-    }
-
     if (*UBC_R_BRCR & UBC_BRCR_CMFB)
     {
         /* STAGE: Be sure to clear the proper bit. */
@@ -429,6 +441,15 @@ void* customize_handler(register_stack *stack, void *current_vector)
 
         /* STAGE: Pass control to the actual code base. */
         current_vector = my_customize_handler(stack, current_vector);
+    }
+
+    if (*UBC_R_BRCR & UBC_BRCR_CMFA)
+    {
+        /* STAGE: Be sure to clear the proper bit. */
+        *UBC_R_BRCR &= ~(UBC_BRCR_CMFA);
+
+        /* STAGE: Pass control to the actual code base. */
+        current_vector = my_anim_handler(stack, current_vector);
     }
 
     return current_vector;

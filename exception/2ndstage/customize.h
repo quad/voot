@@ -7,7 +7,6 @@
 #define CUSTOMIZE_VMU_HEAD_IDX      0x282
 #define CUSTOMIZE_VMU_VR_IDX        0x2A0
 #define CUSTOMIZE_VMU_COLOR_IDX     0x2B0
-#define CUSTOMIZE_VR_COUNT          13
 #define CUSTOMIZE_PALETTE_SIZE      0x200
 
 /* This is ARGB. (0x00RRGGBB) */
@@ -22,6 +21,13 @@ typedef enum
     LOAD,
     RUN
 } customize_check_mode;
+
+typedef enum
+{
+    CV_NONE,
+    CV_HEADS,
+    CV_COLORS
+} customize_vector_mode;
 
 typedef enum
 {
@@ -45,7 +51,8 @@ typedef enum
     VR_ANGELAN,
     VR_SPECINEFF,
     VR_APHARMDS,
-    VR_AJIM             /* 12 */
+    VR_AJIM,
+    VR_SENTINEL
 } voot_vr_id;
 
 typedef struct
