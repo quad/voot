@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.3 2002/11/12 18:15:41 quad Exp $
+    $Id: net.c,v 1.4 2002/11/14 06:09:48 quad Exp $
 
 DESCRIPTION
 
@@ -156,9 +156,15 @@ void net_init (void)
     IP4_ADDR(&ipaddr, 0,0,0,0);
     IP4_ADDR(&netmask, 0,0,0,0);
 #else
+#ifdef KIRK
+    IP4_ADDR(&gw, 192,168,0,1);
+    IP4_ADDR(&ipaddr, 192,168,0,11);
+    IP4_ADDR(&netmask, 255,255,255,0);
+#else
     IP4_ADDR(&gw, 10,1,1,254);
     IP4_ADDR(&ipaddr, 10,1,1,70);
     IP4_ADDR(&netmask, 255,0,0,0);
+#endif
 #endif
 
     /* STAGE: Enable the BBA network interface. */

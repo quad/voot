@@ -1,6 +1,6 @@
 /*  ubc.h
 
-    $Id: ubc.h,v 1.4 2002/07/06 14:18:15 quad Exp $
+    $Id: ubc.h,v 1.5 2002/11/14 06:09:48 quad Exp $
 
 */
 
@@ -37,6 +37,7 @@
 #define TRAP_CODE_ANIM      (0xFF)
 #define TRAP_CODE_SCIXB_TXI (0xFE)
 #define TRAP_CODE_SCIXB_TXM (0xFD)
+#define TRAP_CODE_SCIXB_ILK (0xFC)
 
 typedef enum
 {

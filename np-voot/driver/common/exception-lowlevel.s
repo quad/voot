@@ -1,6 +1,6 @@
 !   exception-lowlevel.s
 !
-!   $Id: exception-lowlevel.s,v 1.4 2002/08/04 05:48:04 quad Exp $
+!   $Id: exception-lowlevel.s,v 1.5 2002/11/14 06:09:48 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -63,9 +63,9 @@ general_exception_xt:
     stc.l   gbr, @-r15
     stc.l   vbr, @-r15
 !SAVED CONTROL (exception)
-!    stc.l   ssr, @-r15
+    stc.l   ssr, @-r15
 !    stc.l   sgr, @-r15
-!    stc.l   spc, @-r15
+    stc.l   spc, @-r15
 !SYSTEM
     sts.l   macl, @-r15
     sts.l   mach, @-r15
@@ -90,6 +90,10 @@ general_exception_xt:
     lds.l   @r15+, pr
     lds.l   @r15+, mach
     lds.l   @r15+, macl
+!SAVED CONTROL (exception)
+    ldc.l   @r15+, spc
+!    ldc.l   @r15+, sgr
+    ldc.l   @r15+, ssr
 !CONTROL
     ldc.l   @r15+, vbr
     ldc.l   @r15+, gbr

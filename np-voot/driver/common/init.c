@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.9 2002/10/18 19:52:19 quad Exp $
+    $Id: init.c,v 1.10 2002/11/14 06:09:48 quad Exp $
 
 DESCRIPTION
 
@@ -73,8 +73,8 @@ static void* init_handler (register_stack *stack, void *current_vector)
                 otherwise disable our entire boot process.
             */
 
-            spc_set (spc () + 2);   /* STAGE: Skip the SR write. */
-            stack->sr = 0x600000f0; /* STAGE: Leave the BL active. */
+            stack->spc += 2;            /* STAGE: Skip the SR write. */
+            stack->sr   = 0x600000f0;   /* STAGE: Leave the BL active. */
         }
         else if (ubc_is_channel_break (UBC_CHANNEL_B))
         {

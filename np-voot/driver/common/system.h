@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.7 2002/08/04 05:48:04 quad Exp $
+    $Id: system.h,v 1.8 2002/11/14 06:09:48 quad Exp $
 
 */
 
@@ -83,6 +83,9 @@ typedef struct
     uint32  mach;
     uint32  macl;
 
+    uint32  spc;
+    uint32  ssr;
+
     uint32  vbr;
     uint32  gbr;
     uint32  sr;
@@ -124,15 +127,6 @@ extern void     dbr_set     (const void *set);
 extern void *   vbr         (void);
 extern void     vbr_set     (const void *set);
 
-extern void *   spc         (void); 
-extern void     spc_set     (const void *set);
-
-extern void *   gbr         (void);
-extern void     gbr_set     (const void *set);
-
-extern uint32   r15         (void);
-extern uint32   sr          (void);
-extern uint32   fpscr       (void);
 extern void *   sgr         (void);
 
 extern void     flush_cache (void);

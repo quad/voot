@@ -119,7 +119,11 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_SYNMAXRTX           4
 
 /* ---------- ARP options ---------- */
-#define ARP_TABLE_SIZE 10
+#define ARP_TABLE_SIZE          10
+
+/* Dis/enable existing ARP entries updates on any ARP traffic */
+
+#define ETHARP_SNOOP_UPDATES    1
 
 /* ---------- IP options ---------- */
 /* Define IP_FORWARD to 1 if you wish to have the ability to forward

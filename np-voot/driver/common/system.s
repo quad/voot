@@ -1,6 +1,6 @@
 !   system.s
 !
-!   $Id: system.s,v 1.5 2002/08/04 05:48:04 quad Exp $
+!   $Id: system.s,v 1.6 2002/11/14 06:09:48 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -17,6 +17,7 @@
     .global _gbr
     .global _gbr_set
     .global _r15
+    .global _r15_set
     .global _sr
     .global _fpscr
     .global _sgr
@@ -65,6 +66,11 @@ _gbr_set:
 
 _r15:
     mov     r15, r0
+    rts
+    nop
+
+_r15_set:
+    mov     r4, r15
     rts
     nop
 
