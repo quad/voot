@@ -12,6 +12,7 @@
 
 #include "vars.h"
 #include "rtl8139c.h"
+#include "util.h"
 #include "bswap.h"
 #include "voot.h"
 #include "net.h"
@@ -25,10 +26,13 @@
 void net_transmit(ether_info_packet_t *frame_in)
 {
     ether_ii_header_t *frame_out;
+    uint32 frame_out_length;
 
-    /* If it was originally a II header, we're covered. If it was originally
-        a 802.3 header, we're left with space to spare. :-) */
-    frame_out = (ether_ii_header_t *) rtl_info.frame_out_buffer;
+    /* STAGE: malloc() appropriate sized buffer. */
+    frame_out_length = sizeof(ether_ii_header_t) + frame_in->length;
+    frame_out = malloc(frame_out_length);
+    if (!frame_out)     /* !!! there needs an alarming method. */
+        return;
 
     /* STAGE: Setup the packet. */
     memcpy(frame_out->source, frame_in->source, ETHER_MAC_SIZE);
@@ -39,7 +43,10 @@ void net_transmit(ether_info_packet_t *frame_in)
     memcpy((uint8 *) frame_out + sizeof(ether_ii_header_t), frame_in->data, frame_in->length);
 
     /* STAGE: Bye bye Mr. Packet */
-    rtl_tx((uint8 *) frame_out, frame_in->length + sizeof(ether_ii_header_t));
+    rtl_tx((uint8 *) frame_out, frame_out_length);
+
+    /* STAGE: free output buffer. */
+    free(frame_out);
 }
 
 static ether_info_packet_t eth_discover_frame(uint8 *frame_data, uint32 frame_size)

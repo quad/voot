@@ -262,7 +262,8 @@ int snprintf(char *buf, uint32 size, const char *fmt, ...)
 	int i;
 
 	va_start(args, fmt);
-	i=vsnprintf(buf,size,fmt,args);
+	i = vsnprintf(buf,size,fmt,args);
 	va_end(args);
+
 	return i;
 }

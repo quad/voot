@@ -3,9 +3,8 @@
 
 #include "vars.h"
 #include "net.h"
-#include "voot.h"
 
-#define BIUDP_SEGMENT_SIZE  1024 + VOOT_PACKET_HEADER_SIZE
+#define BIUDP_SEGMENT_SIZE  1024
 
 /* #define HARDCODE_IP         1 */
 

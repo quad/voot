@@ -122,6 +122,9 @@ void* exception_handler(register_stack *stack)
     if (do_vbr_switch && !exp_table.vbr_switched)
     {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
+        /* STAGE: Locate and assign syMalloc functionality. */
+        malloc_init();
+
         /* STAGE: Initialize the BBA. */
         if (pci_detect())
         {

@@ -13,33 +13,6 @@
 #define LOADED_POINT        0x8C300000
 #define REAL_LOAD_POINT     0x8C010000
 
-#include "biudp.h"
-#ifdef HARDCODE_IP
-
-void hard_biudp_init(void)
-{
-    biudp_control_t control;
-    uint8 a_mac[ETHER_MAC_SIZE] = {0x00, 0xD0, 0xF1, 0x02, 0x97, 0xDC};
-    uint8 b_mac[ETHER_MAC_SIZE] = {0x00, 0xD0, 0xF1, 0x02, 0x97, 0xCD};
-    uint32 ip = 0x0A0000F0;
-
-    ip = htonl(ip);
-
-#define DO_A_MAC
-#ifdef DO_A_MAC
-    memcpy(control.dest_mac, a_mac, ETHER_MAC_SIZE);
-#else
-    memcpy(control.dest_mac, b_mac, ETHER_MAC_SIZE);
-#endif
-
-    IP_ADDR_COPY(control.source_ip, ip);
-    IP_ADDR_COPY(control.dest_ip, ip);
-    control.port = htons(VOOT_UDP_PORT);
-
-    biudp_init(&control);
-}
-#endif
-
 int dc_main(int do_descramble)
 {
     unsigned long bin_size;
@@ -55,10 +28,6 @@ int dc_main(int do_descramble)
 
     /* STAGE: Wait enough cycles for the UBC to be working properly. */
     ubc_wait();
-
-#ifdef HARDCODE_IP
-    hard_biudp_init();
-#endif
 
     /* STAGE: Handle the 1ST_READ.BIN */
     if (do_descramble)

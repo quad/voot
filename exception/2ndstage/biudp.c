@@ -33,14 +33,19 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
 {
     ether_ii_header_t *frame_out;
     ip_header_t *ip;
-    uint16 ip_header_length;
-    uint16 ip_length;
     udp_header_t *udp;
+    uint16 total_length, ip_length, ip_header_length;
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
-    frame_out = (ether_ii_header_t *) rtl_info.frame_out_buffer;
-    ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t)); 
     ip_length = sizeof(ip_header_t) + sizeof(udp_header_t) + in_data_length;
+    total_length = sizeof(ether_ii_header_t) + ip_length;
+
+    /* STAGE: malloc() the proper size output buffer. */
+    frame_out = malloc(total_length);
+    if (!frame_out)     /* !!! I need some OOB method of warning here. */
+        return;
+
+    ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t)); 
 
     /* STAGE: Setup the frame layer. */
     memcpy(frame_out->source, rtl_info.mac, ETHER_MAC_SIZE);
@@ -80,6 +85,9 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: ... and transmit it, god willing. */
     rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
+
+    /* STAGE: Free the output buffer. */
+    free(frame_out);
 }
 
 void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
@@ -131,7 +139,7 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 
     netout.size = htons(i);
 
-    biudp_write_buffer((uint8 *) &netout, VOOT_PACKET_HEADER_SIZE + netout.size);
+    biudp_write_buffer((uint8 *) &netout, VOOT_PACKET_HEADER_SIZE + i);
 
 	return i;
 }

@@ -8,7 +8,7 @@
 #include "exception.h"
 #include "trap.h"
 #include "biudp.h"
-#include "printf.h"
+#include "util.h"
 #include "voot.h"
 
 #ifdef DEPRECATED_VOOT_NET
@@ -75,8 +75,30 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
 #endif
 
+        case 'm':
+        {
+            uint8 *ba, *bb, *bc;
+
+            ba = malloc(NET_MAX_PACKET);
+            bb = malloc(NET_MAX_PACKET);
+            bc = malloc(NET_MAX_PACKET);
+
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc sequence %x, %x, and %x\n", ba, bb, bc);
+
+            free(bc);
+            free(bb);
+            free(ba);
+
+            ba = malloc(NET_MAX_PACKET);
+
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x", ba);
+
+            free(ba);
+        }
+            break;
+
         case 'v':
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\r\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\n");
             break;
 
         default:
