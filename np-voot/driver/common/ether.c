@@ -1,6 +1,6 @@
 /*  ether.c
 
-    $Id: ether.c,v 1.3 2002/06/24 00:19:17 quad Exp $
+    $Id: ether.c,v 1.4 2002/06/24 07:37:05 quad Exp $
 
 DESCRIPTION
 
@@ -149,4 +149,15 @@ bool ether_handle_frame (const uint8* frame_data, uint32 frame_size)
         default :
             return FALSE;
     }
+}
+
+void ether_reverse_frame (ether_info_packet_t *frame)
+{
+    char            temp_mac[ETHER_MAC_SIZE];
+
+    /* STAGE: Ether - point to our origiantor. */
+
+    memcpy (temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy (frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy (frame->dest, temp_mac, ETHER_MAC_SIZE);
 }

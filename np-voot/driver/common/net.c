@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.8 2002/06/24 06:11:15 quad Exp $
+    $Id: net.c,v 1.9 2002/06/24 07:37:05 quad Exp $
 
 DESCRIPTION
 
@@ -47,19 +47,9 @@ static uint16 ip_checksum_add (const uint16 *buf, uint16 count_short, uint32 sum
     return sum;
 }
 
-static void ip_reverse_packet (ether_info_packet_t *frame)
+static void ip_reverse_packet (ip_header_t *ip)
 {
-    char            temp_mac[ETHER_MAC_SIZE];
     uint32          temp_ipaddr;
-    ip_header_t    *ip;
-
-    ip = (ip_header_t *) frame->data;
-
-    /* STAGE: Ether - point to our origiantor. */
-
-    memcpy (temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy (frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy (frame->dest, temp_mac, ETHER_MAC_SIZE);
 
     /* STAGE: IP - point to our originator. */
 
@@ -191,9 +181,13 @@ static bool icmp_echo_reply (ether_info_packet_t *frame, icmp_header_t *icmp, ui
 
     icmp->type = ICMP_TYPE_ECHO_REPLY;
 
+    /* STAGE: Reverse the frame's direction. */
+
+    ether_reverse_frame (frame);
+
     /* STAGE: Reverse the packet's direction. */
 
-    ip_reverse_packet (frame);
+    ip_reverse_packet (ip);
 
     /* STAGE: Compute ICMP checksum. */
 
@@ -286,28 +280,41 @@ uint16 udp_checksum (ip_header_t *ip, uint16 ip_header_length)
     return ~(calc_checksum & 0xffff);
 }
 
-static bool udp_echo_reply (ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
+static void udp_reverse_packet (ip_header_t *ip, udp_header_t *udp)
 {
     uint16          temp_port;
     uint16          ip_header_size;
-    ip_header_t    *ip;
 
-    ip              = (ip_header_t *) frame->data;
-    ip_header_size  = IP_HEADER_SIZE(ip);
+    ip_header_size = IP_HEADER_SIZE(ip);
 
-    /* STAGE: Reverse the packet's direction. */
-
-    ip_reverse_packet (frame);
-
-    /* STAGE: UDP - we want to reply from our echo port to their port. */
+    /* STAGE: Reverse the port mapping. */
 
     temp_port   = udp->src;
     udp->src    = udp->dest;
     udp->dest   = temp_port;
 
-    /* STAGE: Compute UDP checksum. */
+    /* STAGE: Recompute UDP checksum. */
 
     udp->checksum = udp_checksum (ip, ip_header_size);
+}
+
+static bool udp_echo_reply (ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
+{
+    ip_header_t    *ip;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: Reverse the frame's direction. */
+
+    ether_reverse_frame (frame);
+
+    /* STAGE: Reverse the packet's direction. */
+
+    ip_reverse_packet (ip);
+
+    /* STAGE: Reverse the UDP packet's direction. */
+
+    udp_reverse_packet (ip, udp);
 
     /* STAGE: Transmit it, god willing. */
 
