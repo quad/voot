@@ -58,7 +58,7 @@ bin2c:
 
 clean:
 	make -C 2ndstage clean
-	-rm 2ndstage.c
+	-rm -f 2ndstage.c
 	-rm -f *.o *.elf 1ST_READ.BIN *.bck $(EXTRA_CLEAN)
 
 reallyclean: clean

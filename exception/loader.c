@@ -10,7 +10,6 @@
 #include <dream.h>
 #include "vconsole.h"
 #include "gdrom.h"
-#include "descramble.h"
 #include "2ndstage.h"
 
 #define FIRST_LOAD_POINT    0x8C300000

@@ -14,9 +14,6 @@ OBJS += util.o serial.o gamedata.o printf.o
 OBJS += rtl8139c.o net.o bswap.o biudp.o
 OBJS += heartbeat.o trap.o voot.o
 
-# Deprecated modules
-#OBJS += search.o
-
 TARGET=sh-elf
 DCBASE=/home/scott/dcdev
 #CC=$(DCBASE)/bin/$(TARGET)-gcc -ml -m4-single-only -g -Wall
