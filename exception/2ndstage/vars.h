@@ -1,8 +1,3 @@
-/*  vars.h
-
-    Ok, I give in. I'm not going to type out every variable type anymore.
-*/
-
 #ifndef __VARS_H__
 #define __VARS_H__
 

@@ -9,6 +9,7 @@ DESCRIPTION
 #include "vars.h"
 #include "voot.h"
 #include "util.h"
+#include "system.h"
 
 #include "dumpio.h"
 
@@ -28,7 +29,7 @@ void dump_framebuffer(void)
     #define GREEN_565_TO_INT(color) UPSCALE_6_STYLE(((color) >> 5) & 0x3F)
     #define BLUE_565_TO_INT(color)  UPSCALE_5_STYLE((color) & 0x1F)
 
-    vram_start = (uint16 *) (0xa5000000 + *((volatile unsigned int *) 0xa05f8050));
+    vram_start = VRAM_START;
 
     #define MAP_NUM_PIXELS  (640 * 480)
     #define STRIP_SIZE      300

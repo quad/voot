@@ -28,14 +28,15 @@ typedef union unikey
 
 extern uint32 malloc_fail_count;
 
-/* Standard Library Functions, we don't want to import the actual headers
-    themselves! */
+/* Standard Library functions. We don't want to import the actual headers
+   themselves! */
 
 void* memcpy(void *dest, const void *src, uint32 n);
 int memcmp(const void *s1, const void *s2, uint32 n);
+void *memset(void *s, int32 c, uint32 n);
 uint32 strlen(const char *s);
 
-/* Util Module Prototypes. */
+/* Our prototypes. */
 
 void* memmove(void *dest, const void *src, uint32 count);
 void vid_waitvbl(void);

@@ -12,14 +12,6 @@ DESCRIPTION
 
 #include "printf.h"
 
-#define ZEROPAD 1       /* pad with zero */
-#define SIGN    2       /* unsigned/signed long */
-#define PLUS    4       /* show plus */
-#define SPACE   8       /* space if plus */
-#define LEFT    16      /* left justified */
-#define SPECIAL 32      /* 0x */
-#define LARGE   64      /* use 'ABCDEF' instead of 'abcdef' */
-
 #define do_div(n, base) ({ int32 __res; __res = ((unsigned long) n) % (unsigned) base; n = ((unsigned long) n) / (unsigned) base; __res; })
 
 static int32 skip_atoi(const char **s)
@@ -32,37 +24,37 @@ static int32 skip_atoi(const char **s)
     return i;
 }
 
-static char * number(char *str, long num, int32 base, int32 size, int32 precision, int32 type)
+char* number(char *str, long num, int32 base, int32 size, int32 precision, int32 type)
 {
     char c, sign, tmp[66];
     const char *digits="0123456789abcdefghijklmnopqrstuvwxyz";
     int32 i;
 
-    if (type & LARGE)
+    if (type & N_LARGE)
         digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    if (type & LEFT)
-        type &= ~ZEROPAD;
+    if (type & N_LEFT)
+        type &= ~N_ZEROPAD;
     if (base < 2 || base > 36)
         return 0;
 
-    c = (type & ZEROPAD) ? '0' : ' ';
+    c = (type & N_ZEROPAD) ? '0' : ' ';
 
     sign = 0;
-    if (type & SIGN) {
+    if (type & N_SIGN) {
         if (num < 0) {
             sign = '-';
             num = -num;
             size--;
-        } else if (type & PLUS) {
+        } else if (type & N_PLUS) {
             sign = '+';
             size--;
-        } else if (type & SPACE) {
+        } else if (type & N_SPACE) {
             sign = ' ';
             size--;
         }
     }
 
-    if (type & SPECIAL) {
+    if (type & N_SPECIAL) {
         if (base == 16)
             size -= 2;
         else if (base == 8)
@@ -77,12 +69,12 @@ static char * number(char *str, long num, int32 base, int32 size, int32 precisio
     if (i > precision)
         precision = i;
     size -= precision;
-    if (!(type&(ZEROPAD+LEFT)))
+    if (!(type&(N_ZEROPAD+N_LEFT)))
         while(size-->0)
             *str++ = ' ';
     if (sign)
         *str++ = sign;
-    if (type & SPECIAL)
+    if (type & N_SPECIAL)
     {
         if (base==8)
             *str++ = '0';
@@ -91,7 +83,7 @@ static char * number(char *str, long num, int32 base, int32 size, int32 precisio
             *str++ = digits[33];
         }
     }
-    if (!(type & LEFT))
+    if (!(type & N_LEFT))
         while (size-- > 0)
             *str++ = c;
     while (i < precision--)
@@ -129,11 +121,11 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
         repeat:
             ++fmt;        /* this also skips first '%' */
             switch (*fmt) {
-                case '-': flags |= LEFT; goto repeat;
-                case '+': flags |= PLUS; goto repeat;
-                case ' ': flags |= SPACE; goto repeat;
-                case '#': flags |= SPECIAL; goto repeat;
-                case '0': flags |= ZEROPAD; goto repeat;
+                case '-': flags |= N_LEFT; goto repeat;
+                case '+': flags |= N_PLUS; goto repeat;
+                case ' ': flags |= N_SPACE; goto repeat;
+                case '#': flags |= N_SPECIAL; goto repeat;
+                case '0': flags |= N_ZEROPAD; goto repeat;
                 }
         
         /* get field width */
@@ -146,7 +138,7 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
             field_width = va_arg(args, int);
             if (field_width < 0) {
                 field_width = -field_width;
-                flags |= LEFT;
+                flags |= N_LEFT;
             }
         }
 
@@ -177,7 +169,7 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
 
         switch (*fmt) {
         case 'c':
-            if (!(flags & LEFT))
+            if (!(flags & N_LEFT))
                 while (--field_width > 0)
                     *str++ = ' ';
             *str++ = (unsigned char) va_arg(args, int);
@@ -192,7 +184,7 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
 
             len = strnlen(s, precision);
 
-            if (!(flags & LEFT))
+            if (!(flags & N_LEFT))
                 while (len < field_width--)
                     *str++ = ' ';
             for (i = 0; i < len; ++i)
@@ -204,7 +196,7 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
         case 'p':
             if (field_width == -1) {
                 field_width = 2*sizeof(void *);
-                flags |= ZEROPAD;
+                flags |= N_ZEROPAD;
             }
             str = number(str,
                 (unsigned long) va_arg(args, void *), 16,
@@ -228,14 +220,14 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
             break;
 
         case 'X':
-            flags |= LARGE;
+            flags |= N_LARGE;
         case 'x':
             base = 16;
             break;
 
         case 'd':
         case 'i':
-            flags |= SIGN;
+            flags |= N_SIGN;
         case 'u':
             break;
 
@@ -251,13 +243,13 @@ int32 vsnprintf(char *buf, uint32 size, const char *fmt, va_list args)
         if (qualifier == 'l')
             num = va_arg(args, unsigned long);
         else if (qualifier == 'h')
-            if (flags & SIGN)
+            if (flags & N_SIGN)
 //                num = va_arg(args, int16);
                 num = va_arg(args, int);
             else
 //                num = va_arg(args, uint16);
                 num = va_arg(args, unsigned int);
-        else if (flags & SIGN)
+        else if (flags & N_SIGN)
             num = va_arg(args, int);
         else
             num = va_arg(args, unsigned int);

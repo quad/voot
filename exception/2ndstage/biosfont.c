@@ -74,7 +74,7 @@ volatile uint8* bfont_find_char(uint32 ch)
 }
 
 /* Given a character, draw it into a buffer */
-void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
+bool bfont_draw(uint16 *buffer, uint32 bufwidth, uint32 c)
 {
     uint8 ch[75];
     uint32 ch_base;
@@ -82,7 +82,7 @@ void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
     uint32 x, y;
 
     if (!bfont_address)
-        return;
+        return TRUE;
 
     if (!bfont_lock())
     {
@@ -91,14 +91,16 @@ void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
         ch_base = 0;
     }
     else
-        return;
+        return TRUE;
 
-    for (y=0; y<BFONT_CHAR_HEIGHT; )
+    for (y=0; y < BFONT_CHAR_HEIGHT; )
     {
         /* Do the first row */
         word = (((uint16) ch[ch_base + 0]) << 4) | ((ch[ch_base + 1] >> 4) & 0x0f);
-        for (x=0; x<BFONT_CHAR_WIDTH; x++)
+        for (x=0; x < BFONT_CHAR_WIDTH; x++)
         {
+            *buffer = 0x0;
+
             if (word & (0x0800 >> x))
                 *buffer = 0xff;
 
@@ -109,8 +111,10 @@ void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
         
         /* Do the second row */
         word = ((((uint16) ch[ch_base + 1]) << 8) & 0xf00) | ch[ch_base + 2];
-        for (x=0; x<BFONT_CHAR_WIDTH; x++)
+        for (x=0; x < BFONT_CHAR_WIDTH; x++)
         {
+            *buffer = 0x0;
+
             if (word & (0x0800 >> x))
                 *buffer = 0xff;
 
@@ -121,10 +125,17 @@ void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c)
         
         ch_base += 3;
     }
+
+    return FALSE;
 }
 
-void bfont_draw_str(uint8 *buffer, uint32 width, const char *str)
+bool bfont_draw_str(uint16 *buffer, uint32 width, const char *str)
 {
-    while (*str)
-        bfont_draw(buffer += BFONT_CHAR_WIDTH, width, *str++);
+    bool retval;
+
+    retval = TRUE;
+
+    while (*str && !(retval = bfont_draw(buffer += BFONT_CHAR_WIDTH, width, *str++)));
+
+    return retval;
 }

@@ -41,7 +41,7 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: malloc() the proper size output buffer. */
     frame_out = malloc(total_length);
-    if (!frame_out)     /* !!! I need some OOB method of warning here. */
+    if (!frame_out)
         return;
 
     ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t)); 

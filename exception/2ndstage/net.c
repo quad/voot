@@ -39,7 +39,7 @@ void net_transmit(ether_info_packet_t *frame_in)
     /* STAGE: malloc() appropriate sized buffer. */
     frame_out_length = sizeof(ether_ii_header_t) + frame_in->length;
     frame_out = malloc(frame_out_length);
-    if (!frame_out)     /* !!! there needs an alarming method. */
+    if (!frame_out)
         return;
 
     /* STAGE: Setup the packet. */

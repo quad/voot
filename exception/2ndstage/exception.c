@@ -145,7 +145,7 @@ void* exception_handler(register_stack *stack)
 
 #ifndef REINIT_VBR_ON_RESET
         /* STAGE: Deinitialize the UBC for future use. */
-        clear_ubc_a_exception();
+        //clear_ubc_a_exception();
 #endif
 
         /* STAGE: Initialize the VBR hooks. */

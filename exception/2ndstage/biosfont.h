@@ -6,7 +6,8 @@
 
 void bfont_init(void);
 volatile uint8* bfont_find_char(uint32 ch);
-void bfont_draw(uint8 *buffer, uint32 bufwidth, uint32 c);
-void bfont_draw_str(uint8 *buffer, uint32 width, const char *str);
+bool bfont_draw(uint16 *buffer, uint32 bufwidth, uint32 c);
+bool bfont_draw_str(uint16 *buffer, uint32 width, const char *str);
+
 
 #endif

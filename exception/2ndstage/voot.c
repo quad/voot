@@ -11,6 +11,7 @@ TODO
 */
 
 #include "vars.h"
+#include "assert.h"
 #include "util.h"
 #include "printf.h"
 #include "dumpio.h"
@@ -34,6 +35,7 @@ static bool maybe_handle_command(uint8 command, voot_packet *packet)
 
         case VOOT_COMMAND_TYPE_TIME:
             voot_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
+            assert(time() == 0);
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
