@@ -90,15 +90,20 @@ void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command typ
     else
     {
         command->text = strdup(opt_arg);
+
         switch(type)
         {
             case C_CONNECT_SLAVE:
+            {
                 command->port = VOOT_SLAVE_PORT;
                 break;
+            }
 
             case C_CONNECT_SERVER:
+            {
                 command->port = VOOT_SERVER_PORT;
                 break;
+            }
 
             default:
                 /* This should never happen, but if it does... ahh well. */
@@ -125,18 +130,22 @@ void parse_options(int argc, char *argv[])
         switch(opt)
         {
             case 'c':
+            {
                 if (connect_slave)
                 {
                     printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
                     break;
                 }
+
                 connect_slave = TRUE;
 
                 client_parse_connect(command, optarg, C_CONNECT_SLAVE, "slave");
 
                 break;
+            }
 
             case 's':
+            {
                 if (connect_server)
                 {
                     printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
@@ -147,13 +156,16 @@ void parse_options(int argc, char *argv[])
                     printf("%s: ignoring conflicting '-%c' option.\n", prog_name, opt);
                     break;
                 }
+
                 connect_server = TRUE;
 
                 client_parse_connect(command, optarg, C_CONNECT_SERVER, "server");
 
                 break;
+            }
 
             case 'l':
+            {
                 if (listen_server)
                 {
                     printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
@@ -164,6 +176,7 @@ void parse_options(int argc, char *argv[])
                     printf("%s: ignoring conflicting '-%c' option.\n", prog_name, opt);
                     break;
                 }
+
                 listen_server++;
 
                 command->port = optarg ? atoi(optarg) : VOOT_SERVER_PORT;
@@ -171,14 +184,19 @@ void parse_options(int argc, char *argv[])
                 printf("%s: starting server on port %u...\n", prog_name, command->port);
 
                 command->type = C_LISTEN_SERVER;
+
                 break;
+            }
 
             case 'h':
+            {
                 printf(help_text);
 
                 command->type = C_EXIT;
                 command->code = 0;
+
                 break;
+            }
 
             case '?':
             default:
@@ -210,11 +228,12 @@ void input_handler(char *line)
     {
         npc_command_t *event;
 
+        input_handler_poll = FALSE;
+
         event = malloc(sizeof(npc_command_t));
         event->type = C_EXIT;
+
         npc_add_event_queue(event);
-        
-        input_handler_poll = FALSE;
     }
 }
 
