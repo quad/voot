@@ -48,7 +48,10 @@ CHANGELOG
 #define VOOT_COMMAND_TYPE_DUMPSELECT    'S'
 
 #define VOOT_PACKET_HEADER_SIZE     3
-#define BIUDP_SEGMENT_SIZE          1024
+#define NET_MAX_PACKET              1500
+#define BIUDP_SEGMENT_SIZE          (NET_MAX_PACKET - 42)
+//#define VOOT_PACKET_BUFFER_SIZE     BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header)
+#define VOOT_PACKET_BUFFER_SIZE     1024
 
 typedef struct
 {
@@ -59,7 +62,7 @@ typedef struct
 typedef struct
 {
     voot_packet_header  header __attribute__ ((packed));
-    uint8               buffer[BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header)] __attribute__ ((packed));
+    uint8               buffer[VOOT_PACKET_BUFFER_SIZE] __attribute__ ((packed));
 } voot_packet;
 
 uint32 voot_check_packet_advsize(voot_packet *packet, uint32 size);

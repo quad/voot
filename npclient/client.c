@@ -61,6 +61,9 @@ CHANGELOG
     Thu Jun 13 02:16:07 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
         Added a VBR dumping command.
 
+    Mon Nov 18 17:20:37 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Fixed a debugging chat bug.
+
 TODO
 
     Add support for the DUMPSELECT command.
@@ -84,7 +87,7 @@ char *prog_name;
 bool input_handler_poll;
 pthread_t input_poll_thread;
 
-#define VOOT_DATA_EDIT      0x8c274ee0
+#define VOOT_DATA_EDIT      0x8ccf9f3e
 
 /*
  *  Various frontend texts.
@@ -438,7 +441,7 @@ void input_handler(char *line)
             voot_send_data(system->slave_socket, VOOT_PACKET_TYPE_DATA, data, sizeof(data));
         }
         else if (line_saved)
-            voot_send_data(system->server_socket, VOOT_PACKET_TYPE_DEBUG, line_saved, strlen(line) + 1);
+            voot_send_data(system->server_socket, VOOT_PACKET_TYPE_DEBUG, line_saved, strlen(line_saved) + 1);
           
         free(line);
     }
