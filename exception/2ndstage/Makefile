@@ -40,6 +40,7 @@ OBJS += biosfont.o assert.o
 
 # Customization Handler
 OBJS += customize.o
+CC += -DCUSTOMIZE_SUPPORT
 
 # Controller Access
 OBJS += controller.o

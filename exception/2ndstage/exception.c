@@ -177,8 +177,10 @@ void* exception_handler(register_stack *stack)
         init_heartbeat();
 #endif
 
+#ifdef CUSTOMIZE_SUPPORT
         /* STAGE: Initialize the customization break logic. */
         customize_init();
+#endif
 
 #ifdef CONTROLLER_SUPPORT
         /* STAGE: Initialize the controller access logic. */

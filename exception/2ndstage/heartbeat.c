@@ -14,9 +14,6 @@ TODO
 #include "vars.h"
 #include "asic.h"
 
-#include "exception.h"
-#include "exception-lowlevel.h"
-
 #include "heartbeat.h"
 
 void init_heartbeat(void)

@@ -424,7 +424,7 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
     }
 
     /* STAGE: Check if we're in a VR Customization module. If so, enable Button Y to start VR Test. */
-    if (*anim_mode_a == 0x0 && *anim_mode_b == 0x0 && !strcmp("vrcust.bin", (const char *) VOOT_MODULE_NAME))
+    if (*anim_mode_a == 0x0 && *anim_mode_b == 0x0 && !strcmp("vrcust.bin", (const char *) 0x8ccf9edc))
     {
         vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
 

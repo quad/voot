@@ -16,8 +16,6 @@ TODO
 #include "dumpio.h"
 #include "gamedata.h"
 
-#include "customize.h"
-
 #include "voot.h"
 
 static bool maybe_handle_command(uint8 command, uint32 option, voot_packet *packet)
@@ -26,10 +24,10 @@ static bool maybe_handle_command(uint8 command, uint32 option, voot_packet *pack
     {
         case VOOT_COMMAND_TYPE_DEBUG:
         {
-#if 0
-            new_level++;
-            voot_debug("Level select at %x", new_level);
-#endif
+            static char key[] = "vrcust.bin";
+
+            voot_debug("Module: '%s'", (const char *) VOOT_MODULE_NAME);
+            grep_memory(key, sizeof(key));
 
             break;
         }
