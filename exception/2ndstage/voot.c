@@ -76,6 +76,12 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             break;
 
 #endif
+        case 'i':
+        {
+            char test_string[] = "SuperJoe";
+            trap_inject_data(test_string, sizeof(test_string));
+        }
+            break;
 
         case 'm':
         {

@@ -101,11 +101,13 @@ static int32 net_fifo_del(void)
 
 static bool net_fifo_add(uint8 in_data)
 {
+    uint32 fifo_index;
+
     if (net_fifo.size >= NET_FIFO_SIZE)
         return FALSE;
 
     /* STAGE: Add the byte to the end of the network fifo. */
-    fifo_index = (net_fifo.start + net_fifo.size) % NET_FIFO_SIZE:
+    fifo_index = (net_fifo.start + net_fifo.size) % NET_FIFO_SIZE;
     net_fifo.data[fifo_index] = in_data;
     net_fifo.size++;
 
@@ -175,7 +177,7 @@ static int32 phy_fifo_del(uint8 check_data, bool touch_serial)
     }
 
     if (phy_fifo.data[phy_fifo.start].data != check_data)
-        return -1;
+        return -2;
 
     /* STAGE: Flush the current byte in the physical fifo. */
     phy_fifo.start = ++phy_fifo.start % PHY_FIFO_SIZE;
@@ -197,7 +199,7 @@ static uint32 phy_flush_fifo(uint8 *temp_buffer)
     /* STAGE: Flush all data not marked IN in the physical fifo meanwhile
         saving the remaining data in the temp_buffer */
     temp_index = 0;
-    for (work_index = 0; work_index < PHY_FIFO_SIZE; work_index++)
+    for (work_index = 0; work_index < phy_fifo.size; work_index++)
     {
         uint32 fifo_index;
 
@@ -275,20 +277,22 @@ static void phy_sync(void)
  
 uint32 trap_inject_data(const uint8 *data, uint32 size)
 {
-    uint32 data_processed;
+    uint32 data_index;
 
-#ifdef ACTUALLY_DO_INJECT_DATA
     /* STAGE: Add incoming data to net fifo. */
-    while(net_fifo_add(data, size)
-#else
-    /* DEBUG: Fake the data injection. */
-    data_processed = 0;
-#endif
+    for (data_index = 0; data_index < size; data_index++)
+    {
+        if (!net_fifo_add(data[data_index]))
+        {
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Net fifo overflow in RX!\n");
+            break;
+        }
+    }
 
     /* STAGE: Resynchronize net and physical fifos. */
     phy_sync();
 
-    return data_processed;
+    return data_index;
 }
 
 /*
@@ -345,7 +349,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\n", stack->r3);
 
             /* STAGE: Remove incoming data from physical fifo. */
-            if (phy_fifo_del(stack->r3, TRUE) < 0)
+            if (phy_fifo_del(stack->r3, FALSE) < 0)
                 biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!\n");
 
             break;
