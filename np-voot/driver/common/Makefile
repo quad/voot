@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.6 2002/06/23 23:18:05 quad Exp $
+# $Id: Makefile,v 1.7 2002/06/24 00:58:04 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 
@@ -14,7 +14,7 @@ DRIVER_OBJS += init.o
 DRIVER_OBJS += util.o printf.o searchmem.o video.o serial.o bswap.o
 
 # Biosfont access and assertion.
-DRIVER_OBJS += biosfont.o assert.o
+DRIVER_OBJS += biosfont.o biosfont-lowlevel.o assert.o
 
 # Network Layer (drivers and stack).
 DRIVER_OBJS += net.o ether.o rtl8139c.o biudp.o voot.o dumpio.o

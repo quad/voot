@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.6 2002/06/23 23:48:52 quad Exp $
+    $Id: net.c,v 1.7 2002/06/24 00:58:04 quad Exp $
 
 DESCRIPTION
 
@@ -23,9 +23,9 @@ TODO
 #include "net.h"
 
 /*
-    IP Processor
+    NOTE: IP LAYER processor.
 
-    CREDIT: With all thanks to AndrewK.
+    CREDIT: With all thanks to AndrewK and "Internetworking with TCP/IP: Volume I".
 
     Is this feeling like a cleaner re-implementation of dc-load-ip. Anyone
     else?
@@ -45,6 +45,31 @@ static uint16 ip_checksum_add (const uint16 *buf, uint16 count_short, uint32 sum
     }
 
     return sum;
+}
+
+static void ip_reverse_packet (ether_info_packet_t *frame)
+{
+    char            temp_mac[ETHER_MAC_SIZE];
+    uint32          temp_ipaddr;
+    ip_header_t    *ip;
+
+    ip = (ip_header_t *) frame->data;
+
+    /* STAGE: Ether - point to our origiantor. */
+
+    memcpy (temp_mac, frame->source, ETHER_MAC_SIZE);
+    memcpy (frame->source, frame->dest, ETHER_MAC_SIZE);
+    memcpy (frame->dest, temp_mac, ETHER_MAC_SIZE);
+
+    /* STAGE: IP - point to our originator. */
+
+    SAFE_UINT32_COPY (temp_ipaddr, ip->source);
+    SAFE_UINT32_COPY (ip->source, ip->dest);
+    SAFE_UINT32_COPY (ip->dest, temp_ipaddr);
+
+    /* STAGE: Compute IP checksum. */
+
+    ip->checksum = ip_checksum (ip, IP_HEADER_SIZE(ip));
 }
 
 static bool ip_packet_ok (ether_info_packet_t *frame, uint16 ip_header_length, uint16 ip_data_length)
@@ -129,36 +154,11 @@ bool ip_handle_packet (ether_info_packet_t *frame)
     }
 }
 
-static void ip_reverse_packet (ether_info_packet_t *frame)
-{
-    char            temp_mac[ETHER_MAC_SIZE];
-    uint32          temp_ipaddr;
-    ip_header_t    *ip;
-
-    ip = (ip_header_t *) frame->data;
-
-    /* STAGE: Ether - point to our origiantor. */
-
-    memcpy (temp_mac, frame->source, ETHER_MAC_SIZE);
-    memcpy (frame->source, frame->dest, ETHER_MAC_SIZE);
-    memcpy (frame->dest, temp_mac, ETHER_MAC_SIZE);
-
-    /* STAGE: IP - point to our originator. */
-
-    SAFE_UINT32_COPY (temp_ipaddr, ip->source);
-    SAFE_UINT32_COPY (ip->source, ip->dest);
-    SAFE_UINT32_COPY (ip->dest, temp_ipaddr);
-
-    /* STAGE: Compute IP checksum. */
-
-    ip->checksum = ip_checksum (ip, IP_HEADER_SIZE(ip));
-}
-
 /*
-    ICMP Sub-System
+    NOTE: ICMP LAYER processor.
 */
 
-uint16 icmp_checksum (icmp_header_t *icmp, uint16 icmp_header_length)
+static uint16 icmp_checksum (icmp_header_t *icmp, uint16 icmp_header_length)
 {
     uint16  temp_checksum;
     uint16  calc_checksum;
@@ -233,7 +233,7 @@ bool icmp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, ui
 }
 
 /*
-    UDP Sub-System
+    NOTE: UDP LAYER processor.
 */
 
 uint16 udp_checksum (ip_header_t *ip, uint16 ip_header_length)

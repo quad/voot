@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.8 2002/06/24 00:19:17 quad Exp $
+    $Id: rtl8139c.c,v 1.9 2002/06/24 00:58:04 quad Exp $
 
 DESCRIPTION
 
@@ -445,12 +445,12 @@ static void rtl_rx_all (void)
 
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
-        /* STAGE: Stop processing if network layer instructs us too... */
+        /* STAGE: Don't release the frame if network layer instructs us too... */
 
         if (frame_in && ether_handle_frame (frame_in, frame_size))
-            break;
+            continue;
 
-        /* STAGE: free() the frame, no matter what. */
+        /* STAGE: free () the frame, otherwise. */
 
         free (frame_in);
     }
