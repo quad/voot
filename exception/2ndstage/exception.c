@@ -146,9 +146,6 @@ void* exception_handler(register_stack *stack)
     if (do_vbr_switch && !exp_table.vbr_switched)
     {
         /* ***** PLACE OTHER INITIALIZATION TIME CODE HERE ***** */
-        /* STAGE: Pre-cache the biosfont address. */
-        bfont_init(); 
-
         /* STAGE: Locate and assign syMalloc functionality. */
         malloc_init();
 
@@ -174,6 +171,9 @@ void* exception_handler(register_stack *stack)
 
         /* STAGE: Grab our heartbeat logic. */
         init_heartbeat();
+
+        /* STAGE: Pre-cache the biosfont address. */
+        bfont_init(); 
     }
 #ifdef REINIT_VBR_ON_RESET
     /* STAGE: Handle reinitializations differently. */
