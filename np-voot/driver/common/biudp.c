@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.3 2002/06/12 10:29:01 quad Exp $
+    $Id: biudp.c,v 1.4 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -12,7 +12,6 @@ DESCRIPTION
 #include "rtl8139c.h"
 #include "util.h"
 #include "malloc.h"
-#include "video.h"
 
 #include "biudp.h"
 
@@ -43,6 +42,11 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
     uint16              ip_length;
     uint16              ip_header_length;
     bool                retval;
+
+    /* STAGE: Ensure we're not oversize. */
+
+    if (in_data_length > BIUDP_SEGMENT_SIZE)
+        return FALSE;
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
 
@@ -89,7 +93,7 @@ static bool biudp_write_segment (const uint8 *in_data, uint32 in_data_length)
 
     /* STAGE: Setup the UDP layer. */
 
-    udp->src    = htons (NET_UDP_PORT_VOOT);
+    udp->src    = htons (UDP_PORT_VOOT);
     udp->dest   = control.port;
     udp->length = htons (sizeof (udp_header_t) + in_data_length);
 
@@ -133,10 +137,6 @@ bool biudp_write_buffer (const uint8 *in_data, uint32 in_data_length)
 
         if (!biudp_write_segment (in_data_segment, BIUDP_SEGMENT_SIZE))
             return FALSE;
-
-        /* STAGE: Delay so we don't flood the receiving system. */
-
-        video_waitvbl ();
     }
 
     /* STAGE: Handle any remaining data... */

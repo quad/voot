@@ -1,6 +1,6 @@
 /*  dumpio.h
 
-    $Id: dumpio.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: dumpio.h,v 1.3 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -22,7 +22,7 @@ typedef struct
     uint32 index;
 } dump_control_t;
 
-/* NOTE: Module Declarations */
+/* NOTE: Module definitions. */
 
 void    dump_framebuffer    (void);
 void    dump_buffer         (const uint8 *in_data, uint32 in_data_length);

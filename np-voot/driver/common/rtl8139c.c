@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.3 2002/06/13 02:05:27 quad Exp $
+    $Id: rtl8139c.c,v 1.4 2002/06/20 10:20:05 quad Exp $
 
 DESCRIPTION
 
@@ -25,6 +25,7 @@ DESCRIPTION
 #include "exception-lowlevel.h"
 #include "util.h"
 #include "malloc.h"
+#include "video.h"
 
 #include "rtl8139c.h"
 
@@ -318,6 +319,10 @@ bool rtl_init(void)
 
     rtl_info.cur_rx = rtl_info.cur_tx = 0;
 
+    /* STAGE: Initialize the rate limiter. */
+
+    rtl_info.last_action = time ();
+
     return TRUE;
 }
 
@@ -374,6 +379,15 @@ static uint8* rtl_copy_packet (const uint8 *src, uint32 size)
 
 bool rtl_tx (const uint8* frame, uint32 length)
 {
+    /* STAGE: Perform a rate limit check. */
+
+    if ((time () - rtl_info.last_action) < 5)
+    {
+        video_waitvbl ();
+
+        rtl_info.last_action = time ();
+    }
+
     /* STAGE: Limit us to a certain size. */
 
     length &= RTL_TX_SIZE_MASK;

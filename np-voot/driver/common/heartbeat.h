@@ -1,6 +1,6 @@
 /*  heartbeat.h
 
-    $Id: heartbeat.h,v 1.1 2002/06/11 20:29:52 quad Exp $
+    $Id: heartbeat.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -8,7 +8,8 @@
 #define __COMMON_HEARTBEAT_H__
 
 #include "system.h"
-#include "callbacks.h"
+
+/* NOTE: Module definitions. */
 
 void    heartbeat_init      (void);
 void *  pageflip_handler    (register_stack *stack, void *current_vector);

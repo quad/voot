@@ -1,6 +1,6 @@
 /*  exception-lowlevel.h
 
-    $Id: exception-lowlevel.h,v 1.1 2002/06/11 20:39:53 quad Exp $
+    $Id: exception-lowlevel.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -9,7 +9,7 @@
 
 #include "vars.h"
 
-/* NOTE: External definitions and buffers */
+/* NOTE: External definitions and buffers. */
 
 extern uint8    general_sub_handler[];
 extern uint8    general_sub_handler_base[];

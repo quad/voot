@@ -1,6 +1,6 @@
 /*  net.h
 
-    $Id: net.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: net.h,v 1.3 2002/06/20 10:20:05 quad Exp $
 
 */
 
@@ -10,19 +10,23 @@
 #include "vars.h"
 #include "bswap.h"
 
-#define NET_UDP_PORT_ECHO       7
-#define NET_UDP_PORT_VOOT       5007
+/*
+    NOTE: Maximum packet size.
 
-/* NOTE: This cannot be greater than 0x800 (2048d) - the Tx descriptor size. */
+    This cannot be greater than 0x800 (2048d) - the Tx descriptor size.
+*/
 
-#define NET_MAX_PACKET          1518
+#define NET_MAX_PACKET          1500
 
 #define ETHER_MAC_SIZE          6
+
+#define IP_HEADER_SIZE(hdr)     ((hdr->version_ihl & 0x0f) * 4)
 
 #define IP_PROTO_ICMP           0x1
 #define IP_PROTO_UDP            0x11
 
-#define IP_HEADER_SIZE(hdr)     ((hdr->version_ihl & 0x0f) * 4)
+#define UDP_PORT_ECHO           7
+#define UDP_PORT_VOOT           5007
 
 /*
     CREDIT: Straight from "Internetworking with TCP/IP" and just about any
@@ -108,7 +112,7 @@ typedef struct
     uint16  length                  __attribute__ ((packed));
 } udp_pseudo_header_t;
 
-/* NOTE: Module Definitions */
+/* NOTE: Module definitions. */
 
 uint16  ip_checksum         (ip_header_t *ip, uint16 ip_header_length);
 bool    ip_handle_packet    (ether_info_packet_t *frame);

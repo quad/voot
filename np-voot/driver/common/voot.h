@@ -1,6 +1,6 @@
 /*  voot.h
 
-    $Id: voot.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: voot.h,v 1.3 2002/06/20 10:20:05 quad Exp $
 
 */ 
 
@@ -15,8 +15,7 @@
 #include "biudp.h"
 #include "net.h"
 
-#define VOOT_PACKET_HEADER_SIZE         3
-#define VOOT_PACKET_BUFFER_SIZE         (BIUDP_SEGMENT_SIZE - sizeof (voot_packet_header))
+#define VOOT_PACKET_BUFFER_SIZE         (BIUDP_SEGMENT_SIZE - sizeof (voot_packet_header) - 1)
 
 #define VOOT_PACKET_TYPE_DEBUG          'd'
 #define VOOT_PACKET_TYPE_DATA           '>'
@@ -44,9 +43,18 @@ typedef struct
 {
     voot_packet_header  header                          __attribute__ ((packed));
     uint8               buffer[VOOT_PACKET_BUFFER_SIZE] __attribute__ ((packed));
+    uint8               padding                         __attribute__ ((packed));
 } voot_packet;
 
 typedef bool (* voot_packet_handler_f)  (voot_packet *);
+
+/* NOTE: Module definitions. */
+
+#ifdef DEBUG
+    #define voot_debug(args...)     __voot_debug(args)
+#else
+    #define voot_debug(args...)     ;
+#endif
 
 bool    voot_packet_handle_default  (voot_packet *packet);
 void *  voot_add_packet_chain       (voot_packet_handler_f function);
@@ -56,11 +64,5 @@ bool    voot_send_command           (uint8 type);
 int32   voot_aprintf                (uint8 type, const char *fmt, va_list args);
 int32   voot_printf                 (uint8 type, const char *fmt, ...);
 int32   __voot_debug                (const char *fmt, ...);
-
-#ifdef DEBUG
-    #define voot_debug(args...)     __voot_debug(args)
-#else
-    #define voot_debug(args...)     ;
-#endif
 
 #endif

@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.4 2002/06/13 02:05:27 quad Exp $
+    $Id: dumpio.c,v 1.5 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -78,10 +78,6 @@ void dump_buffer (const uint8 *in_data, uint32 in_data_length)
 
         if (!voot_send_packet (VOOT_PACKET_TYPE_DUMP, in_data_segment, segment_size))
             break;
-
-        /* STAGE: Delay so we don't flood the receiving system. */
-
-        video_waitvbl ();
     }
 
     /* STAGE: Transmit any remaining trailing data... */

@@ -1,6 +1,6 @@
 /*  biosfont.h
 
-    $Id: biosfont.h,v 1.1 2002/06/11 23:22:51 quad Exp $
+    $Id: biosfont.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -10,12 +10,13 @@
 #define BFONT_CHAR_WIDTH    12
 #define BFONT_CHAR_HEIGHT   24
 
-/* NOTE: External definitions */
+/* NOTE: External definitions. */
+
 extern volatile uint8 * bfont_get_address   (void);
 extern int32            bfont_lock          (void);
 extern void             bfont_unlock        (void);
 
-/* NOTE: Module definitions */
+/* NOTE: Module definitions. */
 
 void    bfont_init      (void);
 bool    bfont_draw      (uint16 *buffer, uint32 bufwidth, uint32 c);

@@ -1,6 +1,6 @@
 /*  gamedata.h
 
-    $Id: gamedata.h,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: gamedata.h,v 1.3 2002/06/20 10:20:04 quad Exp $
 
 TODO
 
@@ -84,15 +84,6 @@ uint8 unknown_b;            /* 0x45: Game complete, temjin in fog. */
     uint8 versus_cable_us;  /* 0x8D: 0 is hidden. 1 is active. */
 } voot_gamedata_t;
 
-/*
-
-Total Guesstimated System Memory:
-    8CCF0000 - 8CCFAFFF
-
-0x9f1a seems important.
-
-*/
-
 #define GAME_MEM_START      0x8C270000
 
 #define VOOT_MEM_START      0x8CCF0000
@@ -100,7 +91,7 @@ Total Guesstimated System Memory:
 
 #define VOOT_MODULE_NAME    0x8CCF9ECC
 
-/* NOTE: Module definitions */
+/* NOTE: Module definitions. */
 
 bool    replace_game_text       (const char *key, const char *repl);
 void    gamedata_enable_debug   (void);

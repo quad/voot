@@ -1,6 +1,6 @@
 /*  heartbeat.c
 
-    $Id: heartbeat.c,v 1.3 2002/06/13 02:05:27 quad Exp $
+    $Id: heartbeat.c,v 1.4 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,7 @@ DESCRIPTION
 
 #include "vars.h"
 #include "asic.h"
+#include "callbacks.h"
 
 #include "heartbeat.h"
 
@@ -17,8 +18,8 @@ void heartbeat_init (void)
 {
     asic_lookup_table_entry new_irq;
 
-
     /* STAGE: Catch on TA_DONE ASIC interrupts. */
+
     new_irq.irq     = EXP_CODE_INT9;
     new_irq.mask0   = ASIC_MASK0_VSYNC;
     new_irq.handler = ta_handler;

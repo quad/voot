@@ -1,6 +1,6 @@
 /*  biudp.h
 
-    $Id: biudp.h,v 1.1 2002/06/11 20:32:53 quad Exp $
+    $Id: biudp.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -10,7 +10,7 @@
 #include "vars.h"
 #include "net.h"
 
-#define BIUDP_SEGMENT_SIZE  1024
+#define BIUDP_SEGMENT_SIZE  (NET_MAX_PACKET - sizeof (ether_ii_header_t) - (sizeof (ip_header_t) + sizeof (udp_header_t)))
 
 typedef struct
 {
@@ -20,6 +20,8 @@ typedef struct
     uint16  port;
     bool    initialized;
 } biudp_control_t;
+
+/* NOTE: Module definitions. */
 
 void    biudp_init          (const biudp_control_t *in_control);
 bool    biudp_write_buffer  (const uint8 *in_data, uint32 in_data_length);

@@ -1,6 +1,6 @@
 /*  controller.h
 
-    $Id: controller.h,v 1.1 2002/06/11 20:40:47 quad Exp $
+    $Id: controller.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -80,7 +80,7 @@ typedef enum
 #define CONTROLLER_MASK_TRIGGER_L       (1 << 16)
 #define CONTROLLER_MASK_TRIGGER_R       (1 << 17)
 
-/* NOTE: Module definitions */
+/* NOTE: Module definitions. */
 
 void                controller_init         (void);
 controller_status*  check_controller_info   (controller_port port);

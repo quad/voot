@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.3 2002/06/12 10:29:01 quad Exp $
+    $Id: init.c,v 1.4 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -23,6 +23,7 @@ DESCRIPTION
 #include "assert.h"
 #include "malloc.h"
 #include "biosfont.h"
+#include "callbacks.h"
 
 #include "init.h"
 

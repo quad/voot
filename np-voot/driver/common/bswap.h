@@ -1,6 +1,6 @@
 /*  bswap.h
 
-    $Id: bswap.h,v 1.1 2002/06/11 20:40:59 quad Exp $
+    $Id: bswap.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -9,7 +9,7 @@
 
 #include "vars.h"
 
-/* NOTE: External definitions */
+/* NOTE: External definitions. */
 
 extern uint16   bswap16 (uint16 x);
 extern uint32   bswap32 (uint32 x);

@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.3 2002/06/13 02:05:27 quad Exp $
+    $Id: net.c,v 1.4 2002/06/20 10:20:05 quad Exp $
 
 DESCRIPTION
 
@@ -26,8 +26,6 @@ TODO
 #include "biudp.h"
 #include "voot.h"
 
-#include "assert.h"
-
 #include "net.h"
 
 /*
@@ -40,9 +38,15 @@ bool net_transmit (ether_info_packet_t *frame_in)
     uint32              frame_out_length;
     bool                retval;
 
-    /* STAGE: malloc() appropriate sized buffer. */
+    /* STAGE: Ensure the packet isn't oversize. */
 
     frame_out_length    = sizeof (ether_ii_header_t) + frame_in->length;
+
+    if (frame_out_length > NET_MAX_PACKET)
+        return FALSE;
+
+    /* STAGE: malloc() appropriate sized buffer. */
+
     frame_out           = malloc (frame_out_length);
 
     if (!frame_out)
@@ -438,13 +442,13 @@ bool udp_handle_packet (ether_info_packet_t *frame, uint16 ip_header_length, uin
     {
         /* STAGE: UDP Echo. */
 
-        case NET_UDP_PORT_ECHO :
+        case UDP_PORT_ECHO :
             udp_echo_reply (frame, udp, udp_data_length);
             break;
 
         /* STAGE: VOOT protocol. */
 
-        case NET_UDP_PORT_VOOT :
+        case UDP_PORT_VOOT :
         {
             /* STAGE: This really shouldn't be here, but I can't think of a better location. */
             {

@@ -1,6 +1,6 @@
 /*  callbacks.h
 
-    $Id: callbacks.h,v 1.1 2002/06/11 20:32:31 quad Exp $
+    $Id: callbacks.h,v 1.2 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -10,6 +10,8 @@ DESCRIPTION
 
 #ifndef __COMMON_CALLBACKS_H__
 #define __COMMON_CALLBACKS_H__
+
+/* NOTE: External definitions. */
 
 extern void     module_initialize   (void);
 extern void     module_configure    (void);

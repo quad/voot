@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.3 2002/06/12 10:29:01 quad Exp $
+    $Id: voot.c,v 1.4 2002/06/20 10:20:05 quad Exp $
 
 DESCRIPTION
 
@@ -33,7 +33,7 @@ bool voot_packet_handle_default (voot_packet *packet)
 
                 malloc_stat (&freesize, &max_freesize);
 
-                __voot_debug ("Netplay VOOT Extensions, DEBUG [%u/%u]", freesize, max_freesize);
+                __voot_debug ("Netplay VOOT Extensions, DEBUG [mem: %u block: %u]", freesize, max_freesize);
             }
 
             break;
@@ -93,12 +93,13 @@ bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
         for data_size + NULL.
     */
 
-    if ((data_size >= sizeof (netout->buffer)) || !data_size)
+    if (data_size > sizeof (netout->buffer))
         return FALSE;
 
     /* STAGE: Malloc the full-sized voot_packet. */
 
     netout = malloc (sizeof (voot_packet));
+
     if (!netout)
         return FALSE;
 
@@ -114,7 +115,7 @@ bool voot_send_packet (uint8 type, const uint8 *data, uint32 data_size)
 
     /* STAGE: Transmit the packet. */
 
-    retval = biudp_write_buffer ((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + data_size + 1);
+    retval = biudp_write_buffer ((const uint8 *) netout, sizeof (voot_packet_header) + data_size + 1);
 
     /* STAGE: Free the buffer and return. */
 

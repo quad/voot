@@ -1,6 +1,6 @@
 /*  asic.h
 
-    $Id: asic.h,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: asic.h,v 1.3 2002/06/20 10:20:04 quad Exp $
 
 */
 
@@ -9,6 +9,8 @@
 
 #include "vars.h"
 #include "system.h"
+
+#define ASIC_TABLE_SIZE     4
 
 #define ASIC_BASE           (0xa05f6900)
 
@@ -55,11 +57,9 @@ typedef struct
     void   *(*handler)(void *, register_stack *, void *);
 } asic_lookup_table_entry;
 
-#define ASIC_TABLE_SIZE     4
-
 typedef struct
 {
-    /* NOTE: Function hooks for various interrupts */
+    /* NOTE: Function hooks for various interrupts. */
 
     asic_lookup_table_entry table[ASIC_TABLE_SIZE];
 } asic_lookup_table;

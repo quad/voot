@@ -1,6 +1,6 @@
 /*  vmu.h
 
-    $Id: vmu.h,v 1.1 2002/06/11 21:56:22 quad Exp $
+    $Id: vmu.h,v 1.2 2002/06/20 10:20:05 quad Exp $
 
 */
 
@@ -56,7 +56,7 @@ typedef uint8 vmu_port;
 #define VMU_STATUS_READY        0x00000000
 #define VMU_STATUS_BUSY         0xffffffff
 
-/* NOTE: Module declarations */
+/* NOTE: Module definitions. */
 
 void    vmu_init        (void);
 uint32  vmu_load_file   (vmu_port port, char *filename, uint8 *obuffer, uint32 num_blocks);

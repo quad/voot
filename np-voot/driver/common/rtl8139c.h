@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.1 2002/06/11 22:04:39 quad Exp $
+    $Id: rtl8139c.h,v 1.2 2002/06/20 10:20:05 quad Exp $
 
 */
 
@@ -12,7 +12,7 @@
 #include "net.h"
 #include "system.h"
 
-/* NOTE: PCI/G2 Register Definitions */
+/* NOTE: PCI/G2 register definitions. */
 
 #define PCI_IDENT_STR       (REGISTER(char)     0xa1001400)
 #define G2_BYTE(idx)        (REGISTER(uint8)    0xa1000000)[(idx)]
@@ -20,7 +20,7 @@
 #define G2_INT(idx)         (REGISTER(uint32)   0xa1000000)[(idx)/4]
 
 /*
-    NOTE: RTL8139c IO and DMA Definitions
+    NOTE: RTL8139c IO and DMA definitions.
 */
 
 #define RTL_IO_BYTE(idx)    (REGISTER(uint8)    0xa1001700)[(idx)]
@@ -32,9 +32,9 @@
 #define RTL_DMA_INT         (REGISTER(uint32)   0xa1840000)
 
 /*
-    NOTE: RTL8139c Register Definitions
+    NOTE: RTL8139c register definitions.
 
-    CREDIT: Imported from dc-load-ip 1.0.1
+    CREDIT: Imported from dc-load-ip 1.0.1.
 */
 
 #define RTL_IDR0                0x00            /* Mac address (32 + ) */
@@ -66,14 +66,14 @@
 #define RTL_CONFIG4             0x5A            /* Config register 4 */
 #define RTL_MULTIINTR           0x5C            /* Multiple interrupt select */
 #define RTL_MII_TSAD            0x60            /* Transmit status of all descriptors (16 bits) */
-#define RTL_MII_BMCR            0x62            /* Basic Mode Control Register (16 bits) */
-#define RTL_MII_BMSR            0x64            /* Basic Mode Status Register (16 bits) */
+#define RTL_MII_BMCR            0x62            /* Basic Mode Control register (16 bits) */
+#define RTL_MII_BMSR            0x64            /* Basic Mode Status register (16 bits) */
 #define RTL_AS_ADVERT           0x66            /* Auto-negotiation advertisement reg (16 bits) */
 #define RTL_AS_LPAR             0x68            /* Auto-negotiation link partner reg (16 bits) */
 #define RTL_AS_EXPANSION        0x6A            /* Auto-negotiation expansion reg (16 bits) */
 
 /*
-    NOTE: RTL8193c command bits
+    NOTE: RTL8193c command bits.
 
     OR these together and write the resulting value into CHIPCMD to execute
     it.
@@ -84,18 +84,18 @@
 #define RTL_CMD_TX_ENABLE       0x04
 #define RTL_CMD_RX_BUF_EMPTY    0x01
 
-/* NOTE: RTL8193c MII BMCR bits; OR these together */
+/* NOTE: RTL8193c MII BMCR bits; OR these together. */
 
-#define RTL_BMCR_RESET          0x8000          /* Reset PHY Registers */
+#define RTL_BMCR_RESET          0x8000          /* Reset PHY registers */
 #define RTL_BMCR_ANE            0x1000          /* Automatic Negotiation Enable */
 #define RTL_BMCR_RAN            0x200           /* Reset Auto Negotiation */
 
-/* NOTE: 93C456 command bits; OR these together */
+/* NOTE: 93C456 command bits; OR these together. */
 
 #define RTL_9346_EEM1           0x40            /* Enable EEM1 operating mode register */
 #define RTL_9346_EEM0           0x80            /* Enable EEM0 operating mode register */
 
-/* NOTE: RTL8193c config bits; OR these together */
+/* NOTE: RTL8193c config bits; OR these together. */
 
 #define RTL_C4_RX_AUTOCLR       0x80            /* RTL8193c will clear Rx overflow automatically */
 #define RTL_RX_TOALL            0x08            /* Accept broadcast packets */
@@ -103,9 +103,9 @@
 #define RTL_RX_TOUS             0x02            /* Accept physical match packets */
 
 /*
-    NOTE: RTL8139c interrupt status bits
+    NOTE: RTL8139c interrupt status bits.
 
-    To clear an interrupt write a true back on the status bit
+    To clear an interrupt write a true back on the status bit.
 */
 
 #define RTL_INT_PCIERR          0x8000          /* PCI Bus error */
@@ -119,7 +119,7 @@
 #define RTL_INT_RX_ERR          0x0002
 #define RTL_INT_RX_OK           0x0001
 
-/* NOTE: RTL8139c transmit status bits */
+/* NOTE: RTL8139c transmit status bits. */
 
 #define RTL_TX_CARRIER_LOST     0x80000000      /* Carrier sense lost */
 #define RTL_TX_ABORTED          0x40000000      /* Transmission aborted */
@@ -129,7 +129,7 @@
 #define RTL_TX_HOST_OWNS        0x00002000      /* Set to 1 when DMA operation is completed */
 #define RTL_TX_SIZE_MASK        0x00001fff      /* Descriptor size mask */
 
-/* NOTE: RTL8139C receive status bits */
+/* NOTE: RTL8139C receive status bits. */
 
 #define RTL_RX_MULTICAST        0x00008000      /* Multicast packet */
 #define RTL_RX_PAM              0x00004000      /* Physical address matched */
@@ -169,18 +169,19 @@
 
 #define RTL_DMA_FRAME_COPYING   0xfff0          /* in the frame status, means the DMA is still working */
 
-/* NOTE: Main RTL module structure */
+/* NOTE: Main RTL module structure. */
 
 typedef struct
 {
     uint16  cur_rx;                             /* Current Rx DMA buffer tail index */
     uint16  cur_tx;
     uint8   mac[ETHER_MAC_SIZE];                /* Mac address */
+    uint32  last_action;
 
     uint32  hdl_tbl_index;                      /* Exception handler table index */
 } rtl_t;
 
-/* NOTE: Module Function Definitions */
+/* NOTE: Module definitions. */
 
 bool    pci_detect      (void);
 bool    pci_bb_init     (void);

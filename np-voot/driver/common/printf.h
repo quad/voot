@@ -1,6 +1,6 @@
 /*  printf.h
 
-    $Id: printf.h,v 1.1 2002/06/11 20:36:55 quad Exp $
+    $Id: printf.h,v 1.2 2002/06/20 10:20:05 quad Exp $
 
 */
 
@@ -21,7 +21,7 @@
 #define N_SPECIAL   32      /* 0x */
 #define N_LARGE     64      /* use 'ABCDEF' instead of 'abcdef' */
 
-/* NOTE: Module definitions */
+/* NOTE: Module definitions. */
 
 char *  number      (char *str, long num, int32 base, int32 size, int32 precision, int32 type);
 int     vsnprintf   (char *buf, uint32 size, const char *fmt, va_list args);

@@ -1,6 +1,6 @@
 /*  serial.h
 
-    $Id: serial.h,v 1.1 2002/06/11 20:16:39 quad Exp $
+    $Id: serial.h,v 1.2 2002/06/20 10:20:05 quad Exp $
 
 */
 
@@ -10,12 +10,13 @@
 #include "vars.h"
 
 #define _SCIF_BASE      (0xFFE80000)
-#define SCIF_R_SMR      (REGISTER(uint16)   (_SCIF_BASE + 0x00))
-#define SCIF_R_BRR      (REGISTER(uint8)    (_SCIF_BASE + 0x04))
+
+#define SCIF_R_SM       (REGISTER(uint16)   (_SCIF_BASE + 0x00))
+#define SCIF_R_BR       (REGISTER(uint8)    (_SCIF_BASE + 0x04))
 #define SCIF_R_SC       (REGISTER(uint16)   (_SCIF_BASE + 0x08))
-#define SCIF_R_FTG      (REGISTER(uint8)    (_SCIF_BASE + 0x0C))
+#define SCIF_R_TD       (REGISTER(uint8)    (_SCIF_BASE + 0x0C))
 #define SCIF_R_FS       (REGISTER(uint16)   (_SCIF_BASE + 0x10))
-#define SCIF_R_FRD      (REGISTER(uint8)    (_SCIF_BASE + 0x14))
+#define SCIF_R_RD       (REGISTER(uint8)    (_SCIF_BASE + 0x14))
 #define SCIF_R_FC       (REGISTER(uint16)   (_SCIF_BASE + 0x18))
 
 #define SCIF_SC_RIE     (1<<6)
@@ -28,6 +29,8 @@
 #define SCIF_FC_LOOP    (1)
 
 #define SCIF_TIMEOUT    10000
+
+/* NOTE: Module definitions. */
 
 void    serial_set_baudrate (uint16 baud_rate);
 

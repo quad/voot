@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.3 2002/06/12 10:32:32 quad Exp $
+    $Id: exception.c,v 1.4 2002/06/20 10:20:04 quad Exp $
 
 DESCRIPTION
 
@@ -129,6 +129,12 @@ static void init_vbr_table (void)
             interrupt_sub_handler_end - interrupt_sub_handler
            );
 
+    /* STAGE: GENERAL magic sprinkes of evil to the VOOT VBR. */
+
+    memcpy (VBR_INT (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
+            general_sub_handler,
+            general_sub_handler_end - general_sub_handler
+           );
     /* STAGE: Relocate the Katana VBR index - bypass our entry logic. */
 
     vbr_buffer_katana = vbr_buffer + (sizeof (uint16) * 4);
@@ -145,17 +151,23 @@ static void init_vbr_table (void)
 static bool is_vbr_switch_time (void)
 {
     uint32  int_changed;
+    uint32  gen_changed;
 
-    /* STAGE: Check to see if our interrupt hooks are still installed. */
+    /* STAGE: Check to see if our VBR hooks are still installed. */
 
     int_changed = memcmp (VBR_INT (vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
                           interrupt_sub_handler,
                           interrupt_sub_handler_end - interrupt_sub_handler
                          );
 
+    gen_changed = memcmp (VBR_INT (vbr_buffer) - (general_sub_handler_base - general_sub_handler),
+                          general_sub_handler,
+                          general_sub_handler_end - general_sub_handler
+                         );
+
     /* STAGE: After enough exceptions, allow the initialization. */
 
-    return int_changed && exp_table.ubc_exception_count >= 5;
+    return (int_changed || gen_changed) && exp_table.ubc_exception_count >= 5;
 }
 
 uint32 add_exception_handler (const exception_table_entry *new_entry)
