@@ -49,7 +49,6 @@ CHANGELOG
 
 #define VOOT_PACKET_HEADER_SIZE     3
 #define NET_MAX_PACKET              1500
-#define BIUDP_SEGMENT_SIZE          (NET_MAX_PACKET - 42)
 //#define VOOT_PACKET_BUFFER_SIZE     BIUDP_SEGMENT_SIZE - sizeof(voot_packet_header)
 #define VOOT_PACKET_BUFFER_SIZE     1024
 

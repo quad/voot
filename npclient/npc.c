@@ -133,11 +133,9 @@ static void npc_close_socket(volatile int32 *in_socket, const char *socket_desc)
         *in_socket = -1;
 
         if (close(socket))
-            NPC_LOG(npc_system, LOG_ALERT, "Unable to close %s socket.", socket_desc);
+            NPC_LOG(npc_system, LOG_ALERT, "Unable to close %s connection on %s:%u.", socket_desc, socket_name, socket_port);
         else
-        {
             NPC_LOG(npc_system, LOG_NOTICE, "Closed %s connection on %s:%u.", socket_desc, socket_name, socket_port);
-        }
     }
 }
 
@@ -185,7 +183,7 @@ int32 npc_handle_command(npc_command_t *command)
             }
             else
             {
-                NPC_LOG(npc_system, LOG_NOTICE, "Unable to connect to slave %s:%u.", npc_system.slave_name, npc_system.slave_port);
+                NPC_LOG(npc_system, LOG_WARNING, "Unable to connect to slave %s:%u.", npc_system.slave_name, npc_system.slave_port);
             }
 
             break;
@@ -214,7 +212,7 @@ int32 npc_handle_command(npc_command_t *command)
             }
             else
             {
-                NPC_LOG(npc_system, LOG_NOTICE, "Unable to connect to server %s:%u.", npc_system.server_name, npc_system.server_port);
+                NPC_LOG(npc_system, LOG_WARNING, "Unable to connect to server %s:%u.", npc_system.server_name, npc_system.server_port);
             }
 
             break;
@@ -263,7 +261,7 @@ int32 npc_handle_command(npc_command_t *command)
 
                 case VOOT_PACKET_TYPE_DATA:
                 {
-                    NPC_LOG(npc_system, LOG_INFO,
+                    NPC_LOG(npc_system, LOG_DEBUG,
                       "DATA(slave): '%c' [%x] ... '%c' [%x] : len [%d]",
                       command->packet->buffer[0],
                       command->packet->buffer[0],
@@ -314,7 +312,7 @@ int32 npc_handle_command(npc_command_t *command)
                 
                 case VOOT_PACKET_TYPE_DATA:
                 {
-                    NPC_LOG(npc_system, LOG_INFO,
+                    NPC_LOG(npc_system, LOG_DEBUG,
                       "DATA(server): '%c' [%x] ... '%c' [%x] : len [%d]",
                       command->packet->buffer[0],
                       command->packet->buffer[0],
@@ -352,7 +350,7 @@ int32 npc_handle_command(npc_command_t *command)
 
         default:
         {
-            NPC_LOG(npc_system, LOG_WARNING, "Dropping unimplemented npc_command of type %u.", command->type);
+            NPC_LOG(npc_system, LOG_ERR, "Dropping unimplemented npc_command of type %u.", command->type);
             break;
         }
     }
@@ -484,7 +482,7 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
     host = gethostbyname(dest_name);
     if (!host)
     {
-        NPC_LOG(npc_system, LOG_INFO, "Could not resolve '%s'.", dest_name);
+        NPC_LOG(npc_system, LOG_NOTICE, "Could not resolve '%s'.", dest_name);
         return -1;
     }
 
@@ -517,7 +515,7 @@ int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
         return -3;
     }
 
-    NPC_LOG(npc_system, LOG_INFO, "Connected to %s:%u and sending VERSION command.", dest_name, dest_port);
+    NPC_LOG(npc_system, LOG_NOTICE, "Connected to %s:%u and sending VERSION command.", dest_name, dest_port);
     voot_send_command(new_socket, VOOT_COMMAND_TYPE_VERSION);
 
     return new_socket;

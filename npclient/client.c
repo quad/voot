@@ -94,8 +94,7 @@ TODO
 char *prog_name;
 bool input_handler_poll;
 pthread_t input_poll_thread;
-
-#define VOOT_DATA_EDIT      0x8ccf9f3e
+uint32 voot_data_edit = 0x8ccf9f3e;
 
 /*
  *  Various frontend texts.
@@ -188,15 +187,30 @@ static void frontend_cleanup(void)
     free(prog_name);
 }
 
+static void frontend_printf(const char *format, ...)
+{
+    va_list args;
+
+    rl_crlf();
+
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+
+    rl_crlf();
+    rl_on_new_line();
+    rl_redisplay();
+}
+
 static void client_parse_connect(npc_command_t *command, char *opt_arg, npc_command type, const char *vis_type)
 {
     char *tokidx_work;
     char *tokidx;
 
     command->type = type;
-    strtok_r(opt_arg, ":", &tokidx_work);
+    tokidx = strtok_r(opt_arg, ":", &tokidx_work);
 
-    if ((tokidx = strtok_r(NULL, ":", &tokidx_work)))
+    if (tokidx && (tokidx = strtok_r(NULL, ":", &tokidx_work)))
     {
         char *host;
         uint16 port;
@@ -231,7 +245,7 @@ static void client_parse_connect(npc_command_t *command, char *opt_arg, npc_comm
         }
     }
 
-    printf("%s: connecting to %s %s:%u ...\n", prog_name, vis_type, command->text, command->port);
+    frontend_printf("%s: connecting to %s %s:%u ...", prog_name, vis_type, command->text, command->port);
 }
 
 static void parse_options(int argc, char *argv[])
@@ -253,7 +267,7 @@ static void parse_options(int argc, char *argv[])
             {
                 if (connect_slave)
                 {
-                    printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
+                    frontend_printf("%s: ignoring duplicate '-%c' option.", prog_name, opt);
                     break;
                 }
 
@@ -268,12 +282,12 @@ static void parse_options(int argc, char *argv[])
             {
                 if (connect_server)
                 {
-                    printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
+                    frontend_printf("%s: ignoring duplicate '-%c' option.", prog_name, opt);
                     break;
                 }
                 else if (listen_server)
                 {
-                    printf("%s: ignoring conflicting '-%c' option.\n", prog_name, opt);
+                    frontend_printf("%s: ignoring conflicting '-%c' option.", prog_name, opt);
                     break;
                 }
 
@@ -288,12 +302,12 @@ static void parse_options(int argc, char *argv[])
             {
                 if (listen_server)
                 {
-                    printf("%s: ignoring duplicate '-%c' option.\n", prog_name, opt);
+                    frontend_printf("%s: ignoring duplicate '-%c' option.", prog_name, opt);
                     break;
                 }
                 else if (connect_server)
                 {
-                    printf("%s: ignoring conflicting '-%c' option.\n", prog_name, opt);
+                    frontend_printf("%s: ignoring conflicting '-%c' option.", prog_name, opt);
                     break;
                 }
 
@@ -301,7 +315,7 @@ static void parse_options(int argc, char *argv[])
 
                 command->port = optarg ? atoi(optarg) : VOOT_SERVER_PORT;
 
-                printf("%s: starting server on port %u...\n", prog_name, command->port);
+                frontend_printf("%s: starting server on port %u...", prog_name, command->port);
 
                 command->type = C_LISTEN_SERVER;
 
@@ -403,15 +417,11 @@ void input_handler(char *line)
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPMEM);
         else if (!strcasecmp(command, "c-dump-gamedata"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPGAME);
-        else if (!strcasecmp(command, "dump-voot"))
-            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, VOOT_DATA_EDIT);
         else if (!strcasecmp(command, "dump-vbr"))
             voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, 0x8c00f400);
-        else if (!strcasecmp(command, "connect-slave"))
-        {
-            client_parse_connect(event, command_args, C_CONNECT_SLAVE, "slave");
-        }
-        else if (!strcasecmp(command, "send-voot"))
+        else if (!strcasecmp(command, "dump"))
+            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, voot_data_edit);
+        else if (!strcasecmp(command, "send-dump"))
         {
             char *filename, *maybe_address;
 
@@ -433,23 +443,33 @@ void input_handler(char *line)
 
                     if (!buffer_size)
                     {
-                        printf("%s: [dump-send] '%s' is an empty file?\n", prog_name, filename);
+                        frontend_printf("%s: [send-dump] '%s' is an empty file?", prog_name, filename);
                     }
                     else
                     {
-                        printf("%s: [dump-send] Dumping %u bytes of data...\n", prog_name, buffer_size);
+                        frontend_printf("%s: [send-dump] Dumping %u bytes of data...", prog_name, buffer_size);
 
-                        /* Gamedata structure. */
-                        voot_dump_buffer(system->slave_socket, VOOT_DATA_EDIT, buffer, buffer_size);
+                        voot_dump_buffer(system->slave_socket, voot_data_edit, buffer, buffer_size);
 
-                        printf("%s: [dump-send] Sent file '%s'.\n", prog_name, filename);
+                        frontend_printf("%s: [send-dump] Sent file '%s'.", prog_name, filename);
                     }
                 }
                 else
-                    printf("%s: [dump-send] Unable to open file '%s' for dumping.\n", prog_name, filename);
+                    frontend_printf("%s: [send-dump] Unable to open file '%s' for dumping.", prog_name, filename);
             }
             else
-                printf("%s: [dump-send] You need to specify a filename, as command option, for dumping.\n", prog_name);
+                frontend_printf("%s: [send-dump] You need to specify a filename, as a command option, for dumping.", prog_name);
+        }
+        else if (!strcasecmp(command, "set-dump"))
+        {
+            if (command_args && strlen(command_args))
+                voot_data_edit = strtoul(command_args, NULL, 0);
+
+            frontend_printf("%s: [set-dump] Dump address set to %x.", prog_name, voot_data_edit);
+        }
+        else if (!strcasecmp(command, "connect-slave"))
+        {
+            client_parse_connect(event, command_args, C_CONNECT_SLAVE, "slave");
         }
         else if (!strcasecmp(command, "inject"))
         {
@@ -479,14 +499,16 @@ void logger_callback(npc_log_level severity, const char *format, ...)
 {
     va_list args;
 
+    rl_crlf();
+
     printf("%s: [npc|%s] ", prog_name, npc_log_level_desc[severity]); 
 
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
 
-    printf("\n");
-
+    rl_crlf();
+    rl_on_new_line();
     rl_redisplay();
 }
 
@@ -511,11 +533,11 @@ bool packet_callback(uint8 type, const voot_packet *packet)
                         dump_file = mkstemp(template);
                         if (dump_file > 0)
                         {
-                            printf("%s: [dump] Opened dump file #%d. (%d)\n", prog_name, file_count - 1, dump_file);
+                            frontend_printf("%s: [dump] Opened dump file #%d. (%d)", prog_name, file_count - 1, dump_file);
                         }
                         else
                         {
-                            printf("%s: [dump] Unable to open a dump file.\n", prog_name);
+                            frontend_printf("%s: [dump] Unable to open a dump file.", prog_name);
                             dump_file = 0;
                         }
                     }
@@ -531,7 +553,7 @@ bool packet_callback(uint8 type, const voot_packet *packet)
 
                         close(t_dump_file);
 
-                        printf("%s: [dump] Closed dump file. (%d)\n", prog_name, t_dump_file);
+                        frontend_printf("%s: [dump] Closed dump file. (%d)", prog_name, t_dump_file);
                     }
                     break;
             }
@@ -543,7 +565,7 @@ bool packet_callback(uint8 type, const voot_packet *packet)
             out = write(dump_file, packet->buffer, (ntohs(packet->header.size) - 1));
 
             if (!out)
-                printf("%s: [dump] Error in writing data the dump IO file.\n", prog_name);
+                frontend_printf("%s: [dump] Error in writing data the dump IO file.", prog_name);
         }
     }
 

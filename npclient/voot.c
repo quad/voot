@@ -100,7 +100,7 @@ uint32 voot_socket_verify_packet(int32 socket)
 
 voot_packet* voot_parse_socket(int32 socket)
 {
-    unsigned char data[BIUDP_SEGMENT_SIZE];
+    unsigned char data[NET_MAX_PACKET];
     int32 packet_size;
     int32 rx;
 
