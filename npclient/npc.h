@@ -69,8 +69,7 @@ uint32 handle_npc_command(npc_command_t *command);
 
 npc_command_t* npc_get_event(void);
 npc_command_t* npc_io_check(int32 socket, npc_command type);
-int npc_slave_connect(void);
-int npc_server_connect(void);
+int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);
 int npc_server_listen(void);
 void npc_exit(int code);
 void npc_init(void);

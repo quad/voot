@@ -63,23 +63,23 @@ unsigned int handle_npc_command(npc_command_t *command)
         case C_CONNECT_SLAVE:
             npc_system.slave_name = command->text;
 
-            retval = npc_slave_connect();
-            
-            #ifdef NPC_DEBUG
-                if (retval)
-                    fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
-            #endif
+            retval = npc_connect(npc_system.slave_name, npc_system.slave_port, SOCK_DGRAM);
+
+            if (retval >= 0)
+                npc_system.slave_socket = retval;
+            else
+                fprintf(stderr, "[npc] unable to connect to slave %s:%u.\n", npc_system.slave_name, npc_system.slave_port);
             break;
 
         case C_CONNECT_SERVER:
             npc_system.server_name = command->text;
 
-            retval = npc_server_connect();
+            retval = npc_connect(npc_system.server_name, npc_system.server_port, SOCK_STREAM);
 
-            #ifdef NPC_DEBUG
-                if (retval)
-                    fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
-            #endif
+            if (retval >= 0)
+                npc_system.server_socket = retval;
+            else
+                fprintf(stderr, "[npc] unable to connect to server %s:%u.\n", npc_system.server_name, npc_system.server_port);
             break;
 
         case C_LISTEN_SERVER:
@@ -168,57 +168,48 @@ npc_command_t* npc_io_check(int32 socket, npc_command type)
     return event;
 }
 
-int npc_slave_connect(void)
+int npc_connect(char *dest_name, uint16 dest_port, int32 conntype)
 {
     struct hostent *host;
-    struct sockaddr_in slave_address;
-    int slave_socket;
+    struct sockaddr_in address;
+    int new_socket;
 
-    bzero(&slave_address, sizeof(slave_address));
+    bzero(&address, sizeof(address));
 
-    /* Try to resolve the slave host name. */
-    host = gethostbyname(npc_system.slave_name);
+    host = gethostbyname(dest_name);
     if (!host)
     {
-        fprintf(stderr, "[npc] unable to resolve slave %s.\n", npc_system.slave_name);
-        return 1;
+        fprintf(stderr, "[npc] unable to resolve %s.\n", dest_name);
+        return -1;
     }
 
-    slave_address.sin_family = host->h_addrtype;
-    memcpy((char *) &slave_address.sin_addr.s_addr, host->h_addr_list[0], host->h_length);
-    slave_address.sin_port = htons(npc_system.slave_port);
+    address.sin_family = host->h_addrtype;
+    memcpy((char *) &address.sin_addr.s_addr, host->h_addr_list[0], host->h_length);
+    address.sin_port = htons(dest_port);
 
-    /* Open a UDP socket and bind to any port. */
-    slave_socket = socket(AF_INET, SOCK_DGRAM, 0);  /* ??? I'm using the 'ip' protocol. Shouldn't I be using the 'udp' protocol? */
-    if (slave_socket < 0)
+    new_socket = socket(AF_INET, conntype, 0);
+    if (new_socket < 0)
     {
-        fprintf(stderr, "[npc] unable to open a socket for the slave.\n");
-        return 2;
+        fprintf(stderr, "[npc] unable to open a socket.\n");
+        return -2;
     }
 
-    if (connect(slave_socket, (struct sockaddr *) &slave_address, sizeof(slave_address)))
+    if (connect(new_socket, (struct sockaddr *) &address, sizeof(address)))
     {
-        close(slave_socket);
-        fprintf(stderr, "[npc] unable to connect to the slave.\n");
-        return 3;
+        close(new_socket);
+        fprintf(stderr, "[npc] unable to connect to %s:%u.\n", dest_name, dest_port);
+        return -3;
     }
 
     /* FIXME: !!! Send version command to slave. */
     {
         char v_string[] = "c  v";
 
-        sendto(slave_socket, v_string, strlen(v_string), 0, (struct sockaddr *) &slave_address, sizeof(slave_address));
+        //send(new_socket, v_string, strlen(v_string), 0);
+        sendto(new_socket, v_string, strlen(v_string), 0, (struct sockaddr *) &address, sizeof(address));
     }
 
-    /* Update npc_system with socket and addressing information. */
-    npc_system.slave_socket = slave_socket;
-
-    return 0;
-}
-
-int npc_server_connect(void)
-{
-    return 1;
+    return new_socket;
 }
 
 int npc_server_listen(void)
