@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.5 2002/06/23 03:22:52 quad Exp $
+    $Id: exception.c,v 1.6 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -8,15 +8,16 @@ DESCRIPTION
 
 TODO
 
-    Move to using a chain system on exceptions.
-
-    Ensure duplicate table entries cannot be added.
+    Ensure exceptions cannot be added to the table unless the system is
+    initialized. (or some derivative, because of the delayed initialization
+    system.)
 
 */
 
 #include "vars.h"
 #include "exception-lowlevel.h"
 #include "ubc.h"
+#include "video.h"
 #include "asic.h"
 #include "util.h"
 #include "init.h"
@@ -81,21 +82,56 @@ static bool is_vbr_switch_time (void)
     return (int_changed || gen_changed) && exp_table.ubc_exception_count >= 5;
 }
 
-uint32 exception_add_handler (const exception_table_entry *new_entry)
+void exception_init (void)
+{
+    /* STAGE: Initialize the UBC. */
+
+    ubc_init ();
+
+    /* STAGE: Configure the UBC for breaking on PVR pageflip. */
+
+    ubc_configure_channel (UBC_CHANNEL_A, VIDEO_FB_BUFFER, UBC_BBR_WRITE | UBC_BBR_OPERAND);
+
+    /* STAGE: Ensure we receive UBC interrupts. */
+
+    dbr_set (ubc_handler_lowlevel);
+}
+
+bool exception_add_handler (const exception_table_entry *new_entry, exception_handler_f *parent_handler)
 {
     uint32  index;
 
+    /* STAGE: Search the entire table for either a match or an opening. */
+
     for (index = 0; index < EXP_TABLE_SIZE; index++)
     {
-        if (!(exp_table.table[index].type))
+        /*
+            STAGE: If the entry is configured with same type and code as the
+            new handler, push it on the stack and let's roll!
+        */
+
+        if ((exp_table.table[index].type == new_entry->type) && (exp_table.table[index].code == new_entry->code))
         {
+            *parent_handler = exp_table.table[index].handler;
+
+            exp_table.table[index].handler = new_entry->handler;
+
+            return TRUE;
+        }
+        /*
+            STAGE: We've reached the end of the filled entries, I guess we have to create our own.
+        */
+        else if (!(exp_table.table[index].type))
+        {
+            *parent_handler = NULL;
+
             memcpy (&exp_table.table[index], new_entry, sizeof (exception_table_entry));
 
-            return index + 1;
+            return TRUE;
         }
     }
 
-    return 0;
+    return FALSE;
 }
 
 void* exception_handler (register_stack *stack)
@@ -118,7 +154,7 @@ void* exception_handler (register_stack *stack)
             exception_code = *REG_EXPEVT;
 
             /* STAGE: Never pass on UBC interrupts to the game. */
-            if (exception_code == EXP_CODE_UBC)
+            if ((exception_code == EXP_CODE_UBC) || (exception_code == EXP_CODE_TRAP))
             {
                 exp_table.ubc_exception_count++;
                 back_vector = my_exception_finish;
@@ -182,6 +218,16 @@ void* exception_handler (register_stack *stack)
 
         if (!vbr_switched)
         {
+            /*
+                STAGE: Clear the UBC channel which triggered us, thus not
+                confusing the module.
+
+                NOTE: This isn't bad behavior becuase it only occurs on the
+                initial UBC breakpoint.
+            */
+
+            ubc_clear_break (UBC_CHANNEL_A);
+
             /* STAGE: Handle ASIC exceptions. */
 
             asic_init_handler ();
@@ -196,8 +242,8 @@ void* exception_handler (register_stack *stack)
 
     for (index = 0; index < EXP_TABLE_SIZE; index++)
     {
-        if (exp_table.table[index].code == exception_code &&
-            exp_table.table[index].type == stack->exception_type)
+        if (((exp_table.table[index].code == exception_code)        || (exp_table.table[index].code == EXP_CODE_ALL)) &&
+            ((exp_table.table[index].type == stack->exception_type) || (exp_table.table[index].type == EXP_TYPE_ALL)))
         {
             /* STAGE: Call the handler and use whatever hook it returns. */
 

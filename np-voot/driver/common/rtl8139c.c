@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.9 2002/06/24 00:58:04 quad Exp $
+    $Id: rtl8139c.c,v 1.10 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -164,177 +164,6 @@ static void rtl_negotiate_media (void)
     RTL_IO_SHORT(RTL_MII_BMCR) = RTL_BMCR_RESET | RTL_BMCR_ANE | RTL_BMCR_RAN;
 }
 
-static void rtl_chip_configure (void)
-{
-    /* STAGE: Allow us to write the chipside configuration data. */
-
-    RTL_IO_BYTE(RTL_CFG9346) = RTL_9346_EEM1 | RTL_9346_EEM0;
-
-    /* STAGE: Configure RX and TX chipside functions. */
-
-    RTL_IO_INT(RTL_RXCONFIG) = RTL_RXCONFIG_ON;
-    RTL_IO_INT(RTL_TXCONFIG) = RTL_TXCONFIG_ON;
-
-    /* STAGE: Configure miscellaneous chipside options. */
-
-    RTL_IO_BYTE(RTL_CONFIG1) &= ~0x30;              /* NOTE: Disable LAN-awake. */
-    RTL_IO_BYTE(RTL_CONFIG1) |= 0x20;               /* NOTE: Set driver-loaded bit. */
-    RTL_IO_BYTE(RTL_CONFIG4) |= RTL_C4_RX_AUTOCLR;  /* NOTE: Set Rx FIFO overflow to auto-flush. */
-
-    /* STAGE: Finished configuration - switch to normal operation mode. */
-
-    RTL_IO_BYTE(RTL_CFG9346) = 0x0;
-
-    /* STAGE: Reset Rx FIFO overflow counter. */
-
-    RTL_IO_INT(RTL_RXMISSED) = 0;
-}
-
-static bool rtl_int_configure (void)
-{
-    asic_lookup_table_entry entry;
-    uint32                  intr;
-
-    /* STAGE: Configure hook for interrupt table. */
-
-    entry.irq       = EXP_CODE_INT13;       /* NOTE: No one uses IRQ 13 - at least, VOOT doesn't. */
-    entry.mask1     = ASIC_MASK1_PCI;       /* NOTE: Latch on the G2 PCI interrupt. */
-    entry.handler   = rtl_irq_handler;
-
-    /* STAGE: Add hook to interrupt table. */
-
-    rtl_info.hdl_tbl_index = asic_add_handler (&entry);
-
-    /* STAGE: Ensure we could attach an exception handler. */
-
-    if (!rtl_info.hdl_tbl_index)
-    {
-        /* NOTE: Shutdown handling is in rtl_init_real (). */
-
-        return FALSE;
-    }
-
-    /* STAGE: Clear the interrupt status. */
-
-    intr = RTL_IO_SHORT(RTL_INTRSTATUS);
-    RTL_IO_SHORT(RTL_INTRSTATUS) = intr;
-
-    /* STAGE: Tell the RTL which interrupts to fire off. */
-
-    RTL_IO_SHORT(RTL_INTRMASK) = RTL_INT_RX_OK | RTL_INT_RXFIFO_OVERFLOW | RTL_INT_RXBUF_OVERFLOW | RTL_INT_LINKCHG;
-
-    /* STAGE: Disable all multi-interrupts - don't tell us about weird frames. */
-
-    RTL_IO_SHORT(RTL_MULTIINTR) = 0;
-
-    /* STAGE: Configured successfully! */
-
-    return TRUE;
-}
-
-static void rtl_cache_mac (void)
-{
-    unsigned tmp;
-
-    /* STAGE: Copy over the first segment. */
-
-    tmp = RTL_IO_INT(RTL_IDR0);
-
-    rtl_info.mac[0] = tmp & 0xff;
-    rtl_info.mac[1] = (tmp >> 8) & 0xff;
-    rtl_info.mac[2] = (tmp >> 16) & 0xff;
-    rtl_info.mac[3] = (tmp >> 24) & 0xff;
-
-    /* STAGE: Copy over the second segment. */
-
-    tmp = RTL_IO_INT(RTL_IDR1);
-
-    rtl_info.mac[4] = tmp & 0xff;
-    rtl_info.mac[5] = (tmp >> 8) & 0xff;
-}
-
-
-/*
-    NOTE: This is the actual initialization function.
-
-    The sequence is broken up between various functions for readability.
-*/
-
-static bool rtl_init_real (void)
-{
-    /*
-        STAGE: [STEP 1] Soft reset the adapter and stop the adapter.
-        
-        This keeps us safe from any previous use.
-    */
-
-    rtl_soft_reset ();
-    rtl_stop ();
-
-    /*
-        STAGE: [STEP 2] Clear out the adapter's current configuration.
-    */
-
-    RTL_IO_BYTE(RTL_CONFIG1) = 0;
-
-    /*
-        STAGE: [STEP 3] Auto-negotiate network media type.
-    */
-
-    rtl_negotiate_media ();
-
-    /*
-        STAGE: [STEP 4] Configure chip for operation.
-
-        NOTE: RX and TX functionality must be enabled, but we don't want to
-        receive frames.
-    */
-
-    rtl_send_command (RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
-
-    rtl_chip_configure ();
-
-    /*
-        STAGE: [STEP 5] Configure the RX and TX DMA buffers.
-
-        NOTE: These values are affected by the PCI initialization.
-    */
-
-    RTL_IO_INT(RTL_RXBUF)   = 0x01840000;
-    RTL_IO_INT(RTL_TXADDR0) = 0x01846000;
-    RTL_IO_INT(RTL_TXADDR1) = 0x01846800;
-    RTL_IO_INT(RTL_TXADDR2) = 0x01847000;
-    RTL_IO_INT(RTL_TXADDR3) = 0x01847800;
-
-    /*
-        STAGE: [STEP 6] Enable and latch on chip interrupts.
-    */
-
-    if (!(rtl_int_configure ()))
-    {
-        rtl_stop ();
-        rtl_soft_reset ();
-
-        return FALSE;
-    }
-
-    /*
-        STAGE: [STEP 7] Enable RX and TX functionality.
-    */
-
-    rtl_start ();
-
-    /*
-        STAGE: [STEP 8] Finish module initialization.
-    */
-
-    rtl_cache_mac ();
-
-    rtl_info.cur_rx = rtl_info.cur_tx = 0;
-
-    return TRUE;
-}
-
 /*
     NOTE: Packet reception logic!
 
@@ -456,6 +285,234 @@ static void rtl_rx_all (void)
     }
 }
 
+/*
+    NOTE: Chip interrupt handler.
+
+    TODO: Cleanup for new system.
+*/
+
+static void* rtl_irq_handler (void *passer, register_stack *stack, void *current_vector)
+{
+    uint32 intr;
+
+    /*
+        STAGE: First, identify and clear out the interrupts.
+        
+        We don't want it to *keep* yelling at us.
+    */
+
+    intr = RTL_IO_SHORT(RTL_INTRSTATUS);
+    RTL_IO_SHORT(RTL_INTRSTATUS) = intr;
+
+    /*
+        STAGE: Handle overflows relatively harshly.
+        
+        CREDIT: I'm taking this solution from the BSD driver.
+    */
+
+    if (intr & RTL_INT_RXBUF_OVERFLOW)
+    {
+        rtl_stop ();
+        
+        rtl_info.cur_rx = RTL_IO_SHORT(RTL_RXBUFHEAD) % RX_BUFFER_LEN;
+        RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_info.cur_rx - RX_BUFFER_THRESHOLD;
+
+        rtl_start ();
+    }
+    /* STAGE: If we're performing a link change, finish up. */
+    else if (intr & RTL_INT_LINKCHG)
+    {
+        static bool link_stable = FALSE;
+
+        if (link_stable)
+        {
+            rtl_negotiate_media ();
+
+            link_stable = FALSE;
+        }
+        else
+        {
+            link_stable = TRUE;
+        }
+    }
+    /* STAGE: Check if we received frames. */
+    else if (intr & RTL_INT_RX_OK)
+    {
+        rtl_rx_all ();
+    }
+
+    if (rtl_info.old_rtl_handler)
+        return rtl_info.old_rtl_handler (passer, stack, my_exception_finish);
+    else
+        return my_exception_finish;
+}
+
+static void rtl_chip_configure (void)
+{
+    /* STAGE: Allow us to write the chipside configuration data. */
+
+    RTL_IO_BYTE(RTL_CFG9346) = RTL_9346_EEM1 | RTL_9346_EEM0;
+
+    /* STAGE: Configure RX and TX chipside functions. */
+
+    RTL_IO_INT(RTL_RXCONFIG) = RTL_RXCONFIG_ON;
+    RTL_IO_INT(RTL_TXCONFIG) = RTL_TXCONFIG_ON;
+
+    /* STAGE: Configure miscellaneous chipside options. */
+
+    RTL_IO_BYTE(RTL_CONFIG1) &= ~0x30;              /* NOTE: Disable LAN-awake. */
+    RTL_IO_BYTE(RTL_CONFIG1) |= 0x20;               /* NOTE: Set driver-loaded bit. */
+    RTL_IO_BYTE(RTL_CONFIG4) |= RTL_C4_RX_AUTOCLR;  /* NOTE: Set Rx FIFO overflow to auto-flush. */
+
+    /* STAGE: Finished configuration - switch to normal operation mode. */
+
+    RTL_IO_BYTE(RTL_CFG9346) = 0x0;
+
+    /* STAGE: Reset Rx FIFO overflow counter. */
+
+    RTL_IO_INT(RTL_RXMISSED) = 0;
+}
+
+static bool rtl_int_configure (void)
+{
+    asic_lookup_table_entry entry;
+    uint32                  intr;
+
+    /* STAGE: Configure hook for interrupt table. */
+
+    entry.irq       = EXP_CODE_INT13;       /* NOTE: No one uses IRQ 13 - at least, VOOT doesn't. */
+    entry.mask1     = ASIC_MASK1_PCI;       /* NOTE: Latch on the G2 PCI interrupt. */
+    entry.handler   = rtl_irq_handler;
+
+    /* STAGE: Add hook to interrupt table. */
+
+    if (!(asic_add_handler (&entry, &rtl_info.old_rtl_handler)))
+    {
+        /* NOTE: Shutdown handling is in rtl_init_real (). */
+
+        return FALSE;
+    }
+
+    /* STAGE: Clear the interrupt status. */
+
+    intr = RTL_IO_SHORT(RTL_INTRSTATUS);
+    RTL_IO_SHORT(RTL_INTRSTATUS) = intr;
+
+    /* STAGE: Tell the RTL which interrupts to fire off. */
+
+    RTL_IO_SHORT(RTL_INTRMASK) = RTL_INT_RX_OK | RTL_INT_RXFIFO_OVERFLOW | RTL_INT_RXBUF_OVERFLOW | RTL_INT_LINKCHG;
+
+    /* STAGE: Disable all multi-interrupts - don't tell us about weird frames. */
+
+    RTL_IO_SHORT(RTL_MULTIINTR) = 0;
+
+    /* STAGE: Configured successfully! */
+
+    return TRUE;
+}
+
+static void rtl_cache_mac (void)
+{
+    unsigned tmp;
+
+    /* STAGE: Copy over the first segment. */
+
+    tmp = RTL_IO_INT(RTL_IDR0);
+
+    rtl_info.mac[0] = tmp & 0xff;
+    rtl_info.mac[1] = (tmp >> 8) & 0xff;
+    rtl_info.mac[2] = (tmp >> 16) & 0xff;
+    rtl_info.mac[3] = (tmp >> 24) & 0xff;
+
+    /* STAGE: Copy over the second segment. */
+
+    tmp = RTL_IO_INT(RTL_IDR1);
+
+    rtl_info.mac[4] = tmp & 0xff;
+    rtl_info.mac[5] = (tmp >> 8) & 0xff;
+}
+
+/*
+    NOTE: This is the actual initialization function.
+
+    The sequence is broken up between various functions for readability.
+*/
+
+static bool rtl_init_real (void)
+{
+    /*
+        STAGE: [STEP 1] Soft reset the adapter and stop the adapter.
+        
+        This keeps us safe from any previous use.
+    */
+
+    rtl_soft_reset ();
+    rtl_stop ();
+
+    /*
+        STAGE: [STEP 2] Clear out the adapter's current configuration.
+    */
+
+    RTL_IO_BYTE(RTL_CONFIG1) = 0;
+
+    /*
+        STAGE: [STEP 3] Auto-negotiate network media type.
+    */
+
+    rtl_negotiate_media ();
+
+    /*
+        STAGE: [STEP 4] Configure chip for operation.
+
+        NOTE: RX and TX functionality must be enabled, but we don't want to
+        receive frames.
+    */
+
+    rtl_send_command (RTL_CMD_RX_ENABLE | RTL_CMD_TX_ENABLE);
+
+    rtl_chip_configure ();
+
+    /*
+        STAGE: [STEP 5] Configure the RX and TX DMA buffers.
+
+        NOTE: These values are affected by the PCI initialization.
+    */
+
+    RTL_IO_INT(RTL_RXBUF)   = 0x01840000;
+    RTL_IO_INT(RTL_TXADDR0) = 0x01846000;
+    RTL_IO_INT(RTL_TXADDR1) = 0x01846800;
+    RTL_IO_INT(RTL_TXADDR2) = 0x01847000;
+    RTL_IO_INT(RTL_TXADDR3) = 0x01847800;
+
+    /*
+        STAGE: [STEP 6] Enable and latch on chip interrupts.
+    */
+
+    if (!(rtl_int_configure ()))
+    {
+        rtl_stop ();
+        rtl_soft_reset ();
+
+        return FALSE;
+    }
+
+    /*
+        STAGE: [STEP 7] Enable RX and TX functionality.
+    */
+
+    rtl_start ();
+
+    /*
+        STAGE: [STEP 8] Finish module initialization.
+    */
+
+    rtl_cache_mac ();
+
+    rtl_info.cur_rx = rtl_info.cur_tx = 0;
+
+    return TRUE;
+}
+
 /* NOTE: Interface to the ETHERNET LAYER. */
 
 bool rtl_init (void)
@@ -520,59 +577,4 @@ uint8* rtl_mac (void)
     /* NOTE: This is cached back in the rtl_init () sequence. */
 
     return rtl_info.mac;
-}
-
-/* TODO: Cleanup for new system. */
-
-void* rtl_irq_handler (void *passer, register_stack *stack, void *current_vector)
-{
-    uint32 intr;
-
-    /*
-        STAGE: First, identify and clear out the interrupts.
-        
-        We don't want it to *keep* yelling at us.
-    */
-
-    intr = RTL_IO_SHORT(RTL_INTRSTATUS);
-    RTL_IO_SHORT(RTL_INTRSTATUS) = intr;
-
-    /*
-        STAGE: Handle overflows relatively harshly.
-        
-        CREDIT: I'm taking this solution from the BSD driver.
-    */
-
-    if (intr & RTL_INT_RXBUF_OVERFLOW)
-    {
-        rtl_stop ();
-        
-        rtl_info.cur_rx = RTL_IO_SHORT(RTL_RXBUFHEAD) % RX_BUFFER_LEN;
-        RTL_IO_SHORT(RTL_RXBUFTAIL) = rtl_info.cur_rx - RX_BUFFER_THRESHOLD;
-
-        rtl_start ();
-    }
-    /* STAGE: If we're performing a link change, finish up. */
-    else if (intr & RTL_INT_LINKCHG)
-    {
-        static bool link_stable = FALSE;
-
-        if (link_stable)
-        {
-            rtl_negotiate_media ();
-
-            link_stable = FALSE;
-        }
-        else
-        {
-            link_stable = TRUE;
-        }
-    }
-    /* STAGE: Check if we received frames. */
-    else if (intr & RTL_INT_RX_OK)
-    {
-        rtl_rx_all ();
-    }
-
-    return my_exception_finish;
 }

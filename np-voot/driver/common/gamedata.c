@@ -1,6 +1,6 @@
 /*  gamedata.c
 
-    $Id: gamedata.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: gamedata.c,v 1.3 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -9,29 +9,8 @@ DESCRIPTION
 */
 
 #include "vars.h"
-#include "util.h"
-#include "searchmem.h"
-#include "system.h"
 
 #include "gamedata.h"
-
-bool replace_game_text (const char *key, const char *repl)
-{
-    char   *repl_string;
-
-    repl_string = search_sysmem_at (key, strlen (key), (const uint8 *) GAME_MEM_START, (const uint8 *) SYS_MEM_END);
-
-    if (repl_string)
-    {
-        strncpy (repl_string, repl, strlen (key) + 1);
-
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
-}
 
 void gamedata_enable_debug(void)
 {

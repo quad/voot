@@ -1,6 +1,6 @@
 /*  asic.c
 
-    $Id: asic.c,v 1.3 2002/06/23 03:22:52 quad Exp $
+    $Id: asic.c,v 1.4 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -8,12 +8,10 @@ DESCRIPTION
 
 TODO
 
-    Convert the code to an intelligent chaining method of recognizing the
-    interrupts.
-
     Reinitialize the ASIC when reinitializing the VBR table.
 
-    Ensure duplicate table entries cannot be added.
+    Ensure ASIC handlers cannot be installed unless the module is
+    initialized.
 
 */
 
@@ -25,8 +23,9 @@ TODO
 #include "asic.h"
 
 static asic_lookup_table    asic_table;
+static exception_handler_f  old_handler;
 
-uint32 asic_add_handler (const asic_lookup_table_entry *new_entry)
+bool asic_add_handler (const asic_lookup_table_entry *new_entry, asic_handler_f *parent_handler)
 {
     uint32  index;
 
@@ -34,9 +33,24 @@ uint32 asic_add_handler (const asic_lookup_table_entry *new_entry)
 
     for (index = 0; index < ASIC_TABLE_SIZE; index++)
     {
-        if (!(asic_table.table[index].irq))
+        if ((asic_table.table[index].irq == new_entry->irq) &&
+            (asic_table.table[index].mask0 == new_entry->mask0) && (asic_table.table[index].mask1 == new_entry->mask1))
+        {
+            *parent_handler = asic_table.table[index].handler;
+
+            asic_table.table[index].handler = new_entry->handler;
+
+            return TRUE;
+        }
+        else if (!(asic_table.table[index].irq))
         {
             volatile uint32    *mask_base;
+
+            /* STAGE: Ensure there isn't any parent handler given back. */
+
+            *parent_handler = NULL;
+
+            /* STAGE: Determine which ASIC IRQ bank, if any, the given mask will be enabled on. */
 
             switch (new_entry->irq)
             {
@@ -52,23 +66,50 @@ uint32 asic_add_handler (const asic_lookup_table_entry *new_entry)
                     mask_base = ASIC_IRQ13_MASK;
                     break;
 
+                case EXP_CODE_ALL :
+                {
+                    /* STAGE: Mask the first two ASIC banks. */
+
+                    mask_base = ASIC_IRQ9_MASK;
+                    mask_base[0] |= new_entry->mask0;
+                    mask_base[1] |= new_entry->mask1;
+
+                    mask_base = ASIC_IRQ11_MASK;
+                    mask_base[0] |= new_entry->mask0;
+                    mask_base[1] |= new_entry->mask1;
+
+                    /* STAGE: Have the code further on take care of the last mask. */
+
+                    mask_base = ASIC_IRQ13_MASK;
+
+                    break;
+                }
+
+                /* STAGE: Assume the caller knows what the hell they're doing. */
+
                 default :
-                    return 0;
+                    mask_base = NULL;
+                    break;
             }
 
-            mask_base[0] |= new_entry->mask0;
-            mask_base[1] |= new_entry->mask1;
+            /* STAGE: Enable the selected G2 IRQs on the ASIC. */
+
+            if (mask_base)
+                mask_base[0] |= new_entry->mask0;
+                mask_base[1] |= new_entry->mask1;
+
+            /* STAGE: Copy the new entry into our table. */
 
             memcpy (&asic_table.table[index], new_entry, sizeof (asic_lookup_table_entry));
 
-            return index + 1;
+            return TRUE;
         }
     }
 
-    return 0;
+    return FALSE;
 }
 
-void* asic_handle_exception (register_stack *stack, void *current_vector)
+static void* asic_handle_exception (register_stack *stack, void *current_vector)
 {
     uint32  index;
     uint32  code;
@@ -108,7 +149,12 @@ void* asic_handle_exception (register_stack *stack, void *current_vector)
         }
     }
 
-    return new_vector;
+    /* STAGE: Return properly, depending if there is an older handler. */
+
+    if (old_handler)
+        return old_handler (stack, new_vector);
+    else
+        return new_vector;
 }
 
 void asic_init_handler (void)
@@ -120,21 +166,14 @@ void asic_init_handler (void)
     new_entry.type      = EXP_TYPE_INT;
     new_entry.handler   = asic_handle_exception;
 
-    /* STAGE: ASIC handling of interrupt 13. */
+    /*
+        STAGE: ASIC handling of all interrupts.
+    
+        NOTE: In our case, the handler itself checks the exception code and
+        matches it to the interrupt.
+    */
 
-    new_entry.code      = EXP_CODE_INT13;
+    new_entry.code      = EXP_CODE_ALL;
 
-    exception_add_handler (&new_entry);
-
-    /* STAGE: ASIC handling of interrupt 11. */
-
-    new_entry.code      = EXP_CODE_INT11;
-
-    exception_add_handler (&new_entry);
-
-    /* STAGE: ASIC handling of interrupt 9. */
-
-    new_entry.code      = EXP_CODE_INT9;
-
-    exception_add_handler (&new_entry);
+    exception_add_handler (&new_entry, &old_handler);
 }

@@ -1,11 +1,19 @@
 /*  printf.c
 
-    $Id: printf.c,v 1.2 2002/06/13 02:05:27 quad Exp $
+    $Id: printf.c,v 1.3 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
-    An implementation of printf. I stole it from somewhere. I can't remember
-    where though. Sorry!
+    An implementation of printf.
+
+CREDIT
+
+    I stole it from somewhere. I can't remember where though. Sorry!
+
+TODO
+
+    Cleanup the printf implementation. See if it's possible to compress its
+    size - remove textualization modes we don't need.
 
 */
 
@@ -28,7 +36,7 @@ static int32 skip_atoi (const char **s)
     return i;
 }
 
-char* number (char *str, long num, int32 base, int32 size, int32 precision, int32 type)
+char* printf_number (char *str, long num, int32 base, int32 size, int32 precision, int32 type)
 {
     int32       i;
     char        c;
@@ -88,7 +96,7 @@ char* number (char *str, long num, int32 base, int32 size, int32 precision, int3
         precision = i;
     size -= precision;
 
-    if (!(type & (N_ZEROPAD+N_LEFT)))
+    if (!(type & (N_ZEROPAD + N_LEFT)))
     {
         while (size-- > 0)
             *str++ = ' ';
@@ -136,7 +144,7 @@ int32 vsnprintf (char *buf, uint32 size, const char *fmt, va_list args)
     int32           base;
     char           *str;
     const char     *s;
-    int32           flags;          /* NOTE: Flags to number (). */
+    int32           flags;          /* NOTE: Flags to printf_number (). */
 
     int32           field_width;    /* NOTE: Width of output field. */
     int32           precision;      /* NOTE: min. # of digits for integers; max number of chars for from string. */
@@ -287,7 +295,7 @@ int32 vsnprintf (char *buf, uint32 size, const char *fmt, va_list args)
                     flags |= N_ZEROPAD;
                 }
 
-                str = number (str, (unsigned long) va_arg (args, void *), 16, field_width, precision, flags);
+                str = printf_number (str, (unsigned long) va_arg (args, void *), 16, field_width, precision, flags);
 
                 continue;
             }
@@ -360,19 +368,19 @@ int32 vsnprintf (char *buf, uint32 size, const char *fmt, va_list args)
         else if (qualifier == 'h')
         {
             /*
-                NOTE: The int16 should work, but I guess for some reason I
-                commented this out.
+                NOTE: The int16 should work, but the compiler promotes the
+                datatype and complains if I don't handle it directly.
             */
 
             if (flags & N_SIGN)
             {
                 // num = va_arg (args, int16);
-                num = va_arg (args, int);
+                num = va_arg (args, int32);
             }
             else
             {
                 // num = va_arg (args, uint16);
-                num = va_arg (args, unsigned int);
+                num = va_arg (args, uint32);
             }
         }
         else if (flags & N_SIGN)
@@ -386,7 +394,7 @@ int32 vsnprintf (char *buf, uint32 size, const char *fmt, va_list args)
 
         /* STAGE: And after all that work, actually convert the integer into text. */
 
-        str = number (str, num, base, field_width, precision, flags);
+        str = printf_number (str, num, base, field_width, precision, flags);
     }
 
     *str = '\0';

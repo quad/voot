@@ -1,6 +1,6 @@
 /*  searchmem.h
 
-    $Id: searchmem.h,v 1.1 2002/06/12 10:29:01 quad Exp $
+    $Id: searchmem.h,v 1.2 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -9,7 +9,8 @@
 
 /* NOTE: Module definitions. */
 
-uint8 * search_sysmem       (const uint8 *key, uint32 key_size);
-uint8 * search_sysmem_at    (const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
+void *  search_sysmem       (const uint8 *key, uint32 key_size);
+void *  search_gamemem      (const uint8 *key, uint32 key_size);
+void *  search_memory_at    (const uint8 *key, uint32 key_size, const uint8 *start_loc, const uint8 *end_loc);
 
 #endif

@@ -1,6 +1,6 @@
 /*  malloc.c
 
-    $Id: malloc.c,v 1.1 2002/06/12 10:29:01 quad Exp $
+    $Id: malloc.c,v 1.2 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -20,7 +20,7 @@ static const uint8  malloc_key[] = { 0xe6, 0x2f, 0xc6, 0x2f, 0xfc, 0x7f, 0x02, 0
 void malloc_init (void)
 {
     if (!malloc_root || memcmp (malloc_root, malloc_key, sizeof (malloc_key)))
-        malloc_root = search_sysmem (malloc_key, sizeof (malloc_key));
+        malloc_root = search_gamemem (malloc_key, sizeof (malloc_key));
 }
 
 void malloc_stat (uint32 *freesize, uint32 *max_freesize)

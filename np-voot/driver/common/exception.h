@@ -1,6 +1,6 @@
 /*  exception.h 
 
-    $Id: exception.h,v 1.4 2002/06/23 03:22:52 quad Exp $
+    $Id: exception.h,v 1.5 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -10,13 +10,16 @@
 #include "vars.h"
 #include "system.h"
 
-#define EXP_TABLE_SIZE  7
+#define EXP_TABLE_SIZE  5
+
+typedef void * (* exception_handler_f)  (register_stack *, void *);
 
 typedef struct
 {
-    uint32  type;
-    uint32  code;
-    void    *(*handler)(register_stack *, void *);
+    uint32              type;
+    uint32              code;
+
+    exception_handler_f handler;
 } exception_table_entry;
 
 typedef struct
@@ -40,7 +43,8 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-uint32  exception_add_handler   (const exception_table_entry *new_entry);
+void    exception_init          (void);
+bool    exception_add_handler   (const exception_table_entry *new_entry, exception_handler_f *parent_handler);
 void *  exception_handler       (register_stack *stack);
 
 #endif

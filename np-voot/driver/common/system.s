@@ -1,6 +1,6 @@
 !   system.s
 !
-!   $Id: system.s,v 1.3 2002/06/23 03:22:52 quad Exp $
+!   $Id: system.s,v 1.4 2002/06/29 12:57:04 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -18,6 +18,7 @@
     .global _sr
     .global _fpscr
     .global _gbr
+    .global _sgr
     .global _flush_cache
     .global _ubc_wait
 
@@ -68,6 +69,11 @@ _fpscr:
 
 _gbr:
     stc     GBR, r0
+    rts
+    nop
+
+_sgr:
+    stc     SGR, r0
     rts
     nop
 

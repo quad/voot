@@ -1,6 +1,6 @@
 /*  printf.h
 
-    $Id: printf.h,v 1.2 2002/06/20 10:20:05 quad Exp $
+    $Id: printf.h,v 1.3 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -23,8 +23,8 @@
 
 /* NOTE: Module definitions. */
 
-char *  number      (char *str, long num, int32 base, int32 size, int32 precision, int32 type);
-int     vsnprintf   (char *buf, uint32 size, const char *fmt, va_list args);
-int     snprintf    (char *buf, uint32 size, const char *fmt, ...);
+char *  printf_number   (char *str, long num, int32 base, int32 size, int32 precision, int32 type);
+int     vsnprintf       (char *buf, uint32 size, const char *fmt, va_list args);
+int     snprintf        (char *buf, uint32 size, const char *fmt, ...);
 
 #endif

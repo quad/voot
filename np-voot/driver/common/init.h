@@ -1,6 +1,6 @@
 /*  init.h
 
-    $Id: init.h,v 1.3 2002/06/23 03:22:52 quad Exp $
+    $Id: init.h,v 1.4 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -14,6 +14,5 @@ extern uint8    *end;
 
 void    np_initialize       (void *arg1, void *arg2, void *arg3, void *arg4)    __attribute__ ((noreturn));
 void    np_configure        (void);
-void    handle_bios_vector  (void);
 
 #endif

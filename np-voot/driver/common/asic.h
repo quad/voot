@@ -1,6 +1,6 @@
 /*  asic.h
 
-    $Id: asic.h,v 1.4 2002/06/23 03:22:52 quad Exp $
+    $Id: asic.h,v 1.5 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -10,7 +10,7 @@
 #include "vars.h"
 #include "system.h"
 
-#define ASIC_TABLE_SIZE     4
+#define ASIC_TABLE_SIZE     5
 
 #define ASIC_BASE           (0xa05f6900)
 
@@ -47,14 +47,19 @@
 #define ASIC_MASK1_MODEM            0x04        /* Modem ? */
 #define ASIC_MASK1_PCI              0x08        /* Expansion port (PCI Bridge) */
 
+typedef void * (* asic_handler_f)   (void *, register_stack *, void *);
+
 typedef struct
 {
-    uint32  mask0, mask1;
-    uint32  irq;
+    uint32          mask0;
+    uint32          mask1;
+    uint32          irq;
 
-    bool    clear_irq;
+    asic_handler_f  handler;
 
-    void   *(*handler)(void *, register_stack *, void *);
+    /* NOTE: This is only used internally, and should never be set. */
+
+    bool            clear_irq;
 } asic_lookup_table_entry;
 
 typedef struct
@@ -66,8 +71,7 @@ typedef struct
 
 /* NOTE: Module definitions. */
 
-uint32  asic_add_handler        (const asic_lookup_table_entry *new_entry);
-void *  asic_handle_exception   (register_stack *stack, void *current_vector);
+bool    asic_add_handler        (const asic_lookup_table_entry *new_entry, asic_handler_f *parent_handler);
 void    asic_init_handler       (void);
 
 #endif

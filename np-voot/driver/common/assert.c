@@ -1,6 +1,6 @@
 /*  assert.c
 
-    $Id: assert.c,v 1.2 2002/06/12 09:33:51 quad Exp $
+    $Id: assert.c,v 1.3 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -93,7 +93,7 @@ void __assert (const char *module, int32 line, const char *expr, const char *fun
     /* STAGE: The line number of the assertion. */
 
     memset (line_msg, NULL, sizeof (line_msg));
-    number (line_msg, line, 10, sizeof (line_msg), 0, N_LEFT);
+    printf_number (line_msg, line, 10, sizeof (line_msg), 0, N_LEFT);
 
     assert_puts ("Line Number:");
     assert_puts (line_msg);
@@ -107,8 +107,10 @@ void __assert (const char *module, int32 line, const char *expr, const char *fun
 
     if (extra)
     {
+        /* STAGE: Convert the extra number to ASCII for rendering. */
+
         memset (line_msg, NULL, sizeof (line_msg));
-        number (line_msg, extra, 16, sizeof (line_msg), 0, N_LEFT);
+        printf_number (line_msg, extra, 16, sizeof (line_msg), 0, N_LEFT);
 
         assert_puts ("Message:");
         assert_puts (line_msg);

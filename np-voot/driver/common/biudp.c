@@ -1,6 +1,6 @@
 /*  biudp.c
 
-    $Id: biudp.c,v 1.7 2002/06/24 00:19:17 quad Exp $
+    $Id: biudp.c,v 1.8 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -12,6 +12,7 @@ DESCRIPTION
 #include "ether.h"
 #include "util.h"
 #include "malloc.h"
+#include "video.h"
 
 #include "biudp.h"
 
@@ -129,6 +130,8 @@ bool biudp_write_buffer (const uint8 *in_data, uint32 in_data_length)
 
         if (!biudp_write_segment (in_data_segment, BIUDP_SEGMENT_SIZE))
             return FALSE;
+
+        video_waitvbl ();
     }
 
     /* STAGE: Handle any remaining data... */

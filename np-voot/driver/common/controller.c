@@ -1,6 +1,6 @@
 /*  controller.c
 
-    $Id: controller.c,v 1.2 2002/06/12 10:29:01 quad Exp $
+    $Id: controller.c,v 1.3 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -21,7 +21,7 @@ static const uint8  controller_key[] = { 0x34, 0xe0, 0x04, 0xd3, 0x07, 0x04, 0x1
 void controller_init (void)
 {
     if (!controller_root || memcmp (controller_root, controller_key, sizeof (controller_key)))
-        controller_root = search_sysmem (controller_key, sizeof (controller_key));
+        controller_root = search_gamemem (controller_key, sizeof (controller_key));
 }
 
 controller_status* check_controller_info (controller_port port)

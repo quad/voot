@@ -1,6 +1,6 @@
 /*  rtl8139c.h
 
-    $Id: rtl8139c.h,v 1.5 2002/06/24 00:19:17 quad Exp $
+    $Id: rtl8139c.h,v 1.6 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -10,6 +10,7 @@
 #include "vars.h"
 #include "ether.h"
 #include "system.h"
+#include "asic.h"
 
 /* NOTE: PCI/G2 register definitions. */
 
@@ -171,11 +172,11 @@
 
 typedef struct
 {
-    uint16  cur_rx;                             /* Current Rx DMA buffer tail index */
-    uint16  cur_tx;
-    uint8   mac[ETHER_MAC_SIZE];                /* Mac address */
+    uint16          cur_rx;                 /* NOTE: Current Rx DMA buffer tail index. */
+    uint16          cur_tx;                 /* NOTE: Current Tx descriptor. */
+    uint8           mac[ETHER_MAC_SIZE];    /* NOTE: Cached MAC address. */
 
-    uint32  hdl_tbl_index;                      /* Exception handler table index */
+    asic_handler_f  old_rtl_handler;
 } rtl_t;
 
 /* NOTE: Module definitions. */
@@ -183,6 +184,5 @@ typedef struct
 bool    rtl_init        (void);
 bool    rtl_tx          (const uint8 *header, uint32 header_length, const uint8 *data, uint32 data_length);
 uint8 * rtl_mac         (void);
-void *  rtl_irq_handler (void *passer, register_stack *stack, void *current_vector);
 
 #endif

@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.5 2002/06/23 03:22:52 quad Exp $
+    $Id: system.h,v 1.6 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -40,22 +40,6 @@
 
 #define UBC_R_BRCR      (REGISTER(short)    (_UBC_BASE + 0x20))
 
-/* NOTE: UBC register bitmasks. */
-
-#define UBC_BAMR_NOASID     (1<<2)
-#define UBC_BAMR_MASK_10    (1)
-#define UBC_BBR_OPERAND     (1<<5)
-#define UBC_BBR_INSTRUCT    (1<<4)
-#define UBC_BBR_WRITE       (1<<3)
-#define UBC_BBR_READ        (1<<2)
-#define UBC_BBR_UNI         (UBC_BBR_OPERAND | UBC_BBR_INSTRUCT)
-#define UBC_BBR_RW          (UBC_BBR_WRITE | UBC_BBR_READ)
-#define UBC_BRCR_CMFA       (1<<15)
-#define UBC_BRCR_CMFB       (1<<14)
-#define UBC_BRCR_PCBA       (1<<10)
-#define UBC_BRCR_PCBB       (1<<6)
-#define UBC_BRCR_UBDE       (1)
-
 /* NOTE: Exception/Interrupt registers. */
 
 #define REG_EXPEVT          (REGISTER(uint32) (0xFF000024))
@@ -67,6 +51,7 @@
 #define EXP_TYPE_GEN        1
 #define EXP_TYPE_CACHE      2
 #define EXP_TYPE_INT        3
+#define EXP_TYPE_ALL        255
 
 /* NOTE: SH4 exception codes. */
 
@@ -76,6 +61,7 @@
 #define EXP_CODE_TRAP       0x160
 #define EXP_CODE_UBC        0x1E0
 #define EXP_CODE_RXI        0x720
+#define EXP_CODE_ALL        0xFFE
 #define EXP_CODE_BAD        0xFFF
 
 /* NOTE: VBR vectors. */
@@ -86,7 +72,7 @@
 
 /* NOTE: System-level memory ranges. */
 
-#define SYS_MEM_START       0x8C010000
+#define SYS_MEM_START       0x8C000000
 #define SYS_MEM_END         0x8CFFFFFF
 
 typedef struct
@@ -145,6 +131,7 @@ extern uint32   r15         (void);
 extern uint32   sr          (void);
 extern uint32   fpscr       (void);
 extern uint32   gbr         (void);
+extern void *   sgr         (void);
 
 extern void     flush_cache (void);
 

@@ -1,6 +1,6 @@
 # Common driver library Makefile.
 #
-# $Id: Makefile,v 1.7 2002/06/24 00:58:04 quad Exp $
+# $Id: Makefile,v 1.8 2002/06/29 12:57:04 quad Exp $
 
 DRIVER_TARGET = libdriver-common
 
@@ -27,6 +27,9 @@ DRIVER_OBJS += heartbeat.o
 
 # VOOT internal accessors
 DRIVER_OBJS += malloc.o controller.o vmu.o
+
+# VOOT animation/render cycle patch
+DRIVER_OBJS += anim.o
 
 all: $(DRIVER_TARGET).a
 

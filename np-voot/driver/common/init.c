@@ -1,6 +1,6 @@
 /*  main.c
 
-    $Id: init.c,v 1.5 2002/06/23 03:22:52 quad Exp $
+    $Id: init.c,v 1.6 2002/06/29 12:57:04 quad Exp $
 
 DESCRIPTION
 
@@ -8,24 +8,39 @@ DESCRIPTION
 
     The "np_init" function is the receiver of the loader's second stage function call.
 
-    The "handle_bios_vector" function is called by the BIOS during the boot cycle.
-
     The "np_configure" function is the handler of main initializationm,
     after VOOT has been loaded.
 
 */
 
 #include "vars.h"
-#include "ubc.h"
+#include "exception.h"
 #include "exception-lowlevel.h"
-#include "video.h"
 #include "util.h"
-#include "assert.h"
-#include "malloc.h"
 #include "biosfont.h"
+#include "malloc.h"
+#include "assert.h"
 #include "callbacks.h"
 
 #include "init.h"
+
+static void handle_bios_vector (void)
+{
+    /* STAGE: Make sure the BIOS hasn't done anything funny. */
+
+    assert_x (dbr () == ubc_handler_lowlevel, dbr ());
+
+    /* STAGE: It's nice to not have a corrupted BSS segment. */
+ 
+    assert_x ((uint8 *) vbr () >= end, vbr ());
+
+    /*
+        STAGE: Give the module configuration core a chance to do something
+        wonky.
+    */
+
+    module_bios_vector ();
+}
 
 /*
     NOTE: We can only support four arguments. Any further would require
@@ -34,14 +49,9 @@ DESCRIPTION
 
 void np_initialize (void *arg1, void *arg2, void *arg3, void *arg4)
 {
-    /* STAGE: Initialize the UBC. */
+    /* STAGE: Initialize the exception handling chain. */
 
-    ubc_init ();
-
-    /* STAGE: Configure the UBC for breaking on PVR pageflip. */
-
-    ubc_configure_channel (UBC_CHANNEL_A, VIDEO_FB_BUFFER, UBC_BBR_WRITE | UBC_BBR_OPERAND);
-    dbr_set (ubc_handler_lowlevel);
+    exception_init ();
 
     /* STAGE: Give the module initialization core a chance for overrides. */
 
@@ -77,22 +87,4 @@ void np_configure (void)
     /* STAGE: Give the module configuration core a chance to set itself up. */
 
     module_configure ();
-}
-
-void handle_bios_vector (void)
-{
-    /* STAGE: Make sure the BIOS hasn't done anything funny. */
-
-    assert_x (dbr () == ubc_handler_lowlevel, dbr ());
-
-    /* STAGE: It's nice to not have a corrupted BSS segment. */
- 
-    assert_x ((uint8 *) vbr () >= end, vbr ());
-
-    /*
-        STAGE: Give the module configuration core a chance to do something
-        wonky.
-    */
-
-    module_bios_vector ();
 }

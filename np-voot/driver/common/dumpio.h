@@ -1,6 +1,6 @@
 /*  dumpio.h
 
-    $Id: dumpio.h,v 1.3 2002/06/20 10:20:04 quad Exp $
+    $Id: dumpio.h,v 1.4 2002/06/29 12:57:04 quad Exp $
 
 */
 
@@ -29,7 +29,6 @@ void    dump_buffer         (const uint8 *in_data, uint32 in_data_length);
 void    dump_add            (const uint8 *in_data, uint32 in_data_size);
 void    dump_start          (uint32 target_loc);
 uint32  dump_stop           (void);
-bool    dump_packet_handler (voot_packet *packet);
 void    dump_init           (void);
 
 #endif
