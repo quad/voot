@@ -18,8 +18,8 @@ OBJS += util.o printf.o
 OBJS += biosfont.o assert.o
 
 # Hardware Network Layer
-OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
-CC += -DNETWORK_SUPPORT
+#OBJS += rtl8139c.o bswap.o net.o biudp.o voot.o dumpio.o
+#CC += -DNETWORK_SUPPORT
 
 # Gamedata interaction.
 #OBJS += gamedata.o
