@@ -154,6 +154,7 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     /* STAGE: Construct the UDP psuedo-header. */
     udp_top.source_ip = ip->source;
     udp_top.dest_ip = ip->dest;
+    udp_top.zero = 0;
     udp_top.protocol = ip->protocol;
     udp_top.length = udp->length;
 
@@ -254,7 +255,7 @@ void ip_handle_packet(ether_info_packet_t *frame)
 
 static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
-
+    ubc_serial_write_str("[UBC] Received UDP ECHO request.\r\n");
 }
 
 void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)
@@ -263,22 +264,24 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
 
     udp = (udp_header_t *) (frame->data + ip_header_length);
 
-#ifdef UDP_CHECKSUM
-
-    /* STAGE: UDP header checksum !!! NOT WORKING !!! */
-    temp_checksum = udp->checksum;
+    /* STAGE: UDP header checksum */
     if (udp->checksum)
     {
-        udp->checksum = 0;
-        udp->checksum = ip_checksum((uint16 *) udp, udp_data_length/2);
+        uint16 checksum;
 
-        if (!udp->checksum)     /* If the honest checksum is 0, then change to all bits on. */
-            udp->checksum--;
+        checksum = udp_checksum((ip_header_t *) (frame->data), ip_header_length);
+
+        if (!checksum)  /* If the honest checksum is 0, then change to all bits on. */
+            checksum--;
+
+        if (checksum != udp->checksum)
+        {
+            ubc_serial_write_str("[UBC] Bad UDP checksum.\r\n");
+            return;
+        }
     }
-    if (temp_checksum != udp->checksum)
-        return;
-
-#endif
+    else
+        ubc_serial_write_str("[UBC] UDP packet missing checksum.\r\n");
 
     /* STAGE: Handle UDP packets based on port. */
     switch(udp->dest)
@@ -289,6 +292,7 @@ void udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint
 
         case 5007:  /* now the official VOOT network protocol port. */
         default:    /* Drop on the floor any network data we couldn't possibly understand. */
+            ubc_serial_write_str("[UBC] UDP packet to unknown port!\r\n");
             break;
     }
 }
