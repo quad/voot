@@ -1,6 +1,6 @@
 !   exception-lowlevel.s
 !
-!   $Id: exception-lowlevel.s,v 1.5 2002/11/14 06:09:48 quad Exp $
+!   $Id: exception-lowlevel.s,v 1.6 2002/11/14 20:56:02 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -141,6 +141,7 @@ general_exception_handler:
     nop
 
     .align  4
+
 general_handler:
     .long   general_exception_xt
 
@@ -155,9 +156,8 @@ _my_exception_finish:
     rte
     nop
 
-! All 32-bit reference variables go after this. They need to be 4-byte
-! aligned, I guess.
     .align  4
+
 hdl_except:
     .long   _exception_handler
 
@@ -181,6 +181,7 @@ cache_exception_handler:
     nop
 
     .align  4
+
 cache_handler:
     .long   general_exception_xt
 
@@ -210,6 +211,7 @@ interrupt_exception_handler:
     nop
 
     .align  4
+
 interrupt_handler:
     .long   general_exception_xt
 

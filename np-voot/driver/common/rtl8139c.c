@@ -1,6 +1,6 @@
 /*  rtl8139c.c
 
-    $Id: rtl8139c.c,v 1.15 2002/11/12 02:00:50 quad Exp $
+    $Id: rtl8139c.c,v 1.16 2002/11/14 20:56:03 quad Exp $
 
 DESCRIPTION
 
@@ -19,10 +19,9 @@ DESCRIPTION
 
 #include "vars.h"
 #include "util.h"
-#include "malloc.h"
 #include "asic.h"
 
-#include "lwip/net.h"
+#include <net.h>
 
 #include "rtl8139c.h"
 

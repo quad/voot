@@ -1,6 +1,6 @@
 /*  dumpio.c
 
-    $Id: dumpio.c,v 1.10 2002/11/12 19:58:02 quad Exp $
+    $Id: dumpio.c,v 1.11 2002/11/14 20:56:02 quad Exp $
 
 DESCRIPTION
 
@@ -25,7 +25,7 @@ TODO
 #include "system.h"
 #include "video.h"
 
-#include "lwip/voot.h"
+#include <voot.h>
 
 #include "dumpio.h"
 

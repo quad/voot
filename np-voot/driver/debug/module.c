@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.14 2002/11/14 06:08:57 quad Exp $
+    $Id: module.c,v 1.15 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -25,7 +25,6 @@ NOTES
 
 #include <vars.h>
 #include <anim.h>
-#include <timer.h>
 
 #include <lwip/net.h>
 #include <lwip/voot.h>

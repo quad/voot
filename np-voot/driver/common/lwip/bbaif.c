@@ -1,6 +1,6 @@
 /*  bbaif.c
 
-    $Id: bbaif.c,v 1.4 2002/11/12 08:52:35 quad Exp $
+    $Id: bbaif.c,v 1.5 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -24,13 +24,12 @@ TODO
 #include <vars.h>
 #include <rtl8139c.h>
 
-#include <lwip/opt.h>
-#include <lwip/def.h>
-#include <lwip/mem.h>
-#include <lwip/pbuf.h>
-#include <lwip/sys.h>
-
-#include <netif/etharp.h>
+#include "lwip/opt.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/sys.h"
+#include "netif/etharp.h"
 
 #include "bbaif.h"
 
@@ -232,7 +231,8 @@ void bbaif_input (struct netif *netif)
 
             TODO: This may be a bug waiting to happen! While we've just
             received a packet, there is no guarantee we can transmit. The
-            current BBA TX logic will block until it can transmit - however, this won't always remain true.
+            current BBA TX logic will block until it can transmit - however,
+            this won't always remain true.
 
             If possible, I would like to switch to a interrupt operated TX
             system with a queue for the packets.

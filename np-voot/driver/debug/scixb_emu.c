@@ -1,6 +1,6 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.3 2002/11/14 06:08:57 quad Exp $
+    $Id: scixb_emu.c,v 1.4 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -172,8 +172,8 @@ static void my_anim_chain (uint16 anim_mode_a, uint16 anim_mode_b)
         }
     }
 
-    anim_printf_debug (0.0, 15.0, "vf->size = %u", voot_fifo->size);
-    anim_printf_debug (0.0, 30.0, "vf->head end = [%u %u]", voot_fifo->head, voot_fifo->end);
+    if (init_link_lock && init_link_lock_time >= time ())
+        anim_printf_debug (0.0, 15.0, "Link init. timeout remaining: %us", init_link_lock_time - time ());
 
     if (old_anim_chain)
         return old_anim_chain (anim_mode_a, anim_mode_b);
@@ -235,6 +235,7 @@ static void* trap_handler (register_stack *stack, void *current_vector)
                     {
                         stack->r0   = 1;
                         stack->spc  = stack->pr;
+                        voot_debug ("init_link locked! [%u remaining]", init_link_lock_time - time ());
                     }
                     else
                     {

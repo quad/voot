@@ -1,6 +1,6 @@
 !   biosfont-lowlevel.s
 !
-!   $Id: biosfont-lowlevel.s,v 1.2 2002/06/24 01:09:41 quad Exp $
+!   $Id: biosfont-lowlevel.s,v 1.3 2002/11/14 20:56:02 quad Exp $
 !
 ! DESCRIPTION
 !
@@ -17,7 +17,7 @@ _bfont_bios:
     jmp     @r0
     mov     r4, r1
 
-    .align 4
+    .align  4
 
 syscall_b4:
     .long   0x8c0000b4

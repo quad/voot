@@ -154,7 +154,6 @@ a lot of data that needs to be copied, this should be set high. */
 
 
 /* ---------- Statistics options ---------- */
-/*#define STATS*/
 
 #ifdef STATS
 #define LINK_STATS

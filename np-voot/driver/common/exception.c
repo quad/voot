@@ -1,6 +1,6 @@
 /*  exception.c
 
-    $Id: exception.c,v 1.9 2002/08/04 05:48:04 quad Exp $
+    $Id: exception.c,v 1.10 2002/11/14 20:56:03 quad Exp $
 
 DESCRIPTION
 
@@ -141,7 +141,7 @@ void* exception_handler (register_stack *stack)
 
     /* STAGE: Ensure vbr buffer is set... */
 
-    vbr_buffer = vbr ();
+    vbr_buffer = stack->vbr;
 
     /* STAGE: Increase our counters and set the proper back_vectors. */
 

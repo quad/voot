@@ -1,6 +1,6 @@
 /*  voot.c
 
-    $Id: voot.c,v 1.1 2002/11/12 19:58:30 quad Exp $
+    $Id: voot.c,v 1.2 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -13,6 +13,8 @@ TODO
     Write a better packet handler chain function. Something more general and
     portable to other handlers.
 
+    Handle initialization cleaner!
+
 */
 
 #include <vars.h>
@@ -23,8 +25,6 @@ TODO
 #include "lwip/udp.h"
 
 #include "voot.h"
-
-#include <assert.h>
 
 static voot_packet_handler_f    voot_packet_handler_chain = voot_packet_handle_default;
 static struct udp_pcb          *voot_pcb;
@@ -41,7 +41,7 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     if (p->len < sizeof (packet->header))
     {
-        assert (0);
+        pbuf_free (p);
         return;
     }
 
@@ -53,7 +53,7 @@ static void voot_handle_packet (void *arg, struct udp_pcb *upcb, struct pbuf *p,
 
     if (p->len < (sizeof (packet->header) + packet->header.size))
     {
-        assert (0);
+        pbuf_free (p);
         return;
     }
 
@@ -220,8 +220,6 @@ bool voot_send_command (uint8 type)
 void voot_init (void)
 {
     voot_pcb = udp_new ();
-
-    assert (voot_pcb);
 
     if (voot_pcb)
     {

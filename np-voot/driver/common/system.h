@@ -1,6 +1,6 @@
 /*  system.h
 
-    $Id: system.h,v 1.8 2002/11/14 06:09:48 quad Exp $
+    $Id: system.h,v 1.9 2002/11/14 20:56:03 quad Exp $
 
 */
 
@@ -123,9 +123,6 @@ typedef struct
 
 extern void *   dbr         (void);
 extern void     dbr_set     (const void *set);
-
-extern void *   vbr         (void);
-extern void     vbr_set     (const void *set);
 
 extern void *   sgr         (void);
 

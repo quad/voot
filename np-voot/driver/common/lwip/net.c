@@ -1,6 +1,6 @@
 /*  net.c
 
-    $Id: net.c,v 1.4 2002/11/14 06:09:48 quad Exp $
+    $Id: net.c,v 1.5 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -14,6 +14,9 @@ TODO
 
     Add support for modem via SLIP.
 
+    Handle cases of soft-reset flushing our malloc-able memory. (maybe
+    switch lwIP back into static memory mode)
+
 */
 
 #include <vars.h>
@@ -21,24 +24,14 @@ TODO
 #include <util.h>
 #include <timer.h>
 
-#include "lwip/debug.h"
+#include "bbaif.h"
 
 #include "lwip/mem.h"
 #include "lwip/memp.h"
-#include "lwip/sys.h"
-
-#include "lwip/stats.h"
-
-#include "lwip/ip.h"
 #include "lwip/udp.h"
-#include "lwip/tcp.h"
 #include "lwip/dhcp.h"
 
-#include "bbaif.h"
-
 #include "net.h"
-
-#include <assert.h>
 
 static anim_render_chain_f  old_anim_chain;
 

@@ -1,6 +1,6 @@
 /*  mem.c
 
-    $Id: mem.c,v 1.2 2002/11/12 02:00:55 quad Exp $
+    $Id: mem.c,v 1.3 2002/11/14 20:56:08 quad Exp $
 
 DESCRIPTION
 
@@ -13,30 +13,22 @@ TODO
 
 */
 
-#include <lwip/debug.h>
-
-#include <lwip/arch.h>
-#include <lwip/opt.h>
-#include <lwip/def.h>
-#include <lwip/mem.h>
-
-#include <lwip/sys.h>
-
-#include <lwip/stats.h>
-
 #include <vars.h>
 #include <malloc.h>
 
+#include "lwip/arch.h"
+#include "lwip/opt.h"
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/sys.h"
+#include "lwip/stats.h"
+
 void mem_init (void)
 {
-    uint32  freesize;
-    uint32  max_freesize;
-
     malloc_init ();
-    malloc_stat (&freesize, &max_freesize);
 
 #ifdef MEM_STATS
-    stats.mem.avail = max_freesize;
+    malloc_stat (&stats.mem.max, &stats.mem.avail);
 #endif /* MEM_STATS */
 }
 
