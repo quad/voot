@@ -35,6 +35,10 @@ CHANGELOG
     Mon Jan 21 20:03:46 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added proper pthread mutexing to the event queue.
 
+    Mon Jan 21 23:25:13 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
+        Added usage of fcntl for non-blocking IO because cygwin might
+        support it above MSG_NONBLOCK in recv().
+
 TODO
 
     Remove console system assumptions. All IO logic should be handled by the client itself.
@@ -47,6 +51,7 @@ TODO
 #include <netdb.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include <pthread.h>
 
 #include "voot.h"
@@ -156,7 +161,6 @@ int32 handle_npc_command(npc_command_t *command)
                     break;
 
                 case VOOT_PACKET_TYPE_DATA:
-                    fprintf(stderr, "[npc] DATA(slave): '%c'... [passing]\n", command->packet->buffer[0]);
                     voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
             
@@ -179,12 +183,10 @@ int32 handle_npc_command(npc_command_t *command)
                     break;
 
                 case VOOT_PACKET_TYPE_COMMAND:
-                    fprintf(stderr, "[npc] COMMAND(server): '%c'... [passing]\n", command->packet->buffer[0]);
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
 
                 case VOOT_PACKET_TYPE_DATA:
-                    fprintf(stderr, "[npc] DATA(server): '%c'... [passing]\n", command->packet->buffer[0]);
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
             
@@ -298,13 +300,18 @@ void* npc_io_check(void *in_arg)
 
             if (!packet)
             {
-                if (!recv(*socket, NULL, 0, MSG_DONTWAIT | MSG_PEEK | MSG_TRUNC))
+                fcntl(*socket, F_SETFL, O_NONBLOCK);
+                if (!recv(*socket, NULL, 0, MSG_PEEK))
                 {
+                    fcntl(*socket, F_SETFL, NULL);
                     out_type = type + 1;         /* this is a bad hack, but I'm essentially "closing" the socket for cleanup issues. */
                     poll_done = TRUE;
                 }
                 else
+                {
+                    fcntl(*socket, F_SETFL, NULL);
                     continue;          /* skip on the whole event sending. */
+                }
             }
             else
                 out_type = type;
