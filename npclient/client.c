@@ -344,11 +344,7 @@ void input_handler(char *line)
         system = npc_expose();
 
         /* Now parse simple commands. */
-        if (!strcmp(command, "c-inject"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
-        else if (!strcmp(command, "c-netstat"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_NETSTAT);
-        else if (!strcmp(command, "c-health"))
+        if (!strcmp(command, "c-health"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_HEALTH);
         else if (!strcmp(command, "c-time"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_TIME);
