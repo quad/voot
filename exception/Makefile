@@ -43,8 +43,9 @@ $(BIN).elf: $(OBJS)
 	$(OBJCOPY) -O binary $(BIN).elf $(BIN).bin
 	./scramble $(BIN).bin 1ST_READ.BIN
 
-IP.BIN: makeip
+IP.BIN: makeip logoinsert
 	./makeip ip.txt IP.BIN
+	./logoinsert netplay-sam.mr IP.BIN
 
 np-voot-slave.iso: 1ST_READ.BIN IP.BIN
 	mkisofs -l -V NPVOOTSLAVE -C 0,11702 -o temp.iso 1ST_READ.BIN IP.BIN
@@ -65,6 +66,9 @@ makeip:
 bin2c:
 	gcc -o bin2c bin2c.c
 
+logoinsert:
+	gcc -o logoinsert tools/logotools/logoinsert.c
+
 clean:
 	make -C 2ndstage clean
 	-rm -f 2ndstage.c
@@ -77,7 +81,7 @@ mrproper: clean
 	make -C 2ndstage mrproper
 	-rm -f *.bin *.srec
 	-rm -f *~
-	-rm -f scramble makeip bin2c
+	-rm -f scramble makeip bin2c logoinsert
 
 run: $(BIN).bin
 	dc-tool -n -x $(BIN).elf
