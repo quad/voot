@@ -50,7 +50,7 @@ static void init_vbr_table(void)
     /* STAGE: !!! Install handlers for the other exception types OR remove
         the alternative exception type handlers. */
 
-    /* STAGE: Add our magic sprinkles of evil to the VOOT VBR. */
+    /* STAGE: INTERRUPT magic sprinkles of evil to the VOOT VBR. */
     memcpy(VBR_INT(vbr_buffer) - (interrupt_sub_handler_base - interrupt_sub_handler),
             interrupt_sub_handler,
             interrupt_sub_handler_end - interrupt_sub_handler);

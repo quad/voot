@@ -1,12 +1,10 @@
     .section .text
 
-    .global _my_vbr_table
-    .global _my_vbr_table_end
     .global _exception_handler_lowlevel
-    .global _my_exception_finish
     .global _general_sub_handler
     .global _general_sub_handler_base
     .global _general_sub_handler_end
+    .global _my_exception_finish
     .global _cache_sub_handler
     .global _cache_sub_handler_base
     .global _cache_sub_handler_end
@@ -15,42 +13,10 @@
     .global _interrupt_sub_handler_end
     .global _ubc_wait
 
-_my_vbr_table:
-    .long   0
-
-!
-! wait enough instructions for the UBC to be refreshed
-!
-
-_ubc_wait:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    rts
-    nop
-
 !
 ! HANDLE GENERAL EXCEPTIONS
 !
 
-    .org 0x100
 _exception_handler_lowlevel:
 general_exception:
 !BEGIN REGISTER SAVE
@@ -171,8 +137,7 @@ _general_sub_handler_base:
 _general_sub_handler_end:
 
 _my_exception_finish:
-    ! Recover in case of missing stack (paranoia)
-    stc     sgr, r15
+    stc     sgr, r15    ! Recover in case of missing stack (paranoia)
     rte
     nop
 
@@ -186,7 +151,6 @@ hdl_except:
 ! HANDLE CACHE EXCEPTIONS
 !
 
-    .org    0x400
 cache_exception:
     nop
     bra     cache_exception_handler
@@ -216,7 +180,6 @@ _cache_sub_handler_end:
 ! HANDLE INTERRUPT EXCEPTIONS
 !
 
-    .org    0x600
 interrupt_exception:
     nop
     bra     interrupt_exception_handler
@@ -242,5 +205,30 @@ _interrupt_sub_handler_base:
     nop
 _interrupt_sub_handler_end:
 
-_my_vbr_table_end:
+!
+! Wait enough instructions for the UBC to be refreshed
+!
+
+_ubc_wait:
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    rts
     nop

@@ -43,9 +43,6 @@
 #define UBC_BRCR_PCBB       (1<<6)
 #define UBC_BRCR_UBDE       (1)
 
-extern uint8 my_vbr_table[];
-extern uint8 my_vbr_table_end[];
-
 extern uint8 general_sub_handler[];
 extern uint8 general_sub_handler_base[];
 extern uint8 general_sub_handler_end[];
