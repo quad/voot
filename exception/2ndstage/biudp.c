@@ -129,7 +129,7 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 	i = vsnprintf(netout.buffer, sizeof(netout.buffer), fmt, args);
 	va_end(args);
 
-    netout.size = i;
+    netout.size = htons(i);
 
     biudp_write_buffer((uint8 *) &netout, VOOT_PACKET_HEADER_SIZE + netout.size);
 

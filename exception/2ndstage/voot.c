@@ -86,6 +86,9 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
 static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp_data_length)
 {
+    /* STAGE: Fix the size byte order. */
+    packet->size = ntohs(packet->size);
+
     switch (packet->type)
     {
         case VOOT_PACKET_TYPE_COMMAND:
@@ -93,7 +96,7 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
             break;
 
         case VOOT_PACKET_TYPE_DATA:
-            trap_inject_data(packet->buffer, sizeof(uint8));
+            trap_inject_data(packet->buffer, packet->size);
             break;
 
         default:

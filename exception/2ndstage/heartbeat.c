@@ -27,6 +27,8 @@ void init_heartbeat(void)
     /* STAGE: !!! There needs to be a better method of notification. */
 }
 
+#ifdef COUNT_PAGEFLIP
+
 static void count_pageflip(void)
 {
     /* STAGE: Display statistic information only in the case of a new pageflip handler. */
@@ -43,6 +45,8 @@ static void count_pageflip(void)
     pageflip_info.count++;
 }
 
+#endif
+
 static void* my_heartbeat(register_stack *stack, void *current_vector)
 {
     static bool done_once = FALSE;
@@ -58,8 +62,10 @@ static void* my_heartbeat(register_stack *stack, void *current_vector)
         done_once = TRUE;
     }
 
+#ifdef COUNT_PAGEFLIP
     /* STAGE: Pageflip statistics. */
     count_pageflip();
+#endif
 
     return current_vector;
 }
