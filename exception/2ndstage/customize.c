@@ -6,8 +6,13 @@ DESCRIPTION
 
 TODO
 
-    Test heads in cable versus, which is just about the only mode they work
-    in.
+    Versus mode needs to be reversed.
+
+    Cable versus needs to be tested.
+
+    Menu select side should be checked instead of game side in Cable Versus mode/
+
+    Find animation IDs for 2D single player continue.
 
 */
 
@@ -22,12 +27,20 @@ TODO
 
 #include "customize.h"
 
-static const uint8 osd_func_key[] = { 0xe6, 0x2f, 0xd6, 0x2f, 0xc6, 0x2f, 0xb6, 0x2f, 0xa6, 0x2f, 0x96, 0x2f, 0x86, 0x2f, 0xfb, 0xff, 0x22, 0x4f, 0xfc, 0x7f, 0x43, 0x6d, 0x00, 0xe4, 0x43, 0x6b };
-static const uint8 custom_func_key[] = { 0xe6, 0x2f, 0x53, 0x6e, 0xd6, 0x2f, 0xef, 0x63, 0xc6, 0x2f, 0x38, 0x23 };
 static char module_save[VMU_MAX_FILENAME];
+static const uint8 osd_func_key[] = { 0xe6, 0x2f, 0xd6, 0x2f, 0xc6, 0x2f, 0xb6, 0x2f, 0xa6, 0x2f, 0x96, 0x2f, 0x86, 0x2f, 0xfb, 0xff, 0x22, 0x4f, 0xfc, 0x7f, 0x43, 0x6d, 0x00, 0xe4, 0x43, 0x6b };
+
+static const uint8 custom_func_key[] = { 0xe6, 0x2f, 0x53, 0x6e, 0xd6, 0x2f, 0xef, 0x63, 0xc6, 0x2f, 0x38, 0x23 };
 static uint32 custom_func;
 
+static customize_ipc ipc = C_IPC_START;
+static uint8 player = 0;
+static uint8 side = 0;
+static uint8 file_number = 0;
+static uint8 *file_buffer = NULL;
 static customize_data* colors[2][CUSTOMIZE_VR_COUNT]; 
+
+#define HEALTH_OSD
 
 void customize_init(void)
 {
@@ -92,16 +105,9 @@ static void* my_customize_handler(register_stack *stack, void *current_vector)
     return current_vector;
 }
 
-static void maybe_load_customize(void)
+static void maybe_start_load_customize(void)
 {
-    static customize_ipc ipc = C_IPC_START;
-
-    static uint8 player = 0;
-    static uint8 side = 0;
-
     vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
-    static uint8 file_number = 0;
-    static uint8 *file_buffer = NULL;
 
     /* STAGE: [Step 1-P1] First player requests customization load. */
     if (ipc == C_IPC_START && (check_controller_press(CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y))
@@ -171,8 +177,14 @@ static void maybe_load_customize(void)
 
         vmu_mount(*data_port);
     }
+}
+
+static void maybe_do_load_customize(void)
+{
+    vmu_port *data_port = (vmu_port *) (0x8ccf9f06);
+
     /* STAGE: [Step 2] If we're involved in either step of the mount scan. */
-    else if ((ipc == C_IPC_MOUNT_SCAN_1 || ipc == C_IPC_MOUNT_SCAN_2) && !vmu_status(*data_port))
+    if ((ipc == C_IPC_MOUNT_SCAN_1 || ipc == C_IPC_MOUNT_SCAN_2) && !vmu_status(*data_port))
     {
         uint32 retval;
         char filename[VMU_MAX_FILENAME];
@@ -318,8 +330,11 @@ static void* my_anim_handler(register_stack *stack, void *current_vector)
         (*anim_mode_a == 0x2 && *anim_mode_b == 0x9) ||     /* Single Player quick select. */
         (*anim_mode_a == 0x5 && *anim_mode_b == 0x2))       /* Versus select. */
     {
-        maybe_load_customize();
+        maybe_start_load_customize();
+        maybe_do_load_customize();
     }
+    else
+        maybe_do_load_customize();
 
 #ifdef HEALTH_OSD
     /* STAGE: Health OSD segment - only triggers in game mode. */
