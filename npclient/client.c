@@ -35,6 +35,10 @@ CHANGELOG
         Added inter-client communication via the input command parser. If
         it's not a command, it's something to send via the DEBUG data route.
 
+    Sun Feb 24 01:02:31 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added the new callback initialization functionality and stub code
+        for packet callbacks.
+
 */
 
 #include <stdlib.h>
@@ -312,9 +316,13 @@ void input_handler(char *line)
         while((line[string_index] = tolower(line[string_index])))
             string_index++;
 
+        add_history(line);
+
         /* Now parse simple commands. */
         if (!strcmp(line, "c-inject"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_INJECTTST);
+        else if (!strcmp(line, "c-printf"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PRINTFTST);
         else if (!strcmp(line, "c-malloc"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_MALLOCTST);
         else if (!strcmp(line, "c-netstat"))
@@ -325,9 +333,13 @@ void input_handler(char *line)
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_TIME);
         else if (!strcmp(line, "c-version"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_VERSION);
+        else if (!strcmp(line, "c-passive-on"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PASVON);
+        else if (!strcmp(line, "c-screenshot"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_SCREEN);
         else if (!strcmp(line, "inject"))
         {
-            char data[] = "123456789012345678901234567890123456789012345678901234567890";
+            char data[] = "012345678901234567890123456789012345678901234567890123456789";
 
             voot_send_data(system->slave_socket, VOOT_PACKET_TYPE_DATA, data, sizeof(data));
         }
@@ -364,15 +376,67 @@ void logger_callback(npc_log_level severity, const char *format, ...)
     rl_redisplay();
 }
 
+bool packet_callback(uint8 type, const voot_packet *packet)
+{
+    static uint32 dump_file = 0;
+
+    if (type == C_PACKET_FROM_SLAVE)
+    {
+        if (packet->header.type == VOOT_PACKET_TYPE_COMMAND)
+        {
+            switch (packet->buffer[0])
+            {
+                case VOOT_COMMAND_TYPE_DUMPON:
+                    if (!dump_file)
+                    {
+                        char template[] = "npc-dump.XXXXXX";
+
+                        dump_file = mkstemp(template);
+
+                        printf("%s: [dump] Opened dump file. (%d)\n", prog_name, dump_file);
+
+                    }
+                    break;
+
+                case VOOT_COMMAND_TYPE_DUMPOFF:
+                    if (dump_file)
+                        close(dump_file);
+                    dump_file = 0;
+
+                    printf("%s: [dump] Closed dump file.\n", prog_name);
+
+                    break;
+            }
+        }
+        else if (packet->header.type == VOOT_PACKET_TYPE_DUMP && dump_file)
+        {
+            int out;
+
+            //printf("%s: [dump] Writing dump data...\n", prog_name);
+
+            out = write(dump_file, packet->buffer, (ntohs(packet->header.size) - 1));
+
+            if (!out)
+                printf("%s: [dump] Error in writing data the dump IO file.\n", prog_name);
+        }
+    }
+
+    return FALSE;
+}
+
 int main(int argc, char *argv[])
 {
     npc_command_t *event;
+    npc_callbacks_t callbacks;
 
     display_start_banner();
 
     frontend_init(argv[0]);
 
-    npc_init(logger_callback);
+    callbacks.log = logger_callback;
+    callbacks.packet = packet_callback;
+
+    npc_init(&callbacks);
 
     parse_options(argc, argv);
 

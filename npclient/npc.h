@@ -13,6 +13,10 @@ CHANGELOG
     Tue Jan 22 23:37:22 PST 2002    Scott Robinson <scott_np@dsn.itgo.com>
         Added the debugging callback functionality.
 
+    Sun Feb 24 00:57:12 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added callback structure and definitions for the new client assisted
+        callback functionality.
+
 */
 
 #ifndef __NPC_H__
@@ -22,7 +26,7 @@ CHANGELOG
 #include "vars.h"
 #include "voot.h"
 
-#define NPC_EVENT_QUEUE_SIZE    50
+#define NPC_EVENT_QUEUE_SIZE    (1024 * 5)
 
 typedef enum
 {
@@ -98,6 +102,13 @@ typedef enum    /* This is all a rather blatant ripoff from syslog - but they've
 } npc_log_level;
 
 typedef void npc_log_callback_f (npc_log_level, const char *, ...);
+typedef bool npc_packet_callback_f (uint8 type, const voot_packet *);
+
+typedef struct
+{
+    npc_log_callback_f      *log;
+    npc_packet_callback_f   *packet;
+} npc_callbacks_t;
 
 typedef struct
 {
@@ -118,10 +129,11 @@ typedef struct
     uint32              event_queue_tail;
     pthread_mutex_t     event_queue_busy;
 
-    npc_log_callback_f  *log_callback_function;
+    npc_callbacks_t     callbacks;
 } npc_data_t;
 
-#define NPC_LOG(sys,sev, args...) (sys.log_callback_function)(sev, ## args)
+#define NPC_LOG(sys, sev, args...) (sys.callbacks.log)(sev, ## args)
+#define CLIENT_PACKET(sys, type, pkt) (sys.callbacks.packet)(type, pkt)
 
 int32 npc_handle_command(npc_command_t *command);
 bool npc_add_event_queue(npc_command_t *command);
@@ -131,7 +143,7 @@ void* npc_io_check(void *in_arg);
 int npc_connect(char *dest_name, uint16 dest_port, int32 conntype);
 int npc_server_listen(void);
 void npc_exit(int code);
-void npc_init(npc_log_callback_f *log_callback_function);
+void npc_init(npc_callbacks_t *callbacks);
 npc_data_t* npc_expose(void);
 
 #endif

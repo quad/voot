@@ -54,6 +54,12 @@ CHANGELOG
         Added detail to socket debugging messages and created a socket
         information utility function.
 
+    Sun Feb 24 01:01:51 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added callback initializer and usage of new packet callbacks itself.
+
+    Sun Feb 24 02:55:02 PST 2002    Scott Robinson <scott_vo@quadhome.com>
+        Added dump IO logs.
+
 */
 
 #include <stdlib.h>
@@ -220,14 +226,23 @@ int32 npc_handle_command(npc_command_t *command)
 
                 case VOOT_PACKET_TYPE_DATA:
                 {
-                    NPC_LOG(npc_system, LOG_INFO, "DATA(slave): '%s'", command->packet->buffer);
+                    NPC_LOG(npc_system, LOG_INFO,
+                      "DATA(slave): '%c' [%x] ... '%c' [%x] : len [%d]",
+                      command->packet->buffer[0],
+                      command->packet->buffer[0],
+                      command->packet->buffer[ntohs(command->packet->header.size) - 2],
+                      command->packet->buffer[ntohs(command->packet->header.size) - 2],
+                      ntohs(command->packet->header.size));
 
                     voot_send_packet(npc_system.server_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
                 }
 
                 default:
+                {
+                    CLIENT_PACKET(npc_system, C_PACKET_FROM_SLAVE, command->packet);
                     break;
+                }
             }
             
             free(command->packet);
@@ -262,7 +277,13 @@ int32 npc_handle_command(npc_command_t *command)
                 
                 case VOOT_PACKET_TYPE_DATA:
                 {
-                    NPC_LOG(npc_system, LOG_DEBUG, "DATA(server): '%s'", command->packet->buffer);
+                    NPC_LOG(npc_system, LOG_INFO,
+                      "DATA(server): '%c' [%x] ... '%c' [%x] : len [%d]",
+                      command->packet->buffer[0],
+                      command->packet->buffer[0],
+                      command->packet->buffer[ntohs(command->packet->header.size) - 2],
+                      command->packet->buffer[ntohs(command->packet->header.size) - 2],
+                      ntohs(command->packet->header.size));
 
                     voot_send_packet(npc_system.slave_socket, command->packet, voot_check_packet_advsize(command->packet, sizeof(voot_packet)));
                     break;
@@ -562,12 +583,12 @@ void npc_exit(int code)
     npc_close_socket(&npc_system.server_socket, "server");
 }
 
-void npc_init(npc_log_callback_f *log_callback_function)
+void npc_init(npc_callbacks_t *callbacks)
 {
     memset(&npc_system, 0x0, sizeof(npc_system));
     npc_system.slave_socket = npc_system.server_socket = npc_system.server_socket_wait = -1;
 
-    npc_system.log_callback_function = log_callback_function;
+    memcpy(&npc_system.callbacks, callbacks, sizeof(npc_callbacks_t));
 
     pthread_mutex_init(&npc_system.event_queue_busy, NULL);
 }
