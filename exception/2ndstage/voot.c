@@ -138,6 +138,7 @@ bool voot_handle_packet(ether_info_packet_t *frame, udp_header_t *udp, uint16 ud
 bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
 {
 	voot_packet *netout;
+	bool retval;
 
     /* STAGE: Make sure the dimensions are legit and we have enough space
         for data_size + NULL */
@@ -158,12 +159,12 @@ bool voot_send_packet(uint8 type, const uint8 *data, uint32 data_size)
     netout->buffer[data_size] = 0x0;
 
     /* STAGE: Transmit the packet. */
-    biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + data_size + 1);
+    retval = biudp_write_buffer((const uint8 *) netout, VOOT_PACKET_HEADER_SIZE + data_size + 1);
 
     /* STAGE: Free the buffer and return. */
     free(netout);
 
-    return TRUE;
+    return retval;
 }
 
 bool voot_send_command(uint8 type)
