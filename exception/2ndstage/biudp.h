@@ -16,8 +16,8 @@ typedef struct
 } biudp_control_t;
 
 void biudp_init(const biudp_control_t *in_control);
-void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length);
-void biudp_write(uint8 in);
-void biudp_write_str(const uint8 *in_string);
+bool biudp_write_buffer(const uint8 *in_data, uint32 in_data_length);
+bool biudp_write(uint8 in);
+bool biudp_write_str(const uint8 *in_string);
 
 #endif

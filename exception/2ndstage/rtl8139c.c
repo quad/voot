@@ -356,7 +356,8 @@ void rtl_rx_all(void)
         /* Reset both buffers to within our scope. */
         RTL_IO_SHORT(RTL_RXBUFTAIL) = (rtl_info.cur_rx - RX_BUFFER_THRESHOLD) % RX_BUFFER_LEN;
 
-        /* STAGE: Stop processing if network layer instructs us too... */
+        /* STAGE: Stop processing if network layer instructs us too...
+            (assume it will take care of the handle) */
         if (frame_in && net_handle_frame(frame_in, packet_size))
             break;
 

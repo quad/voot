@@ -31,16 +31,17 @@ TODO
  *
  */
 
-void net_transmit(ether_info_packet_t *frame_in)
+bool net_transmit(ether_info_packet_t *frame_in)
 {
     ether_ii_header_t *frame_out;
     uint32 frame_out_length;
+    bool retval;
 
     /* STAGE: malloc() appropriate sized buffer. */
     frame_out_length = sizeof(ether_ii_header_t) + frame_in->length;
     frame_out = malloc(frame_out_length);
     if (!frame_out)
-        return;
+        return FALSE;
 
     /* STAGE: Setup the packet. */
     memcpy(frame_out->source, frame_in->source, ETHER_MAC_SIZE);
@@ -51,10 +52,12 @@ void net_transmit(ether_info_packet_t *frame_in)
     memcpy((uint8 *) frame_out + sizeof(ether_ii_header_t), frame_in->data, frame_in->length);
 
     /* STAGE: Bye bye Mr. Packet */
-    rtl_tx((uint8 *) frame_out, frame_out_length);
+    retval = rtl_tx((uint8 *) frame_out, frame_out_length);
 
     /* STAGE: free output buffer. */
     free(frame_out);
+
+    return retval;
 }
 
 static ether_info_packet_t eth_discover_frame(uint8 *frame_data, uint32 frame_size)
@@ -245,7 +248,7 @@ uint16 icmp_checksum(icmp_header_t *icmp, uint16 icmp_header_length)
     return calc_checksum;
 }
 
-static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
+static bool icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uint16 icmp_data_length)
 {
     ip_header_t *ip;
 
@@ -261,7 +264,7 @@ static void icmp_echo_reply(ether_info_packet_t *frame, icmp_header_t *icmp, uin
     icmp->checksum = icmp_checksum(icmp, icmp_data_length);
 
     /* STAGE: Transmit it, god willing. */
-    net_transmit(frame);
+    return net_transmit(frame);
 }
 
 bool icmp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 icmp_data_length)
@@ -335,7 +338,7 @@ uint16 udp_checksum(ip_header_t *ip, uint16 ip_header_length)
     return ~(calc_checksum & 0xffff);
 }
 
-static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
+static bool udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16 udp_data_length)
 {
     uint16 temp_port;
     uint16 ip_header_size;
@@ -356,7 +359,7 @@ static void udp_echo_reply(ether_info_packet_t *frame, udp_header_t *udp, uint16
     udp->checksum = udp_checksum(ip, ip_header_size);
 
     /* STAGE: Transmit it, god willing. */
-    net_transmit(frame);
+    return net_transmit(frame);
 }
 
 bool udp_handle_packet(ether_info_packet_t *frame, uint16 ip_header_length, uint16 udp_data_length)

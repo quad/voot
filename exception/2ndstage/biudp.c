@@ -28,12 +28,13 @@ void biudp_init(const biudp_control_t *in_control)
 
 /* This entire section is essentially a duplicate of the net_transmit code,
     except its formatted differently. I wish I could combine them somehow. */
-static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
+static bool biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
 {
     ether_ii_header_t *frame_out;
     ip_header_t *ip;
     udp_header_t *udp;
     uint16 total_length, ip_length, ip_header_length;
+    bool retval;
 
     /* STAGE: Use Ethernet II. Everyone MUST support it. */
     ip_length = sizeof(ip_header_t) + sizeof(udp_header_t) + in_data_length;
@@ -42,7 +43,7 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
     /* STAGE: malloc() the proper size output buffer. */
     frame_out = malloc(total_length);
     if (!frame_out)
-        return;
+        return FALSE;
 
     ip = (ip_header_t *) ((uint8 *) frame_out + sizeof(ether_ii_header_t)); 
 
@@ -83,18 +84,20 @@ static void biudp_write_segment(const uint8 *in_data, uint32 in_data_length)
     udp->checksum = udp_checksum(ip, ip_header_length);
 
     /* STAGE: ... and transmit it, god willing. */
-    rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
+    retval = rtl_tx((uint8 *) frame_out, sizeof(ether_ii_header_t) + ip_length);
 
     /* STAGE: Free the output buffer. */
     free(frame_out);
+
+    return retval;
 }
 
-void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
+bool biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 {
     uint32 index, remain;
 
     if (!control.initialized)
-        return;
+        return FALSE;
 
     /* STAGE: Split the incoming data into BIUDP_SEGMENT_SIZE byte chunks
         and feed those out. */
@@ -104,7 +107,8 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 
         in_data_segment = in_data + (BIUDP_SEGMENT_SIZE * index);
 
-        biudp_write_segment(in_data_segment, BIUDP_SEGMENT_SIZE);
+        if (!biudp_write_segment(in_data_segment, BIUDP_SEGMENT_SIZE))
+            return FALSE;
 
         /* STAGE: Delay so we don't flood the receiving system. */
         vid_waitvbl();
@@ -112,15 +116,17 @@ void biudp_write_buffer(const uint8 *in_data, uint32 in_data_length)
 
     remain = in_data_length % BIUDP_SEGMENT_SIZE;
     if (remain)
-        biudp_write_segment((in_data + in_data_length) - remain, remain);
+        return biudp_write_segment((in_data + in_data_length) - remain, remain);
+    else
+        return TRUE;
 }
 
-void biudp_write(uint8 in)
+bool biudp_write(uint8 in)
 {
-    biudp_write_buffer(&in, sizeof(uint8));
+    return biudp_write_buffer(&in, sizeof(uint8));
 }
 
-void biudp_write_str(const uint8 *in_string)
+bool biudp_write_str(const uint8 *in_string)
 {
-    biudp_write_buffer(in_string, strlen(in_string));
+    return biudp_write_buffer(in_string, strlen(in_string));
 }

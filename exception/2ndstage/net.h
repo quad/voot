@@ -96,7 +96,7 @@ typedef struct
     uint16  length __attribute__ ((packed));
 } udp_pseudo_header_t __attribute__ ((packed));
 
-void net_transmit(ether_info_packet_t *frame_in);
+bool net_transmit(ether_info_packet_t *frame_in);
 
 uint16 ip_checksum(ip_header_t *ip, uint16 ip_header_length);
 bool ip_handle_packet(ether_info_packet_t *frame);
