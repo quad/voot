@@ -1,6 +1,6 @@
 /*  scixb_emu.c
 
-    $Id: scixb_emu.c,v 1.5 2002/11/24 14:56:46 quad Exp $
+    $Id: scixb_emu.c,v 1.6 2002/12/17 12:01:29 quad Exp $
 
 DESCRIPTION
 
@@ -18,7 +18,6 @@ TODO
 #include <searchmem.h>
 #include <ubc.h>
 #include <exception.h>
-#include <serial.h>
 #include <malloc.h>
 #include <anim.h>
 
@@ -183,8 +182,6 @@ static void tx_handler (uint8 in_data, bool main_tx)
     {
         //voot_send_packet (VOOT_PACKET_TYPE_DATA, &in_data, sizeof (in_data));
         fifo_push (&delay_fifo, in_data);
-
-        //serial_write_char (in_data);
     }
 }
 

@@ -1,6 +1,6 @@
 /*  module.c
 
-    $Id: module.c,v 1.18 2002/12/17 11:55:01 quad Exp $
+    $Id: module.c,v 1.19 2002/12/17 12:01:29 quad Exp $
 
 DESCRIPTION
 
@@ -26,7 +26,6 @@ NOTES
 #include <vars.h>
 #include <anim.h>
 
-#include <gamedata.h>
 #include <dumpio.h>
 
 #include <lwip/net.h>
@@ -70,7 +69,6 @@ void module_configure (void)
 
     net_init ();
     voot_init ();
-    dump_init ();
 
     /* STAGE: Initialize the SCIXB emulation layer. */
 
@@ -79,9 +77,10 @@ void module_configure (void)
 
 void module_reconfigure (void)
 {
+    /* STAGE: Reinitialize the networking drivers. */
+
     net_init ();
     voot_init ();
-    dump_init ();
 
     reconf_count++;
 }
