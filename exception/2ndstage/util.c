@@ -63,17 +63,17 @@ void grep_memory(const char *key, uint32 key_size)
 {
     uint8 *mem_loc;
 
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Grepping memory for '%s' ...\n", key);
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Grepping memory for '%s' ...", key);
 
     mem_loc = SYS_MEM_START;
 
     while ((mem_loc = search_sysmem_at(key, key_size, mem_loc, SYS_MEM_END)))
     {
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Match @ %x\n", mem_loc);
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Match @ %x", mem_loc);
         mem_loc++;
     }
 
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Grep done!\n");
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Grep done!");
 }
 
 /* Stolen from VOOT! Accessor to syMalloc() */

@@ -87,13 +87,13 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
         {
             uint8 *ba, *bb, *bc;
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc_fail_count == %u\n", malloc_fail_count);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc_fail_count == %u", malloc_fail_count);
 
             ba = malloc(NET_MAX_PACKET);
             bb = malloc(NET_MAX_PACKET);
             bc = malloc(NET_MAX_PACKET);
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc sequence %x, %x, and %x\n", ba, bb, bc);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "malloc sequence %x, %x, and %x", ba, bb, bc);
 
             free(bc);
             free(bb);
@@ -101,14 +101,14 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
 
             ba = malloc(NET_MAX_PACKET);
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x\n", ba);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "fresh malloc %x", ba);
 
             free(ba);
         }
             break;
 
         case VOOT_COMMAND_TYPE_NETSTAT:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u\n", rtl_max_wait_count);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rtl_max_wait_count == %u", rtl_max_wait_count);
             break;
 
         case VOOT_COMMAND_TYPE_HEALTH:
@@ -116,16 +116,16 @@ static void maybe_handle_command(uint8 command, udp_header_t *udp, uint16 udp_da
             volatile uint16 *p1_health = (uint16 *) 0x8CCF6284;
             volatile uint16 *p2_health = (uint16 *) 0x8CCF7402;
 
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u\n", *p1_health, *p2_health);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "p1_health = %u p2_health = %u", *p1_health, *p2_health);
         }
             break;
 
         case VOOT_COMMAND_TYPE_TIME:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "%u\n", time());
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "%u", time());
             break;
 
         case VOOT_COMMAND_TYPE_VERSION:
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Netplay VOOT Extensions, BETA");
             break;
 
         default:
@@ -145,7 +145,7 @@ static void maybe_handle_voot(voot_packet *packet, udp_header_t *udp, uint16 udp
             break;
 
         case VOOT_PACKET_TYPE_DATA:
-            trap_inject_data(packet->buffer, packet->header.size);
+            trap_inject_data(packet->buffer, packet->header.size - 1);
             break;
 
         default:

@@ -139,7 +139,7 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
         /* STAGE: Check if we can transmit on the SCIF. */
         if (!(*SCIF_R_FS & SCIF_FS_TDFE))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF not in TX mode!\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF not in TX mode!");
             return FALSE;
         }
         
@@ -154,7 +154,7 @@ static bool phy_fifo_add(uint8 in_data, dir_e dir, bool touch_serial)
 
         if (timeout_count == SCIF_TIMEOUT)
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF timeout during TX.\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF timeout during TX.");
             return FALSE;
         }
     }        
@@ -254,7 +254,7 @@ static void phy_sync(void)
     {
         if(!phy_fifo_add(temp_buffer[work_index], IN, TRUE))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in resynchronization! %u bytes injected.\n", work_index);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in resynchronization! %u bytes injected.", work_index);
             break;
         }
     }
@@ -268,13 +268,10 @@ static void phy_sync(void)
 
         if (net_in_data >= 0x0 && !phy_fifo_add(net_in_data, IN, TRUE))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in net injection!\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in net injection!");
             break;
         }
     }
-
-    /* DEBUG: Notification of resynchronization completion. */
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Fifos resynchronized. %u bytes retained.\n", phy_size());
 }
 
 /*
@@ -290,7 +287,7 @@ uint32 trap_inject_data(const uint8 *data, uint32 size)
     {
         if (!net_fifo_add(data[data_index]))
         {
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Net fifo overflow in RX!\n");
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Net fifo overflow in RX!");
             break;
         }
     }
@@ -345,18 +342,18 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
 
             /* STAGE: Add outgoing data to physical fifo. */
             if (!phy_fifo_add(stack->r2, OUT, FALSE))
-                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in TX!\n");
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in TX!");
 
             break;        
 
         /* STAGE: Trapped reception. */
         case 0x8c039b58:
             /* DEBUG: Immediate mode dumping of incoming serial data. */
-            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\n", stack->r3);
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c", stack->r3);
 
             /* STAGE: Remove incoming data from physical fifo. */
             if (phy_fifo_del(stack->r3, FALSE) < 0)
-                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!\n");
+                biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo underflow in RX!");
 
             break;
     }

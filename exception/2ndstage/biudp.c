@@ -143,6 +143,8 @@ int32 biudp_printf(uint8 type, const char *fmt, ...)
 	i = vsnprintf(netout->buffer, sizeof(netout->buffer), fmt, args);
 	va_end(args);
 
+    i++;    /* for the NULL on strings! */
+
     if (i)
     {
         netout->header.size = htons(i);

@@ -462,7 +462,7 @@ void* rtl_handler(void *passer, register_stack *stack, void *current_vector)
 
         rtl_start();
 
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!\n");
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "rx buffer overflow!");
     }
 
     /* STAGE: Return from the handler */

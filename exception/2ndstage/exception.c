@@ -153,7 +153,7 @@ void* exception_handler(register_stack *stack)
         bfont_init(); 
 
         /* DEBUG: Notification. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR\n");
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Initialized VBR");
     }
 #ifdef DO_VBR_RESET
     /* STAGE: Handle reinitializations differently. */
@@ -163,7 +163,7 @@ void* exception_handler(register_stack *stack)
         init_vbr_table();
 
         /* DEBUG: Notification. */
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR\n");
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Reinitialized VBR");
     }
 #endif
 

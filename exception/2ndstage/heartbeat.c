@@ -41,12 +41,12 @@ static void count_pageflip(void)
     /* STAGE: Display statistic information only in the case of a new pageflip handler. */
     if (pageflip_info.spc != spc())
     {
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip %x lasted %u\n", pageflip_info.spc, pageflip_info.count);
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip %x lasted %u", pageflip_info.spc, pageflip_info.count);
 
         pageflip_info.spc = spc();
         pageflip_info.count = 0;
 
-        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip @ %x\n", pageflip_info.spc);
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Pageflip @ %x", pageflip_info.spc);
     }
 
     pageflip_info.count++;
