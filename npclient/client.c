@@ -51,6 +51,10 @@ CHANGELOG
         than the older one did. Also started implementing the "c-dump-file"
         command.
 
+    Tue Apr 23 01:59:38 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        A little better tracking of the dump files. I wish I could get the
+        actual file name.
+
 */
 
 #include <stdlib.h>
@@ -472,7 +476,7 @@ bool packet_callback(uint8 type, const voot_packet *packet)
                         dump_file = mkstemp(template);
                         if (dump_file > 0)
                         {
-                            printf("%s: [dump] Opened dump file. (%d)\n", prog_name, dump_file);
+                            printf("%s: [dump] Opened dump file #%d. (%d)\n", prog_name, file_count - 1, dump_file);
                         }
                         else
                         {
