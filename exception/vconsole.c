@@ -7,7 +7,8 @@ DESCRIPTION
 
 TODO
 
-    Add in cose for the console to loop over on itself.
+    Add in code for the console to loop over on itself. Maybe I should
+    borrow from KOS's libconio?
 
 */
 

@@ -24,7 +24,7 @@ $(BIN).bin: $(BIN).elf
 	$(OBJCOPY) -O binary $(BIN).elf $(BIN).bin
 
 $(BIN).elf: $(OBJS)
-	$(CC) -Wl,-Ttext,0x8C010000 -nostartfiles -o $(BIN).elf $(OBJS) $(LIBS)
+	$(CC) -static -Wl,-Ttext,0x8C010000 -nostartfiles -o $(BIN).elf $(OBJS) $(LIBS)
 
 2ndstage/2ndstage.bin:
 	make -C 2ndstage 2ndstage.bin

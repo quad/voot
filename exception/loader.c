@@ -10,7 +10,6 @@ DESCRIPTION
 
 */
 
-#include <stdio.h>
 #include <string.h>
 #include <dream.h>
 #include "vconsole.h"
