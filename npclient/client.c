@@ -55,6 +55,13 @@ CHANGELOG
         A little better tracking of the dump files. I wish I could get the
         actual file name.
 
+    Tue May  7 08:58:44 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Removed and added a few command types.
+
+TODO
+
+    Add support for the DUMPSELECT command.
+
 */
 
 #include <stdlib.h>
@@ -363,21 +370,21 @@ void input_handler(char *line)
         system = npc_expose();
 
         /* Now parse simple commands. */
-        if (!strcmp(command, "c-health"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_HEALTH);
-        else if (!strcmp(command, "c-time"))
+        if (!strcasecmp(command, "c-debug"))
+            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DEBUG);
+        else if (!strcasecmp(command, "c-time"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_TIME);
-        else if (!strcmp(command, "c-version"))
+        else if (!strcasecmp(command, "c-version"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_VERSION);
-        else if (!strcmp(command, "c-passive-on"))
-            voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_PASVON);
-        else if (!strcmp(command, "c-screenshot"))
+        else if (!strcasecmp(command, "c-screenshot"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_SCREEN);
-        else if (!strcmp(command, "c-dump-memory"))
+        else if (!strcasecmp(command, "c-dump-memory"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPMEM);
-        else if (!strcmp(command, "c-dump-gamedata"))
+        else if (!strcasecmp(command, "c-dump-gamedata"))
             voot_send_command(system->slave_socket, VOOT_COMMAND_TYPE_DUMPGAME);
-        else if (!strcmp(command, "c-dump-send"))
+        else if (!strcasecmp(command, "dump-566"))
+            voot_send_command_opt(system->slave_socket, VOOT_COMMAND_TYPE_DUMPSELECT, 0x8c274cc7);
+        else if (!strcasecmp(command, "c-dump-send"))
         {
             char *filename, *maybe_address;
 
@@ -416,7 +423,7 @@ void input_handler(char *line)
             else
                 printf("%s: [dump-send] You need to specify a filename, as command option, for dumping.\n", prog_name);
         }
-        else if (!strcmp(command, "inject"))
+        else if (!strcasecmp(command, "inject"))
         {
             char data[] = "012345678901234567890123456789012345678901234567890123456789";
 

@@ -18,6 +18,9 @@ CHANGELOG
         Added voot_dump_buffer() and voot_send_command_opt() function
         prototypes.
 
+    Tue May  7 08:56:03 PDT 2002    Scott Robinson <scott_vo@quadhome.com>
+        Removed from older command types and added two new ones.
+
 */
 
 #ifndef __VOOT_H__
@@ -34,15 +37,15 @@ CHANGELOG
 #define VOOT_PACKET_TYPE_COMMAND    'c'
 #define VOOT_PACKET_TYPE_DUMP       'D'
 
-#define VOOT_COMMAND_TYPE_HEALTH    'h'
-#define VOOT_COMMAND_TYPE_TIME      't'
-#define VOOT_COMMAND_TYPE_VERSION   'v'
-#define VOOT_COMMAND_TYPE_PASVON    'P'
-#define VOOT_COMMAND_TYPE_DUMPON    'D'
-#define VOOT_COMMAND_TYPE_DUMPOFF   'd'
-#define VOOT_COMMAND_TYPE_SCREEN    's'
-#define VOOT_COMMAND_TYPE_DUMPMEM   'S'
-#define VOOT_COMMAND_TYPE_DUMPGAME  'g'
+#define VOOT_COMMAND_TYPE_DEBUG         '?'
+#define VOOT_COMMAND_TYPE_TIME          't'
+#define VOOT_COMMAND_TYPE_VERSION       'v'
+#define VOOT_COMMAND_TYPE_DUMPON        'D'
+#define VOOT_COMMAND_TYPE_DUMPOFF       'd'
+#define VOOT_COMMAND_TYPE_SCREEN        's'
+#define VOOT_COMMAND_TYPE_DUMPMEM       'm'
+#define VOOT_COMMAND_TYPE_DUMPGAME      'g'
+#define VOOT_COMMAND_TYPE_DUMPSELECT    'S'
 
 #define VOOT_PACKET_HEADER_SIZE     3
 #define BIUDP_SEGMENT_SIZE          1024
