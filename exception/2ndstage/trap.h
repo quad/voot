@@ -19,7 +19,7 @@ typedef struct
     } data[16];
 
     uint32      start;
-    uint32      end;
+    uint32      size;
 } scif_fifo_t;
 
 void init_ubc_b_serial(void);

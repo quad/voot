@@ -54,6 +54,11 @@ void init_ubc_b_serial(void)
  
 static uint32 fifo_add(const uint8 *data, uint32 size, dir_e direction)
 {
+    /* STAGE: Check if the FIFO is full. */
+    if (fifo->size >= 16)
+        return 0;
+
+    
 }
 
 static dir_e fifo_get(uint8 *data)
@@ -158,7 +163,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             /* TODO: Add outgoing data to per-frame dump buffer. */
 
             /* STAGE: Add outgoing data to FIFO ring with OUT designation. */
-            if(!fifo_add(&(stack->r2), sizeof(stack->r2), IN))
+            if(!fifo_add(&(stack->r2), sizeof(stack->r2), OUT))
                 biudp_printf(VOOT_PACKET_TYPE_DEBUG, "FIFO ring overflow in transmission!\n");
 
             break;        
