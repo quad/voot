@@ -1,6 +1,6 @@
 /*  customize.c
 
-    $Id: customize.c,v 1.7 2002/10/18 19:52:20 quad Exp $
+    $Id: customize.c,v 1.8 2002/10/28 01:13:01 quad Exp $
 
 DESCRIPTION
 
@@ -33,7 +33,6 @@ TODO
 #include <controller.h>
 #include <vmu.h>
 #include <anim.h>
-#include <video.h>
 
 #include "customize.h"
 
@@ -67,53 +66,15 @@ static customize_data*  colors[2][VR_SENTINEL];
 
 static uint8           *p1_vr_loc       = (uint8 *)     0x8ccf6236;
 static uint16          *p1_health_real  = (uint16 *)    0x8ccf6284;
-static uint16          *p1_rw_ammo      = (uint16 *)    0x8ccf63b4;
 static uint16          *p1_health_stat  = (uint16 *)    0x8ccf6286;
 static uint16          *p1_varmour_mod  = (uint16 *)    0x8ccf63ec;
 static uint16          *p1_varmour_base = (uint16 *)    0x8ccf63ee;
-static uint16          *p1_infight_time = (uint16 *)    0x8ccf96b0;
 
 static uint8           *p2_vr_loc       = (uint8 *)     0x8ccf73b2;
 static uint16          *p2_health_real  = (uint16 *)    0x8ccf7400;
 static uint16          *p2_health_stat  = (uint16 *)    0x8ccf7402;
 static uint16          *p2_varmour_mod  = (uint16 *)    0x8ccf7568;
 static uint16          *p2_varmour_base = (uint16 *)    0x8ccf756a;
-
-void customize_init (void)
-{
-    static bool             exp_inited;
-    static bool             anim_inited;
-
-    if (!exp_inited)
-    {
-        exception_table_entry   new;
-
-        /* STAGE: Ensure we're hooked on the UBC as well. */
-
-        new.type    = EXP_TYPE_GEN;
-        new.code    = EXP_CODE_UBC;
-        new.handler = customize_handler;
-
-        exp_inited = exception_add_handler (&new, &old_ubc_handler);
-    }
-
-    if (exp_inited && !anim_inited)
-    {
-        /* STAGE: Initialize and configure the animation render hook. */
-
-        anim_init ();
-
-        anim_inited = anim_add_render_chain (my_anim_handler, &old_anim_handler);
-    }
-
-    /* STAGE: Initialize the VMU sub-system. */
-
-    vmu_init ();
-
-    /* STAGE: Get ourselves controller access too. */
-
-    controller_init ();
-}
 
 static void customize_clear_player (uint32 player, bool do_head)
 {
@@ -165,6 +126,10 @@ static void* my_customize_handler (register_stack *stack, void *current_vector)
 
 static void maybe_start_load_customize (void)
 {
+    bool    go;
+
+    go = FALSE;
+
     /* STAGE: [Step 1-P1] First player requests customization load. */
 
     if (ipc == C_IPC_START && (check_controller_press (CONTROLLER_PORT_A0) & CONTROLLER_MASK_BUTTON_Y))
@@ -180,7 +145,7 @@ static void maybe_start_load_customize (void)
             
             Our player is the controlling port.
         */
-                 
+
         if (GAMEDATA_OPT->control_port)
             side = !(*GAMEDATA_GAME_SIDE);
         else
@@ -188,28 +153,11 @@ static void maybe_start_load_customize (void)
 
         player = GAMEDATA_OPT->control_port;
 
-        /* STAGE: Make sure the colors for this player are cleared out. */
-
-        customize_clear_player (player, TRUE); 
-
         /* STAGE: Begin the mount scan for a VMS. */
 
         GAMEDATA_OPT->data_port = VMU_PORT_A1;
         ipc                     = C_IPC_MOUNT_SCAN_1;
-        file_number             = 0;
-
-        /*
-            STAGE: Let them know we're loading the data.
-        */
-
-        if (side)
-            VIDEO_BORDER_COLOR = VIDEO_COLOR_RED;
-        else
-            VIDEO_BORDER_COLOR = VIDEO_COLOR_BLUE;
-
-        /* STAGE: Send the mount request. */
-
-        vmu_mount (GAMEDATA_OPT->data_port);
+        go                      = TRUE;
     }
     /* STAGE: [Step 1-P2] Second player requests customization load. */
     else if (ipc == C_IPC_START && (check_controller_press (CONTROLLER_PORT_B0) & CONTROLLER_MASK_BUTTON_Y))
@@ -233,19 +181,26 @@ static void maybe_start_load_customize (void)
 
         player = !(GAMEDATA_OPT->control_port);
 
-        /* STAGE: Make sure the colors for this player are cleared out. */
-        customize_clear_player (player, TRUE); 
-
         /* STAGE: Begin the mount scan for a VMS. */
+
         GAMEDATA_OPT->data_port = VMU_PORT_B1;
         ipc                     = C_IPC_MOUNT_SCAN_1;
-        file_number             = 0;
+        go                      = TRUE;
+    }
 
-        /*
-            STAGE: Let them know we're loading the data.
-        */
+    if (go)
+    {
+        /* STAGE: Make sure the colors for this player are cleared out. */
 
-        vmu_mount(GAMEDATA_OPT->data_port);
+        customize_clear_player (player, TRUE); 
+
+        /* STAGE: Finish initializing the IPC for the mount scan. */
+
+        file_number = 0;
+
+        /* STAGE: Send the mount request. */
+
+        vmu_mount (GAMEDATA_OPT->data_port);
     }
 }
 
@@ -404,7 +359,6 @@ static void maybe_load_customize (uint16 anim_mode_a, uint16 anim_mode_b)
         {
             case C_IPC_START :
                 anim_printf_debug (0.0, 0.0, "Press Y to load customized VRs.");
-                VIDEO_BORDER_COLOR = VIDEO_COLOR_BLACK;
                 break;
 
             case C_IPC_MOUNT_SCAN_1 :
@@ -417,7 +371,6 @@ static void maybe_load_customize (uint16 anim_mode_a, uint16 anim_mode_b)
 
             case C_IPC_LOAD :
                 anim_printf_debug (0.0, 0.0, "Loading customized VR data...");
-                VIDEO_BORDER_COLOR = VIDEO_COLOR_WHITE;
                 break;
         }
 
@@ -446,10 +399,6 @@ static void maybe_load_customize (uint16 anim_mode_a, uint16 anim_mode_b)
         /* STAGE: Handle the customization load process. (or cleanup) */
 
         maybe_do_load_customize ();
-
-        /* STAGE: Reset the border color. */
-
-        VIDEO_BORDER_COLOR = VIDEO_COLOR_BLACK;
 
         /* STAGE: If we move back to the main menu, clear all the information. */
 
@@ -526,7 +475,7 @@ static void maybe_display_stats (uint16 anim_mode_a, uint16 anim_mode_b)
 
 }
 
-void my_anim_handler (uint16 anim_mode_a, uint16 anim_mode_b)
+static void my_anim_handler (uint16 anim_mode_a, uint16 anim_mode_b)
 {
     maybe_find_customize ();
     maybe_load_customize (anim_mode_a, anim_mode_b);
@@ -553,7 +502,7 @@ void my_anim_handler (uint16 anim_mode_a, uint16 anim_mode_b)
         return old_anim_handler (anim_mode_a, anim_mode_b);
 }
 
-void* customize_handler (register_stack *stack, void *current_vector)
+static void* customize_handler (register_stack *stack, void *current_vector)
 {
     /* STAGE: In the case of the customize function (channel B) exception. */
 
@@ -564,4 +513,40 @@ void* customize_handler (register_stack *stack, void *current_vector)
         return old_ubc_handler (stack, current_vector);
     else
         return current_vector;
+}
+
+void customize_init (void)
+{
+    static bool             exp_inited;
+    static bool             anim_inited;
+
+    if (!exp_inited)
+    {
+        exception_table_entry   new;
+
+        /* STAGE: Ensure we're hooked on the UBC as well. */
+
+        new.type    = EXP_TYPE_GEN;
+        new.code    = EXP_CODE_UBC;
+        new.handler = customize_handler;
+
+        exp_inited = exception_add_handler (&new, &old_ubc_handler);
+    }
+
+    if (exp_inited && !anim_inited)
+    {
+        /* STAGE: Initialize and configure the animation render hook. */
+
+        anim_init ();
+
+        anim_inited = anim_add_render_chain (my_anim_handler, &old_anim_handler);
+    }
+
+    /* STAGE: Initialize the VMU sub-system. */
+
+    vmu_init ();
+
+    /* STAGE: Get ourselves controller access too. */
+
+    controller_init ();
 }

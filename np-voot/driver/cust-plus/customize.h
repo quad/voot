@@ -1,6 +1,6 @@
 /*  customize.h
 
-    $Id: customize.h,v 1.2 2002/08/04 05:48:05 quad Exp $
+    $Id: customize.h,v 1.3 2002/10/28 01:13:01 quad Exp $
 
 */
 
@@ -62,7 +62,5 @@ typedef struct
 } customize_data;
 
 void    customize_init      (void);
-void    my_anim_handler     (uint16 anim_mode_a, uint16 anim_mode_b);
-void *  customize_handler   (register_stack *stack, void *current_vector);
 
 #endif
