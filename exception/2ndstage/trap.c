@@ -109,9 +109,14 @@ static bool phy_fifo_del(uint8 check_data)
     return TRUE;
 }
 
-static void phy_sync(void)
+static uint32 phy_size(void)
 {
-    uint8 temp_buffer[PHY_FIFO_SIZE];
+    /* STAGE: Return with number of bytes within physical fifo. */
+    return phy_fifo.size;
+}
+
+static uint32 phy_sync_fifo(uint8 *temp_buffer)
+{
     uint32 work_index, temp_index;
 
     /* DEBUG: Notification of physical fifo flush. */
@@ -119,13 +124,13 @@ static void phy_sync(void)
 
     /* STAGE: Flush all data not marked IN in the physical fifo. */
     temp_index = 0;
-    for(work_index = 0; work_index < PHY_FIFO_SIZE; work_index++)
+    for (work_index = 0; work_index < PHY_FIFO_SIZE; work_index++)
     {
         uint32 fifo_index;
 
         fifo_index = (phy_fifo.start + work_index) % PHY_FIFO_SIZE;
 
-        if(phy_fifo.data[fifo_index].direction == IN)
+        if (phy_fifo.data[fifo_index].direction == IN)
         {
             temp_buffer[temp_index] = phy_fifo.data[fifo_index].data;
             temp_index++;
@@ -141,8 +146,8 @@ static void phy_sync(void)
     /* DEBUG: Notification of SCIF flush. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Flushing the SCIF fifo...\n");
 
-    /* STAGE: Flush the SCIF fifo. */
-    while(*SCIF_R_FS &= SCIF_FS_RDF)
+    /* STAGE: Flush the SCIF fifo. */ 
+    while (*SCIF_R_FS & SCIF_FS_RDF)
     {
         /* STAGE: Drop a single character from the SCIF fifo. */
         *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
@@ -154,28 +159,60 @@ static void phy_sync(void)
     /* DEBUG: Notification of SCIF completion. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF FIFO clear!\n");
 
+    return temp_index;
+}
+
+static void phy_sync(void)
+{
+    uint8 temp_buffer[PHY_FIFO_SIZE];
+    uint32 work_index, temp_index;
+
+#define DO_FIFO_FLUSH
+#ifdef DO_FIFO_FLUSH
+    if (phy_size())
+        temp_index = phy_sync_fifo(temp_buffer);
+#endif
+
     /* TODO: Transfer data from the net fifo to the physical fifo - marker IN */
 
     /* DEBUG: Notification of resynchronization. */
     biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Resynchronizing the physical and SCIF fifos:\n");
 
+#ifdef DO_FIFO_SYNC
     /* STAGE: Inject the temporary buffer data in both the SCIF and physical fifos. */
-    for(work_index = 0; work_index < temp_index; work_index++)
+    for (work_index = 0; work_index < temp_index; work_index++)
     {
-        /* STAGE: Handle the physical fifo. */
-        phy_fifo_add(temp_buffer[work_index], IN);
+        uint32 timeout_count;
 
-        /* TODO: Handle the SCIF fifo. */
+        /* STAGE: Check if we can transmit on the SCIF. */
+        if (!(*SCIF_R_FS & SCIF_FS_TDFE))
+        {
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF fifo overflow during resynchronization!\n");
+            break;
+        }
+        
+        /* STAGE: Attempt to transmit the byte. */
+        *SCIF_R_FTG = temp_buffer[work_index];
+        *SCIF_R_FS &= ~(SCIF_FS_TDFE | SCIF_FS_TEND);
+
+        /* STAGE: Wait for the timeout, if necessary. */
+        timeout_count = 0;
+        while((timeout_count < SCIF_TIMEOUT) && !(*SCIF_R_FS & SCIF_FS_TEND))
+            timeout_count++;
+
+        if (timeout_count == SCIF_TIMEOUT)
+        {
+            biudp_printf(VOOT_PACKET_TYPE_DEBUG, "SCIF timeout during injection.\n");
+            break;
+        }
+
+        /* STAGE: Handle the physical fifo. */
+        phy_fifo_add(temp_buffer[work_index], IN);        
     }
 
     /* DEBUG: Notification of resynchronization completion. */
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical and SCIF fifos resynchronized.\n");
-}
-
-static uint32 phy_size(void)
-{
-    /* STAGE: Return with number of bytes within physical fifo. */
-    return phy_fifo.size;
+    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical and SCIF fifos resynchronized. %u bytes retained.\n", temp_index);
+#endif
 }
  
 uint32 trap_inject_data(const uint8 *data, uint32 size)
@@ -203,15 +240,33 @@ void* rxi_handler(register_stack *stack, void *current_vector)
     /* STAGE: If something horrible happens, we don't want VOOT freaking out about it. */
     return_vector = my_exception_finish;
 
-    /* DEBUG: RXI notification. */
-    biudp_printf(VOOT_PACKET_TYPE_DEBUG, "RXI\n");
+#define STUB
+#ifdef STUB
+    /* STAGE: Flush the SCIF fifo. */ 
+//    while (*SCIF_R_FS & SCIF_FS_RDF)
+    {
+        uint8 serial_data;
 
+        /* DEBUG: Obtain the serial data? */
+        serial_data = *SCIF_R_FRD;
+
+        /* DEBUG: RXI notification. */
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "RXI'%c'", serial_data);
+
+        /* STAGE: Drop a single character from the SCIF fifo. */
+        *SCIF_R_FS &= ~(SCIF_FS_RDF | SCIF_FS_DR);
+
+        /* DEBUG: Notify for debugging. Make sure this crap is even working. */
+        biudp_printf(VOOT_PACKET_TYPE_DEBUG, "...flush SCIF...\n");
+    }
+#else
     /* STAGE: Synchronize the physical fifo. */
     phy_sync();
 
     /* STAGE: If there is any remaining data in the physical fifo, pass on the interrupt. */
     if (phy_size())
         return_vector = current_vector;
+#endif
 
     return return_vector;
 }
@@ -233,7 +288,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             /* TODO (future): Add outgoing data to per-frame dump buffer. */
 
             /* STAGE: Add outgoing data to physical fifo. */
-            if(!phy_fifo_add(stack->r2, OUT))
+            if (!phy_fifo_add(stack->r2, OUT))
                 biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in transmission!\n");
 
             break;        
@@ -244,7 +299,7 @@ static void* my_serial_handler(register_stack *stack, void *current_vector)
             biudp_printf(VOOT_PACKET_TYPE_DEBUG, "<%c\n", stack->r3);
 
             /* STAGE: Remove incoming data from physical fifo. */
-            if(!phy_fifo_del(stack->r3))
+            if (!phy_fifo_del(stack->r3))
                 biudp_printf(VOOT_PACKET_TYPE_DEBUG, "Physical fifo overflow in reception!\n");
 
             break;
